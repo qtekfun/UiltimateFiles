@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -13,7 +12,7 @@ val signingKeystore: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
 android {
     namespace = "com.qtekfun.fexplo"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.qtekfun.fexplo"
