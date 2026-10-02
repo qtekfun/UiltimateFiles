@@ -2,27 +2,49 @@
 
 ## 1. Stack Técnico
 - **Lenguaje:** Kotlin 2.x
-- **UI Toolkit:** Jetpack Compose + Material 3 (soporte Adaptive Layouts / WindowSizeClass).
-- **Min SDK:** 26 (Android 8.0) | **Target SDK:** 35 (Android 15)
-- **Inyección de Dependencias:** Hilt o Koin (preferible Koin para menor fricción de código generado en F-Droid).
-- **Asincronía:** Kotlin Coroutines + StateFlow.
-- **Persistencia de Configuración:** Jetpack DataStore (Preferences).
-- **Acceso a Archivos:** Storage Access Framework (`DocumentFile`) + Abstracción `FileSystemRepository`.
+- **UI:** Jetpack Compose + Material 3 + WindowSizeClass
+- **SDKs:** Min SDK 26 | Target SDK 35
+- **DI:** Koin (ligero, sin generación de código invasiva)
+- **Concurrencia:** Kotlin Coroutines + Flow / StateFlow
+- **Configuración:** Jetpack DataStore Preferences
+- **I/O Engine:** `InputStream` / `OutputStream` canalizados con buffer de 64KB y canal de progreso.
 
-## 2. Estructura de Módulos / Paquetes
+## 2. Módulos y Estructura de Paquetes
 ```text
-com.example.filemanager/
+com.qtekfun.fexplo/
 ├── core/
-│   ├── model/             # Modelos de dominio (FileItem, StorageVolume, OperationProgress)
-│   ├── datastore/         # Preferencias (UserPreferencesRepository)
-│   └── util/              # Extensiones y helpers de URI / MimeTypes
+│   ├── model/             # FileItem, StorageVolume, TransferProgress, TransferStatus, ConflictResolution
+│   ├── datastore/         # Persistencia de preferencias (rutas, ordenación, vistas)
+│   └── util/              # Formatters de bytes, hashes (MD5/SHA), MimeTypes
 ├── data/
-│   ├── repository/        # Implementación de FileSystemRepository (LocalFileRepo, SafFileRepo)
-│   └── filesystem/        # Drivers I/O y operaciones en segundo plano
+│   ├── repository/        # FileSystemRepository (LocalFileRepo, SafUsbRepo)
+│   ├── io/                # FileStreamCopier con reporte de bytes emitidos
+│   └── service/           # FileTransferForegroundService + NotificationManager
 ├── domain/
-│   └── usecase/           # CopyFilesUseCase, MoveFilesUseCase, DeleteFilesUseCase, ListFilesUseCase
+│   ├── usecase/           # BatchCopyUseCase, BatchMoveUseCase, DeleteUseCase, HashCalcUseCase
+│   └── clipboard/         # ClipboardManager (Estado global de corte/copia entre paneles)
 └── ui/
-    ├── dualpanel/         # Orquestador del layout Portrait (Pager) vs Landscape (Split)
-    ├── browser/           # Componente reutilizable del explorador de archivos (ViewModel + Screen)
-    ├── operations/        # Diálogos de progreso de I/O y confirmaciones
+    ├── main/              # Scaffold principal con NavigationDrawer y WindowSizeClass
+    ├── dualpanel/         # Orquestador: HorizontalPager (Compact) vs Row 50/50 (Expanded)
+    ├── browser/           # Panel individual (ViewModel, FileList, FileItemRow, CAB)
+    ├── components/        # BreadcrumbBar, DockedPasteBar, ConflictDialog, PropertiesBottomSheet
     └── theme/             # Material3 Theme
+```
+
+## 3. Contratos de dominio
+```kotlin
+data class ClipboardState(
+    val operation: OperationType, // COPY o CUT
+    val sourcePath: String,
+    val items: List<FileItem>
+)
+
+interface FileSystemRepository {
+    suspend fun listFiles(uriOrPath: String): Result<List<FileItem>>
+    suspend fun createDirectory(parentUriOrPath: String, name: String): Result<FileItem>
+    suspend fun createFile(parentUriOrPath: String, name: String, mimeType: String): Result<FileItem>
+    suspend fun delete(items: List<FileItem>): Result<Unit>
+    suspend fun rename(item: FileItem, newName: String): Result<FileItem>
+}
+```
+El contrato base se amplía con lo necesario para el motor de copia (`volumes`, `stat`, `parentOf`, `openInput`, `openOutput`), de modo que `FileStreamCopier` funcione con cualquier backend.

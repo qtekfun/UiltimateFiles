@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fexplo</string>
+    <string name="panel_tab_format">Panel %1$d</string>
+    <string name="placeholder_welcome">Gestor de archivos Fexplo</string>
+</resources>
