@@ -1,9 +1,9 @@
 # Plan de Tareas de Implementación
 
-- [ ] **Fase 1: Setup del Proyecto y Core Domain**
-  - [ ] 1.1 Configurar build.gradle.kts con dependencias F-Droid compliant (Compose, Material3, Coroutines, DataStore).
-  - [ ] 1.2 Definir modelos de dominio: `FileItem`, `StorageVolume`, `FileOperation`.
-  - [ ] 1.3 Diseñar la interfaz `FileSystemRepository` y `UserPreferencesRepository`.
+- [x] **Fase 1: Setup del Proyecto y Core Domain**
+  - [x] 1.1 Configurar build.gradle.kts con dependencias F-Droid compliant (Compose, Material3, Coroutines, DataStore).
+  - [x] 1.2 Definir modelos de dominio: `FileItem`, `StorageVolume`, `FileOperation`.
+  - [x] 1.3 Diseñar la interfaz `FileSystemRepository` y `UserPreferencesRepository`.
 
 - [ ] **Fase 2: Implementación de I/O y Permisos**
   - [ ] 2.1 Implementar `LocalFileSystemRepository` usando SAF / `DocumentFile` para compatibilidad universal (Interno + USB).
