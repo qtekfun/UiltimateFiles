@@ -3,4 +3,14 @@
     <string name="app_name">Fexplo</string>
     <string name="panel_tab_format">Panel %1$d</string>
     <string name="placeholder_welcome">Fexplo file manager</string>
+    <string name="storage_internal">Internal storage</string>
+    <string name="transfer_channel_name">File transfers</string>
+    <string name="transfer_title">Transferring files</string>
+    <string name="transfer_preparing">Preparing…</string>
+    <string name="transfer_progress_text">%1$d%% · %2$s/s</string>
+    <string name="transfer_conflict_waiting">Name conflict: open the app to choose</string>
+    <string name="transfer_cancel">Cancel</string>
+    <string name="transfer_done">Transfer complete</string>
+    <string name="transfer_cancelled">Transfer cancelled</string>
+    <string name="transfer_failed">Transfer failed</string>
 </resources>

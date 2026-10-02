@@ -1,0 +1,75 @@
+package com.qtekfun.fexplo.data.service
+
+import android.app.Service
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.IBinder
+import androidx.core.app.ServiceCompat
+import com.qtekfun.fexplo.core.model.TransferProgress
+import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+/** Keeps long copies/moves alive in the background and mirrors their progress in a notification. */
+class FileTransferForegroundService : Service(), KoinComponent {
+    private val coordinator: TransferCoordinator by inject()
+    private val notifications: TransferNotifications by inject()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    @Volatile private var lastStartId = 0
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        lastStartId = startId
+        // Must be promoted to foreground right away, even if there turns out to be nothing to do.
+        ServiceCompat.startForeground(
+            this,
+            TransferNotifications.ONGOING_ID,
+            notifications.running(coordinator.state.value),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+        )
+        if (intent?.action == ACTION_CANCEL) {
+            coordinator.cancelAll()
+        }
+        if (coordinator.claimWorker()) {
+            scope.launch { drainQueue() }
+        } else if (coordinator.isIdle()) {
+            finish(null)
+        }
+        return START_NOT_STICKY
+    }
+
+    private suspend fun drainQueue() {
+        val updates = coordinator.state.onEach { notifications.update(it) }.launchIn(scope)
+        var last: TransferProgress? = null
+        while (true) {
+            val request = coordinator.next() ?: break
+            last = coordinator.run(request) ?: last
+        }
+        updates.cancel()
+        finish(last)
+    }
+
+    private fun finish(result: TransferProgress?) {
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        if (result != null) notifications.showResult(result)
+        stopSelf(lastStartId)
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    companion object {
+        const val ACTION_CANCEL = "com.qtekfun.fexplo.action.CANCEL_TRANSFER"
+    }
+}
