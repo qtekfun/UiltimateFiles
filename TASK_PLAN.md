@@ -1,25 +1,30 @@
 # Plan de Tareas de Implementación
 
-- [x] **Fase 1: Setup del Proyecto y Core Domain**
-  - [x] 1.1 Configurar build.gradle.kts con dependencias F-Droid compliant (Compose, Material3, Coroutines, DataStore).
-  - [x] 1.2 Definir modelos de dominio: `FileItem`, `StorageVolume`, `FileOperation`.
-  - [x] 1.3 Diseñar la interfaz `FileSystemRepository` y `UserPreferencesRepository`.
+- [x] **Fase 1: Base del Proyecto y Dominio Core**
+  - [x] 1.1 Configurar `build.gradle.kts` con Compose, Material3, Koin, DataStore y Coroutines.
+  - [x] 1.2 Modelos de datos: `FileItem`, `StorageVolume`, `ClipboardState`, `TransferProgress`.
+  - [x] 1.3 Contrato de interfaz `FileSystemRepository` y `ClipboardManager` compartido.
 
-- [ ] **Fase 2: Implementación de I/O y Permisos**
-  - [ ] 2.1 Implementar `LocalFileSystemRepository` usando SAF / `DocumentFile` para compatibilidad universal (Interno + USB).
-  - [ ] 2.2 Implementar gestión de permisos (`MANAGE_EXTERNAL_STORAGE` / SAF document tree picker).
-  - [ ] 2.3 Implementar UseCases atómicos: `ListDirectoryUseCase`, `DeleteFilesUseCase`, `CopyFilesUseCase`.
+- [ ] **Fase 2: Motor de I/O y Foreground Service**
+  - [ ] 2.1 Implementar `FileStreamCopier` con buffer de 64KB y canal de reporte de velocidad/bytes.
+  - [ ] 2.2 Crear `FileTransferForegroundService` con notificación persistente actualizable.
+  - [ ] 2.3 Implementar `SafFileSystemRepository` para gestionar Almacenamiento Interno y USB OTG vía Storage Access Framework.
+  - [ ] 2.4 Lógica de resolución de colisiones de nombres (sobrescribir, omitir, autorenombramiento).
 
-- [ ] **Fase 3: UI - Panel Individual (Browser)**
-  - [ ] 3.1 Crear `BrowserViewModel` con gestión de navegación, carga de ficheros y selección múltiple.
-  - [ ] 3.2 Crear componentes Compose: `FileList`, `FileListItem`, `BreadcrumbBar`, `BottomActionBar`.
+- [ ] **Fase 3: Componentes de UI y Sistema de Menús**
+  - [ ] 3.1 Implementar `BreadcrumbBar` interactivo con saltos de ruta en la Top Bar.
+  - [ ] 3.2 Implementar barra superior en reposo con overflow (*Nueva carpeta*, *Ordenar*, *Seleccionar todo*).
+  - [ ] 3.3 Implementar Contextual Action Bar (CAB) cuando hay selección activa (*Copiar*, *Cortar*, *Eliminar*).
+  - [ ] 3.4 Implementar `DockedPasteBar` inferior que se activa según el estado del `ClipboardManager`.
+  - [ ] 3.5 Crear `PropertiesBottomSheet` con cálculo de hash MD5/SHA-256 en corrutina background.
 
-- [ ] **Fase 4: UI - Dual Panel (Portrait / Landscape)**
-  - [ ] 4.1 Implementar `DualPanelScaffold` que detecte orientación/WindowSizeClass.
-  - [ ] 4.2 En portrait: HorizontalPager con 2 instancias independientes de `BrowserScreen`.
-  - [ ] 4.3 En landscape: Row 50/50 con 2 instancias independientes de `BrowserScreen`.
+- [ ] **Fase 4: Navegador de Archivos (Single Panel)**
+  - [ ] 4.1 Crear `BrowserViewModel` para gestionar listado, ordenación, carga asíncrona y selección.
+  - [ ] 4.2 Crear `FileList` y filas con iconos representativos según MIME type y tamaño legible.
+  - [ ] 4.3 Menú contextual por ítem (pulsación larga / botón 3 puntos en fila).
 
-- [ ] **Fase 5: Portapapeles y Operaciones entre Paneles**
-  - [ ] 5.1 Implementar `ClipboardManager` compartido para operaciones Copiar/Mover del Panel A al Panel B.
-  - [ ] 5.2 Diálogo de progreso en tiempo real para copia/movimiento de ficheros pesados.
-  - [ ] 5.3 Intent de expulsión segura de unidades USB detectadas.
+- [ ] **Fase 5: Integración Dual Panel y Drag & Drop**
+  - [ ] 5.1 Implementar `DualPanelScaffold` con detección de tamaño de pantalla (Compact vs Expanded).
+  - [ ] 5.2 Configurar `HorizontalPager` para modo retrato y layout split 50/50 para apaisado.
+  - [ ] 5.3 Integrar APIs de Drag & Drop entre paneles en modo split con diálogo modal "¿Copiar o Mover?".
+  - [ ] 5.4 Navigation Drawer lateral con volúmenes detectados (Interno, USB).

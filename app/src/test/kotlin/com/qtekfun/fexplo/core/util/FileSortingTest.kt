@@ -8,7 +8,7 @@ import org.junit.Test
 
 class FileSortingTest {
     private fun item(name: String, dir: Boolean = false, size: Long = 0, date: Long = 0) =
-        FileItem(id = name, name = name, isDirectory = dir, sizeBytes = size, lastModifiedMillis = date, mimeType = null)
+        FileItem(path = name, name = name, isDirectory = dir, sizeBytes = size, lastModifiedMillis = date, mimeType = null)
 
     private val items = listOf(
         item("b.txt", size = 10, date = 3),

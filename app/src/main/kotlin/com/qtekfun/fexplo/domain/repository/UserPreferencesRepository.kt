@@ -13,5 +13,5 @@ interface UserPreferencesRepository {
 
     suspend fun setSortOrder(order: SortOrder)
 
-    suspend fun setLastDirectory(panel: PanelId, directoryId: String)
+    suspend fun setLastDirectory(panel: PanelId, directoryPath: String)
 }

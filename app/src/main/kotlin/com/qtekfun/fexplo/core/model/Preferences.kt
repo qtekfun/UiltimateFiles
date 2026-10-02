@@ -11,6 +11,6 @@ data class SortOrder(val field: SortField = SortField.NAME, val ascending: Boole
 data class UserPreferences(
     val viewMode: ViewMode = ViewMode.LIST,
     val sortOrder: SortOrder = SortOrder(),
-    /** Last opened directory id per panel; null means "use the default root". */
-    val lastDirectoryIds: Map<PanelId, String?> = emptyMap(),
+    /** Last opened directory path per panel; null means "use the default root". */
+    val lastDirectoryPaths: Map<PanelId, String?> = emptyMap(),
 )

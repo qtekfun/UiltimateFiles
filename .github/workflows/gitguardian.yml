@@ -11,11 +11,18 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    # Secrets are not available in `if:` directly; expose it through env and skip when unset
+    # (e.g. forks, Dependabot PRs, or before the key is configured).
+    env:
+      HAS_KEY: ${{ secrets.GITGUARDIAN_API_KEY != '' }}
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
         with:
           fetch-depth: 0
       - name: Scan commits for secrets
+        if: env.HAS_KEY == 'true'
         uses: GitGuardian/ggshield-action@v1
         env:
           GITHUB_PUSH_BEFORE_SHA: ${{ github.event.before }}

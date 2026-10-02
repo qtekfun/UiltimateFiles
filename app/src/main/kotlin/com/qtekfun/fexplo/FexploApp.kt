@@ -1,6 +1,7 @@
 package com.qtekfun.fexplo
 
 import android.app.Application
+import com.qtekfun.fexplo.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -9,6 +10,7 @@ class FexploApp : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@FexploApp)
+            modules(appModule)
         }
     }
 }

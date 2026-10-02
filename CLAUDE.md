@@ -1,20 +1,20 @@
-# Directrices de Desarrollo - Android File Manager
+# Directrices de Desarrollo - Android Dual-Panel File Manager
 
 ## Reglas Críticas para el Agente
-- **Cero Google Play Services:** La app debe ser 100% compatible con F-Droid. No añadas dependencias privativas, analytics ni Firebase.
-- **Validación obligatoria:** Tras modificar código, ejecuta `./gradlew testDebugUnitTest` o `./gradlew compileDebugKotlin`. Nunca des una tarea por completada sin compilar.
-- **Abstracción de I/O:** Nunca uses `java.io.File` en capas de dominio o UI. Usa siempre la interfaz abstracta `FileSystemRepository` para permitir futuros conectores (WebDAV/SAF).
-- **Corrutinas:** Toda operación de I/O (copiar, mover, listar, eliminar) debe ejecutarse estrictamente en `Dispatchers.IO` fuera del hilo principal.
-- **Modo de trabajo:** Modifica un fichero a la vez. No generes placeholders tipo `// TODO: implement later`.
+- **Cero Google Play Services:** Compatibilidad estricta con F-Droid. Cero analytics, crashlytics o dependencias de Google closed-source.
+- **Sin FABs:** La UI utiliza Contextual Action Bars (CAB) superiores y barras inferiores acopladas (docked bottom bars). No uses Floating Action Buttons.
+- **Validación obligatoria:** Tras cada cambio, compila con `./gradlew assembleDebug` o corre tests con `./gradlew testDebugUnitTest`. No asumas que compila.
+- **I/O no bloqueante:** Ninguna lectura/escritura en hilo principal. Operaciones largas de I/O (copia, movimiento) se gestionan mediante un `ForegroundService` con notificación persistente.
+- **Abstracción del Storage:** Todo acceso a ficheros debe pasar por la interfaz `FileSystemRepository`. Prohibido el uso directo de `java.io.File` en capas UI o Domain.
 
 ## Entorno y Comandos
-- Java: OpenJDK 21
-- Build: `./gradlew assembleDebug`
+- Java: OpenJDK 21 | Kotlin 2.x
+- Compilar: `./gradlew assembleDebug`
 - Tests: `./gradlew testDebugUnitTest`
-- Linter / Verificación: `./gradlew lintDebug`
-- Logs locales: `adb logcat -s "FileManagerApp"`
+- Linter: `./gradlew lintDebug`
+- Logs: `adb logcat -s "FileManagerApp"`
 
-## Estilo y Convenciones
-- Kotlin puro + Jetpack Compose con Material 3.
-- Arquitectura MVI o MVVM con `StateFlow` y eventos inmutables.
-- Strings localizables en `strings.xml`. No uses strings literales hardcodeadas en UI.
+## Estilo y UI
+- Jetpack Compose con Material 3 y Adaptive Layouts (`WindowWidthSizeClass`).
+- Strings estrictamente en `res/values/strings.xml`. Cero textos hardcodeados en Composable.
+- Estado desacoplado e inmutable con `StateFlow` y eventos tipo Sealed Interface.

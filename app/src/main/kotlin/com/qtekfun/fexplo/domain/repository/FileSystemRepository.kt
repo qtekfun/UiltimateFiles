@@ -1,36 +1,46 @@
 package com.qtekfun.fexplo.domain.repository
 
 import com.qtekfun.fexplo.core.model.FileItem
-import com.qtekfun.fexplo.core.model.OperationProgress
 import com.qtekfun.fexplo.core.model.StorageVolume
-import kotlinx.coroutines.flow.Flow
+import java.io.InputStream
+import java.io.OutputStream
 
 /**
  * Abstraction over any file backend (local paths, SAF, future WebDAV…).
  *
- * Implementations must perform all I/O on `Dispatchers.IO`; callers may invoke
- * these from any dispatcher, including Main.
+ * Implementations must perform all I/O on `Dispatchers.IO`, so callers can invoke
+ * these from any dispatcher, including Main. Failures are returned as [Result.failure].
  */
 interface FileSystemRepository {
     /** Storage roots currently available (internal, USB OTG…). */
     suspend fun volumes(): List<StorageVolume>
 
-    /** Direct children of [directoryId]. Throws [java.io.IOException] if unreadable. */
-    suspend fun list(directoryId: String): List<FileItem>
+    suspend fun listFiles(uriOrPath: String): Result<List<FileItem>>
 
-    /** Metadata of one entry, or null if it no longer exists. */
-    suspend fun stat(id: String): FileItem?
+    suspend fun stat(uriOrPath: String): Result<FileItem>
 
-    /** Parent directory id, or null when [id] is a volume root. */
-    suspend fun parentOf(id: String): String?
+    /** Parent directory, or null when [uriOrPath] is a volume root. */
+    suspend fun parentOf(uriOrPath: String): String?
 
-    suspend fun createDirectory(parentId: String, name: String): FileItem
+    suspend fun createDirectory(parentUriOrPath: String, name: String): Result<FileItem>
 
-    /** Copies [sourceIds] into [targetDirectoryId], emitting progress. Cancellable. */
-    fun copy(sourceIds: List<String>, targetDirectoryId: String): Flow<OperationProgress>
+    suspend fun createFile(parentUriOrPath: String, name: String, mimeType: String): Result<FileItem>
 
-    /** Moves [sourceIds] into [targetDirectoryId], emitting progress. Cancellable. */
-    fun move(sourceIds: List<String>, targetDirectoryId: String): Flow<OperationProgress>
+    suspend fun delete(items: List<FileItem>): Result<Unit>
 
-    fun delete(ids: List<String>): Flow<OperationProgress>
+    suspend fun rename(item: FileItem, newName: String): Result<FileItem>
+
+    /** Opens [item] for reading; the caller closes the stream. */
+    suspend fun openInput(item: FileItem): Result<InputStream>
+
+    /**
+     * Creates (or truncates when [overwrite]) a file named [name] inside [parentUriOrPath]
+     * and opens it for writing; the caller closes the stream.
+     */
+    suspend fun openOutput(
+        parentUriOrPath: String,
+        name: String,
+        mimeType: String,
+        overwrite: Boolean,
+    ): Result<OutputStream>
 }
