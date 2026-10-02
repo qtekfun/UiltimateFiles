@@ -140,6 +140,8 @@ class SafFileSystemRepository(private val context: Context) : FileSystemReposito
             sizeBytes = if (isDirectory) 0L else document.length(),
             lastModifiedMillis = document.lastModified(),
             mimeType = if (isDirectory) null else document.type,
+            isWritable = document.canWrite(),
+            isHidden = document.name.orEmpty().startsWith('.'),
         )
     }
 }
