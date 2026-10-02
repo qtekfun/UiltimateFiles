@@ -63,7 +63,7 @@ jobs:
         run: cp app/build/outputs/apk/release/app-release.apk "fexplo-${{ steps.version.outputs.name }}.apk"
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.name }}
           target_commitish: ${{ github.sha }}
