@@ -5,11 +5,11 @@
   - [x] 1.2 Modelos de datos: `FileItem`, `StorageVolume`, `ClipboardState`, `TransferProgress`.
   - [x] 1.3 Contrato de interfaz `FileSystemRepository` y `ClipboardManager` compartido.
 
-- [ ] **Fase 2: Motor de I/O y Foreground Service**
-  - [ ] 2.1 Implementar `FileStreamCopier` con buffer de 64KB y canal de reporte de velocidad/bytes.
-  - [ ] 2.2 Crear `FileTransferForegroundService` con notificación persistente actualizable.
-  - [ ] 2.3 Implementar `SafFileSystemRepository` para gestionar Almacenamiento Interno y USB OTG vía Storage Access Framework.
-  - [ ] 2.4 Lógica de resolución de colisiones de nombres (sobrescribir, omitir, autorenombramiento).
+- [x] **Fase 2: Motor de I/O y Foreground Service**
+  - [x] 2.1 Implementar `FileStreamCopier` con buffer de 64KB y canal de reporte de velocidad/bytes.
+  - [x] 2.2 Crear `FileTransferForegroundService` con notificación persistente actualizable.
+  - [x] 2.3 Implementar `SafFileSystemRepository` para gestionar Almacenamiento Interno y USB OTG vía Storage Access Framework.
+  - [x] 2.4 Lógica de resolución de colisiones de nombres (sobrescribir, omitir, autorenombramiento).
 
 - [ ] **Fase 3: Componentes de UI y Sistema de Menús**
   - [ ] 3.1 Implementar `BreadcrumbBar` interactivo con saltos de ruta en la Top Bar.

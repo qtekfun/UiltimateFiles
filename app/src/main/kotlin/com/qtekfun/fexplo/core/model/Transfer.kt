@@ -11,6 +11,7 @@ data class TransferProgress(
     val totalFiles: Int,
     val bytesPerSecond: Long = 0L,
     val status: TransferStatus = TransferStatus.RUNNING,
+    val error: String? = null,
 ) {
     /** 0f..1f, or null when the total size is not known. */
     val fraction: Float?
@@ -22,3 +23,13 @@ enum class ConflictResolution { OVERWRITE, SKIP, RENAME }
 
 /** A user's answer to a name collision; [applyToAll] reuses it for the rest of the batch. */
 data class ConflictDecision(val resolution: ConflictResolution, val applyToAll: Boolean = false)
+
+/** A batch to copy or move ([OperationType.COPY] / [OperationType.CUT]) into [targetDirectory]. */
+data class TransferRequest(
+    val operation: OperationType,
+    val items: List<FileItem>,
+    val targetDirectory: String,
+)
+
+/** Asks the user how to resolve a name collision between [source] and the entry already at the destination. */
+data class ConflictPrompt(val source: FileItem, val existing: FileItem)
