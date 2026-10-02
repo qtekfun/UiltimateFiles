@@ -8,7 +8,7 @@ composeBom = "2026.09.00"
 coroutines = "1.10.2"
 datastore = "1.1.7"
 documentfile = "1.1.0"
-koin = "4.1.0"
+koin = "4.2.2"
 junit = "4.13.2"
 
 [libraries]
