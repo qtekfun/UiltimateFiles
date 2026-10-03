@@ -9,7 +9,9 @@ import com.qtekfun.fexplo.core.model.ConflictDecision
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.core.model.StorageKind
 import com.qtekfun.fexplo.core.model.StorageVolume
+import com.qtekfun.fexplo.data.network.WebDavAccountService
 import com.qtekfun.fexplo.data.repository.SafFileSystemRepository
+import com.qtekfun.fexplo.domain.repository.AccountRepository
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
 import com.qtekfun.fexplo.domain.repository.VolumeChangeSource
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -44,6 +47,8 @@ class MainViewModel(
     private val copyFiles: BatchCopyUseCase,
     private val moveFiles: BatchMoveUseCase,
     private val volumeChanges: VolumeChangeSource,
+    private val accountService: WebDavAccountService,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -79,13 +84,43 @@ class MainViewModel(
         }
     }
 
+    private var loginJob: Job? = null
+
+    /**
+     * Signs in to a Nextcloud server through Login Flow v2. [openBrowser] gets the approval page;
+     * [onDone] runs on the main thread with the outcome. A second call replaces a pending one.
+     */
+    fun connectAccount(serverUrl: String, label: String, openBrowser: (String) -> Unit, onDone: (Result<Unit>) -> Unit) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = accountService.connectWithLoginFlow(serverUrl, label, openBrowser).map { }
+            if (result.isSuccess) refreshVolumes()
+            onDone(result)
+        }
+    }
+
+    fun cancelConnect() {
+        loginJob?.cancel()
+        loginJob = null
+    }
+
+    /** Forgets the account behind a network [volume]; nothing is deleted on the server. */
+    fun removeAccount(volume: StorageVolume) {
+        viewModelScope.launch {
+            accountRepository.remove(volume.id.removePrefix("dav:"))
+            refreshVolumes()
+        }
+    }
+
     fun answerConflict(decision: ConflictDecision) = coordinator.answerConflict(decision)
 
     fun cancelTransfers() = coordinator.cancelAll()
 
     fun confirmDrop(copy: Boolean) {
         val drop = dragDrop.pendingDrop.value ?: return
-        if (copy) copyFiles(drop.items, drop.targetPath) else moveFiles(drop.items, drop.targetPath)
+        viewModelScope.launch {
+            if (copy) copyFiles(drop.items, drop.targetPath) else moveFiles(drop.items, drop.targetPath)
+        }
         dragDrop.clearPendingDrop()
     }
 

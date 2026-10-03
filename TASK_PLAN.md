@@ -33,3 +33,8 @@
   - [x] 6.1 Historial de tareas completadas (copiar, mover, eliminar) persistente y accesible desde el cajón.
   - [x] 6.2 Detección de discos expulsados o desconectados: el panel que estaba en ese volumen vuelve a una carpeta disponible y avisa.
   - [x] 6.3 Pantalla de ajustes con tema (sistema, claro, oscuro, AMOLED) y colores dinámicos.
+
+- [x] **Fase 7: Ficheros enormes y Nextcloud**
+  - [x] 7.1 Copias robustas de ficheros grandes: escritura a `*.fexplo-part` + renombrado, verificación SHA-256 opcional antes de borrar el origen en movimientos, buffer de 1 MiB, wake lock, ETA.
+  - [x] 7.2 Test de transferencia de 8 GiB simulada (flujo generado, CRC32) sin necesidad de disco.
+  - [x] 7.3 Cuentas WebDAV/Nextcloud (HTTPS, contraseña de aplicación cifrada con Android Keystore), subida por trozos de Nextcloud (chunked v2) y descarga reanudable (Range).

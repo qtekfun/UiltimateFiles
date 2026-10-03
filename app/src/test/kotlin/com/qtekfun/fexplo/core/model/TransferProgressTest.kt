@@ -17,4 +17,11 @@ class TransferProgressTest {
     fun `fraction is null for unknown total`() {
         assertNull(progress(10, 0).fraction)
     }
+
+    @Test
+    fun `remaining time follows the current speed`() {
+        val p = TransferProgress("f", 1_000, 11_000, 0, 1, bytesPerSecond = 500)
+        assertEquals(20L, p.remainingSeconds)
+        assertNull(TransferProgress("f", 1_000, 11_000, 0, 1, bytesPerSecond = 0).remainingSeconds)
+    }
 }

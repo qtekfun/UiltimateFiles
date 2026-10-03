@@ -20,6 +20,10 @@ class SettingsViewModel(private val preferencesRepository: UserPreferencesReposi
         viewModelScope.launch { preferencesRepository.setThemeMode(mode) }
     }
 
+    fun setVerifyCopies(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setVerifyCopies(enabled) }
+    }
+
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setDynamicColor(enabled) }
     }

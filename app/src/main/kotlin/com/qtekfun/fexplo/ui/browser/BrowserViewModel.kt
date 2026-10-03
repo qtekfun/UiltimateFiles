@@ -103,9 +103,13 @@ class BrowserViewModel(
             BrowserEvent.Refresh -> revalidate()
             BrowserEvent.ToggleSearch -> _state.update { it.copy(searchQuery = if (it.searchQuery == null) "" else null) }
             is BrowserEvent.SetSearchQuery -> _state.update { it.copy(searchQuery = event.query) }
-            is BrowserEvent.OpenItem ->
-                if (event.item.isDirectory) load(event.item.path) else emit(BrowserEffect.OpenFile(event.item, false))
-            is BrowserEvent.OpenWith -> emit(BrowserEffect.OpenFile(event.item, true))
+            is BrowserEvent.OpenItem -> when {
+                event.item.isDirectory -> load(event.item.path)
+                event.item.isRemote() -> emit(BrowserEffect.Message(R.string.error_remote_open))
+                else -> emit(BrowserEffect.OpenFile(event.item, false))
+            }
+            is BrowserEvent.OpenWith ->
+                if (event.item.isRemote()) emit(BrowserEffect.Message(R.string.error_remote_open)) else emit(BrowserEffect.OpenFile(event.item, true))
             is BrowserEvent.ToggleSelection -> toggleSelection(event.item)
             BrowserEvent.SelectAll -> _state.update { s -> s.copy(selectedPaths = s.visibleItems.map { it.path }.toSet()) }
             BrowserEvent.ClearSelection -> _state.update { it.copy(selectedPaths = emptySet()) }
@@ -125,7 +129,7 @@ class BrowserViewModel(
             is BrowserEvent.RequestRename -> showDialog(BrowserDialog.Rename(event.item))
             BrowserEvent.RequestNewFolder -> showDialog(BrowserDialog.NewFolder)
             BrowserEvent.RequestNewFile -> showDialog(BrowserDialog.NewFile)
-            is BrowserEvent.ShowProperties -> showDialog(BrowserDialog.Properties(event.item))
+            is BrowserEvent.ShowProperties -> showProperties(event.item)
             is BrowserEvent.ConfirmName -> confirmName(event.name)
             BrowserEvent.ConfirmDelete -> confirmDelete()
             BrowserEvent.ComputeHash -> computeHash()
@@ -235,20 +239,42 @@ class BrowserViewModel(
     private fun paste() {
         val clip = clipboardManager.state.value ?: return
         val target = _state.value.currentPath ?: return
-        when (clip.operation) {
-            OperationType.COPY -> copyFiles(clip.items, target)
-            // Moving into the folder the items already live in changes nothing.
-            OperationType.CUT -> if (clip.sourcePath != target) moveFiles(clip.items, target)
+        viewModelScope.launch {
+            when (clip.operation) {
+                OperationType.COPY -> copyFiles(clip.items, target)
+                // Moving into the folder the items already live in changes nothing.
+                OperationType.CUT -> if (clip.sourcePath != target) moveFiles(clip.items, target)
+            }
         }
         clipboardManager.clear()
     }
 
+    /** Network files have no local URI to hand to other apps; they must be copied to the device first. */
+    private fun FileItem.isRemote() = path.startsWith("dav://")
+
     private fun share(items: List<FileItem>) {
+        if (items.any { it.isRemote() }) {
+            emit(BrowserEffect.Message(R.string.error_remote_open))
+            return
+        }
         val files = items.filterNot { it.isDirectory }
         if (files.isEmpty()) emit(BrowserEffect.Message(R.string.error_share_folders)) else emit(BrowserEffect.ShareFiles(files))
     }
 
     private fun showDialog(dialog: BrowserDialog) = _state.update { it.copy(dialog = dialog) }
+
+    /** Opens the sheet with the listed data at once, then enriches it with what only `stat` knows (permissions). */
+    private fun showProperties(item: FileItem) {
+        showDialog(BrowserDialog.Properties(item))
+        viewModelScope.launch {
+            repository.stat(item.path).onSuccess { detailed ->
+                _state.update { s ->
+                    val dialog = s.dialog as? BrowserDialog.Properties
+                    if (dialog != null && dialog.item.path == item.path) s.copy(dialog = dialog.copy(item = detailed)) else s
+                }
+            }
+        }
+    }
 
     private fun dismissDialog() {
         hashJob?.cancel()

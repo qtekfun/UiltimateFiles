@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Eject
@@ -19,7 +21,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Usb
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,6 +58,7 @@ import com.qtekfun.fexplo.core.model.StorageVolume
 import com.qtekfun.fexplo.data.system.IntentFactory
 import com.qtekfun.fexplo.ui.browser.BrowserEvent
 import com.qtekfun.fexplo.ui.browser.BrowserViewModel
+import com.qtekfun.fexplo.ui.components.AddAccountDialog
 import com.qtekfun.fexplo.ui.components.ConflictDialog
 import com.qtekfun.fexplo.ui.components.DropActionDialog
 import com.qtekfun.fexplo.ui.components.TransferProgressBar
@@ -79,6 +84,8 @@ fun MainScreen() {
     val settingsViewModel = viewModel<SettingsViewModel>(factory = viewModelFactory { initializer { koin.get<SettingsViewModel>() } })
     val historyViewModel = viewModel<HistoryViewModel>(factory = viewModelFactory { initializer { koin.get<HistoryViewModel>() } })
     var screen by rememberSaveable { mutableStateOf(AppScreen.BROWSER) }
+    var showAddAccount by rememberSaveable { mutableStateOf(false) }
+    var accountToRemove by remember { mutableStateOf<StorageVolume?>(null) }
     BackHandler(enabled = screen != AppScreen.BROWSER) { screen = AppScreen.BROWSER }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,6 +117,11 @@ fun MainScreen() {
                 shortcuts = state.shortcuts,
                 onOpen = ::openInActivePanel,
                 onAddStorage = { pickFolder.launch(null) },
+                onAddAccount = {
+                    showAddAccount = true
+                    scope.launch { drawerState.close() }
+                },
+                onRemoveAccount = { accountToRemove = it },
                 onShowHistory = {
                     screen = AppScreen.HISTORY
                     scope.launch { drawerState.close() }
@@ -153,6 +165,7 @@ fun MainScreen() {
                                 preferences = current,
                                 onThemeMode = settingsViewModel::setThemeMode,
                                 onDynamicColor = settingsViewModel::setDynamicColor,
+                                onVerifyCopies = settingsViewModel::setVerifyCopies,
                                 onBack = { screen = AppScreen.BROWSER },
                             )
                         }
@@ -163,6 +176,27 @@ fun MainScreen() {
         }
     }
 
+    if (showAddAccount) {
+        AddAccountDialog(
+            onConnect = viewModel::connectAccount,
+            onCancel = viewModel::cancelConnect,
+            onDismiss = { showAddAccount = false },
+        )
+    }
+    accountToRemove?.let { volume ->
+        AlertDialog(
+            onDismissRequest = { accountToRemove = null },
+            title = { Text(stringResource(R.string.account_remove_title)) },
+            text = { Text(stringResource(R.string.account_remove_message, volume.label)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.removeAccount(volume)
+                    accountToRemove = null
+                }) { Text(stringResource(R.string.account_remove)) }
+            },
+            dismissButton = { TextButton(onClick = { accountToRemove = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
     transfer.conflict?.let { prompt ->
         ConflictDialog(
             prompt = prompt,
@@ -197,6 +231,8 @@ private fun DrawerContent(
     shortcuts: List<Shortcut>,
     onOpen: (String) -> Unit,
     onAddStorage: () -> Unit,
+    onAddAccount: () -> Unit,
+    onRemoveAccount: (StorageVolume) -> Unit,
     onShowHistory: () -> Unit,
     onShowSettings: () -> Unit,
     onEject: () -> Unit,
@@ -213,7 +249,11 @@ private fun DrawerContent(
                     label = { Text(volume.label) },
                     icon = { Icon(volume.icon(), contentDescription = null) },
                     badge = {
-                        if (volume.isEjectable) {
+                        if (volume.kind == StorageKind.NETWORK) {
+                            IconButton(onClick = { onRemoveAccount(volume) }) {
+                                Icon(Icons.Filled.CloudOff, contentDescription = stringResource(R.string.account_remove))
+                            }
+                        } else if (volume.isEjectable) {
                             IconButton(onClick = onEject) {
                                 Icon(Icons.Filled.Eject, contentDescription = stringResource(R.string.drawer_eject))
                             }
@@ -243,6 +283,13 @@ private fun DrawerContent(
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
             NavigationDrawerItem(
+                label = { Text(stringResource(R.string.drawer_add_account)) },
+                icon = { Icon(Icons.Filled.Cloud, contentDescription = null) },
+                selected = false,
+                onClick = onAddAccount,
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+            NavigationDrawerItem(
                 label = { Text(stringResource(R.string.history_title)) },
                 icon = { Icon(Icons.Filled.History, contentDescription = null) },
                 selected = false,
@@ -260,8 +307,11 @@ private fun DrawerContent(
     }
 }
 
-private fun StorageVolume.icon(): ImageVector =
-    if (kind == StorageKind.INTERNAL) Icons.Filled.PhoneAndroid else Icons.Filled.Usb
+private fun StorageVolume.icon(): ImageVector = when (kind) {
+    StorageKind.INTERNAL -> Icons.Filled.PhoneAndroid
+    StorageKind.NETWORK -> Icons.Filled.Cloud
+    else -> Icons.Filled.Usb
+}
 
 private fun ShortcutKind.icon(): ImageVector = when (this) {
     ShortcutKind.DOWNLOADS -> Icons.Filled.Download

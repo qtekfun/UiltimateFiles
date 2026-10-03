@@ -1,0 +1,13 @@
+Fexplo is a free and open source file manager for Android built around two panels.
+
+• Two panels: swipe between them on a phone, or see both side by side in landscape and on tablets.
+• Drag and drop items from one panel to the other and choose to copy or move.
+• Interactive breadcrumb, folder filter, sorting, multi-selection with a contextual action bar and a docked paste bar.
+• Long copies and moves run in the background with a notification showing the current file, progress and speed.
+• Name conflicts: overwrite, skip or keep both, optionally for the whole batch.
+• Internal storage and USB OTG / SD drives through the Storage Access Framework.
+• Properties with exact size, permissions and MD5 / SHA-256 checksums.
+• History of completed tasks.
+• Light, dark and pure black AMOLED themes, plus Material You colors.
+
+No ads, no analytics and no Google Play Services.

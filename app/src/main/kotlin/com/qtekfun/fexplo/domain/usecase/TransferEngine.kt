@@ -11,9 +11,13 @@ import com.qtekfun.fexplo.core.util.MimeTypes
 import com.qtekfun.fexplo.core.util.TransferSpeedMeter
 import com.qtekfun.fexplo.core.util.uniqueName
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
+import java.io.IOException
+import java.security.MessageDigest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -34,6 +38,8 @@ class TransferEngine(
     private val repository: FileSystemRepository,
     private val copier: StreamCopier,
     private val clockMillis: () -> Long = System::currentTimeMillis,
+    /** Files at least this big are written under a temporary name and renamed once complete. */
+    private val bigFileBytes: Long = DEFAULT_BIG_FILE_BYTES,
 ) {
     /**
      * Emits throttled progress snapshots (latest wins) and finishes with a terminal status
@@ -79,9 +85,12 @@ class TransferEngine(
                 children(item.path).forEach { measure(it) }
             } else {
                 totalFiles++
-                totalBytes += item.sizeBytes
+                totalBytes += weight(item.sizeBytes)
             }
         }
+
+        /** With verification every byte is processed twice: written, then read back. */
+        private fun weight(size: Long) = if (request.verify) size * 2 else size
 
         /** Returns true when everything under [item] was transferred (nothing skipped). */
         private suspend fun transfer(item: FileItem, targetDir: String): Boolean {
@@ -134,28 +143,69 @@ class TransferEngine(
             }
             current = item.name
             publish(TransferStatus.RUNNING)
+            val big = item.sizeBytes >= bigFileBytes
+            // Big files: a half-written file must never look like the real one.
+            val writeName = if (big) name + PART_SUFFIX else name
             try {
-                copyFile(item, targetDir, name, overwrite)
+                val sourceHash = copyFile(item, targetDir, writeName, overwrite = big || overwrite)
+                if (big) finalizePart(targetDir, writeName, name)
+                if (sourceHash != null) verify(item, targetDir, name, sourceHash)
             } catch (e: Exception) {
-                withContext(NonCancellable) { discardPartial(targetDir, name) }
+                withContext(NonCancellable) { discardPartial(targetDir, writeName) }
                 throw e
             }
             listings.remove(targetDir)
             doneFiles++
+            // The source of a move is only deleted after the copy (and verification) succeeded.
             if (isMove) repository.delete(listOf(item)).getOrThrow()
             return true
         }
 
-        private suspend fun copyFile(item: FileItem, targetDir: String, name: String, overwrite: Boolean) {
+        /** Replaces any existing [finalName] with the finished temporary file. */
+        private suspend fun finalizePart(targetDir: String, partName: String, finalName: String) {
+            listings.remove(targetDir)
+            val part = findExisting(targetDir, partName) ?: throw IOException("Temporary file $partName vanished")
+            findExisting(targetDir, finalName)?.let { repository.delete(listOf(it)).getOrThrow() }
+            repository.rename(part, finalName).getOrThrow()
+            listings.remove(targetDir)
+        }
+
+        /** Reads the copy back and compares its SHA-256 with the one computed while copying. */
+        private suspend fun verify(source: FileItem, targetDir: String, name: String, expected: ByteArray) {
+            publish(TransferStatus.VERIFYING)
+            listings.remove(targetDir)
+            val copy = findExisting(targetDir, name) ?: throw IOException("Copy of $name not found")
+            val digest = MessageDigest.getInstance("SHA-256")
+            repository.openInput(copy).getOrThrow().use { input ->
+                val buffer = ByteArray(VERIFY_BUFFER_SIZE)
+                while (true) {
+                    currentCoroutineContext().ensureActive()
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                    doneBytes += read
+                    tick(TransferStatus.VERIFYING)
+                }
+            }
+            if (!MessageDigest.isEqual(expected, digest.digest())) {
+                repository.delete(listOf(copy))
+                throw IOException("Verification failed for ${source.name}: the copy does not match the original")
+            }
+        }
+
+        /** Returns the SHA-256 of what was copied when verification is on, else null. */
+        private suspend fun copyFile(item: FileItem, targetDir: String, name: String, overwrite: Boolean): ByteArray? {
             val mime = item.mimeType ?: MimeTypes.fromName(name) ?: MimeTypes.OCTET_STREAM
+            val digest = if (request.verify) MessageDigest.getInstance("SHA-256") else null
             repository.openInput(item).getOrThrow().use { input ->
                 repository.openOutput(targetDir, name, mime, overwrite).getOrThrow().use { output ->
-                    copier.copy(input, output) { bytes ->
+                    copier.copy(input, output, item.sizeBytes, digest) { bytes ->
                         doneBytes += bytes
                         tick()
                     }
                 }
             }
+            return digest?.digest()
         }
 
         private suspend fun discardPartial(targetDir: String, name: String) {
@@ -181,7 +231,7 @@ class TransferEngine(
                     bytes + b to files + f
                 }
             } else {
-                item.sizeBytes to 1
+                weight(item.sizeBytes) to 1
             }
 
         private suspend fun decide(item: FileItem, existing: FileItem): ConflictDecision {
@@ -222,11 +272,11 @@ class TransferEngine(
         )
 
         /** Non-suspending, throttled update used from the byte-copy callback. */
-        private fun tick() {
+        private fun tick(status: TransferStatus = TransferStatus.RUNNING) {
             val now = clockMillis()
             if (now - lastEmitMillis < EMIT_INTERVAL_MILLIS) return
             lastEmitMillis = now
-            out.trySend(snapshot(TransferStatus.RUNNING))
+            out.trySend(snapshot(status))
         }
 
         private suspend fun publish(status: TransferStatus, error: String? = null) {
@@ -235,7 +285,11 @@ class TransferEngine(
         }
     }
 
-    private companion object {
-        const val EMIT_INTERVAL_MILLIS = 250L
+    companion object {
+        /** Suffix of the temporary name given to big files while they are being written. */
+        const val PART_SUFFIX = ".fexplo-part"
+        const val DEFAULT_BIG_FILE_BYTES = 64L * 1024 * 1024
+        private const val EMIT_INTERVAL_MILLIS = 250L
+        private const val VERIFY_BUFFER_SIZE = 1024 * 1024
     }
 }

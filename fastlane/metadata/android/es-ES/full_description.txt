@@ -1,0 +1,13 @@
+Fexplo es un gestor de archivos libre y de código abierto para Android construido en torno a dos paneles.
+
+• Dos paneles: desliza entre ellos en el móvil, o verlos lado a lado en horizontal y en tabletas.
+• Arrastra y suelta elementos de un panel al otro y elige entre copiar o mover.
+• Migas de pan interactivas, filtro de carpeta, ordenación, selección múltiple con barra de acciones contextual y barra de pegado acoplada.
+• Las copias y movimientos largos se ejecutan en segundo plano con una notificación que muestra el fichero actual, el progreso y la velocidad.
+• Conflictos de nombres: sobrescribir, omitir o conservar ambos, también para todo el lote.
+• Almacenamiento interno y unidades USB OTG / SD mediante el Storage Access Framework.
+• Propiedades con tamaño exacto, permisos y sumas MD5 / SHA-256.
+• Historial de tareas completadas.
+• Temas claro, oscuro y AMOLED negro puro, además de colores Material You.
+
+Sin anuncios, sin analíticas y sin Google Play Services.

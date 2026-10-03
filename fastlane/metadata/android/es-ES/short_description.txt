@@ -1,0 +1,1 @@
+Gestor de archivos de doble panel con soporte USB OTG
