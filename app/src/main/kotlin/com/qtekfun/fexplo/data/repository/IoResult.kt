@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Runs blocking [block] on `Dispatchers.IO`, mapping failures to [Result.failure] but never swallowing cancellation. */
-internal suspend fun <T> ioResult(block: () -> T): Result<T> = withContext(Dispatchers.IO) {
+internal suspend fun <T> ioResult(block: suspend () -> T): Result<T> = withContext(Dispatchers.IO) {
     try {
         Result.success(block())
     } catch (e: CancellationException) {
