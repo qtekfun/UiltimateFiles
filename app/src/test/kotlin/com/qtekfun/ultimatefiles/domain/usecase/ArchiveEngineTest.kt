@@ -69,8 +69,8 @@ class ArchiveEngineTest {
 
         val progress = run(OperationType.COMPRESS, tree, single, name = "pack")
 
-        assertEquals(TransferStatus.COMPLETED, progress.last().status)
-        assertEquals(5L, progress.last().processedBytes)
+        assertEquals(progress.last().error, TransferStatus.COMPLETED, progress.last().status)
+        assertEquals(8L, progress.last().processedBytes)
         val entries = zipEntries(File(dst, "pack.zip"))
         assertEquals("aaa", entries["tree/a.txt"])
         assertEquals("bbbb", entries["tree/inner/b.txt"])
@@ -87,7 +87,7 @@ class ArchiveEngineTest {
         run(OperationType.COMPRESS, file, name = "pack.zip")
 
         assertEquals("old", File(dst, "pack.zip").readText())
-        assertTrue(File(dst, "pack (1).zip").exists() || dst.listFiles()!!.size == 2)
+        assertEquals(setOf("pack.zip", "pack (1).zip"), dst.list()!!.toSet())
     }
 
     @Test
@@ -101,7 +101,7 @@ class ArchiveEngineTest {
 
         val progress = run(OperationType.EXTRACT, zip)
 
-        assertEquals(TransferStatus.COMPLETED, progress.last().status)
+        assertEquals(progress.last().error, TransferStatus.COMPLETED, progress.last().status)
         assertEquals("hello", File(dst, "docs/readme.txt").readText())
         assertEquals("deep", File(dst, "docs/sub/deep/x.txt").readText())
         assertTrue(File(dst, "docs/empty").isDirectory)
@@ -120,7 +120,7 @@ class ArchiveEngineTest {
 
         val progress = run(OperationType.EXTRACT, plain, gz)
 
-        assertEquals(TransferStatus.COMPLETED, progress.last().status)
+        assertEquals(progress.last().error, TransferStatus.COMPLETED, progress.last().status)
         assertEquals("tar body", File(dst, "a/folder/t.txt").readText())
         assertEquals("tar body", File(dst, "b/folder/t.txt").readText())
     }
