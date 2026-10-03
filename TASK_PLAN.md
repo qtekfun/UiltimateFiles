@@ -35,7 +35,7 @@
   - [x] 6.3 Pantalla de ajustes con tema (sistema, claro, oscuro, AMOLED) y colores dinámicos.
 
 - [x] **Fase 7: Ficheros enormes y Nextcloud**
-  - [x] 7.1 Copias robustas de ficheros grandes: escritura a `*.fexplo-part` + renombrado, verificación SHA-256 opcional antes de borrar el origen en movimientos, buffer de 1 MiB, wake lock, ETA.
+  - [x] 7.1 Copias robustas de ficheros grandes: escritura a `*.ultimatefiles-part` + renombrado, verificación SHA-256 opcional antes de borrar el origen en movimientos, buffer de 1 MiB, wake lock, ETA.
   - [x] 7.2 Test de transferencia de 8 GiB simulada (flujo generado, CRC32) sin necesidad de disco.
   - [x] 7.3 Cuentas WebDAV/Nextcloud (HTTPS, contraseña de aplicación cifrada con Android Keystore), subida por trozos de Nextcloud (chunked v2) y descarga reanudable (Range).
   - [x] 7.4 Pausar/reanudar copias, tareas en curso en el historial y notificación visible en la pantalla de bloqueo.

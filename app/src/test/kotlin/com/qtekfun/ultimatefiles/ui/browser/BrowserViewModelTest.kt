@@ -1,0 +1,269 @@
+package com.qtekfun.ultimatefiles.ui.browser
+
+import com.qtekfun.ultimatefiles.core.model.OperationType
+import com.qtekfun.ultimatefiles.core.model.PanelId
+import com.qtekfun.ultimatefiles.core.model.SortField
+import com.qtekfun.ultimatefiles.core.model.SortOrder
+import com.qtekfun.ultimatefiles.core.model.ThemeMode
+import com.qtekfun.ultimatefiles.core.model.UserPreferences
+import com.qtekfun.ultimatefiles.core.model.ViewMode
+import com.qtekfun.ultimatefiles.data.io.FileStreamCopier
+import com.qtekfun.ultimatefiles.data.repository.LocalFileSystemRepository
+import com.qtekfun.ultimatefiles.domain.clipboard.ClipboardManager
+import com.qtekfun.ultimatefiles.domain.history.HistoryEntry
+import com.qtekfun.ultimatefiles.domain.history.TransferHistoryRecorder
+import com.qtekfun.ultimatefiles.domain.history.TransferHistoryRepository
+import com.qtekfun.ultimatefiles.domain.repository.UserPreferencesRepository
+import com.qtekfun.ultimatefiles.domain.repository.VolumeChangeSource
+import com.qtekfun.ultimatefiles.domain.transfer.TransferCoordinator
+import com.qtekfun.ultimatefiles.domain.usecase.BatchCopyUseCase
+import com.qtekfun.ultimatefiles.domain.usecase.BatchMoveUseCase
+import com.qtekfun.ultimatefiles.domain.usecase.BuildBreadcrumbUseCase
+import com.qtekfun.ultimatefiles.domain.usecase.DeleteUseCase
+import com.qtekfun.ultimatefiles.domain.usecase.HashCalcUseCase
+import com.qtekfun.ultimatefiles.domain.usecase.TransferEngine
+import com.qtekfun.ultimatefiles.ui.dualpanel.DragDropState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class BrowserViewModelTest {
+    @get:Rule val tmp = TemporaryFolder()
+
+    private class FakePreferences : UserPreferencesRepository {
+        val flow = MutableStateFlow(UserPreferences())
+        override val preferences = flow
+        override suspend fun setViewMode(mode: ViewMode) = flow.update { it.copy(viewMode = mode) }
+        override suspend fun setSortOrder(order: SortOrder) = flow.update { it.copy(sortOrder = order) }
+        override suspend fun setLastDirectory(panel: PanelId, directoryPath: String) =
+            flow.update { it.copy(lastDirectoryPaths = it.lastDirectoryPaths + (panel to directoryPath)) }
+
+        override suspend fun setThemeMode(mode: ThemeMode) = flow.update { it.copy(themeMode = mode) }
+        override suspend fun setDynamicColor(enabled: Boolean) = flow.update { it.copy(dynamicColor = enabled) }
+        override suspend fun setVerifyCopies(enabled: Boolean) = flow.update { it.copy(verifyCopies = enabled) }
+
+        private fun MutableStateFlow<UserPreferences>.update(block: (UserPreferences) -> UserPreferences) {
+            value = block(value)
+        }
+    }
+
+    private class FakeHistory : TransferHistoryRepository {
+        val added = mutableListOf<HistoryEntry>()
+        override val entries: Flow<List<HistoryEntry>> = MutableStateFlow(emptyList())
+        override suspend fun add(entry: HistoryEntry) {
+            added += entry
+        }
+        override suspend fun clear() = added.clear()
+    }
+
+    private val prefs = FakePreferences()
+    private val clipboard = ClipboardManager()
+    private val history = FakeHistory()
+    private val volumeEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private lateinit var viewModel: BrowserViewModel
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        tmp.newFolder("zeta")
+        tmp.newFolder("alpha")
+        tmp.newFile("b.txt").writeText("hello")
+        val repo = LocalFileSystemRepository(tmp.root, "Internal") { null }
+        val recorder = TransferHistoryRecorder(history, repo)
+        val coordinator = TransferCoordinator(TransferEngine(repo, FileStreamCopier()), recorder) { }
+        viewModel = BrowserViewModel(
+            panel = PanelId.LEFT,
+            repository = repo,
+            preferences = prefs,
+            clipboardManager = clipboard,
+            coordinator = coordinator,
+            buildBreadcrumb = BuildBreadcrumbUseCase(repo),
+            deleteFiles = DeleteUseCase(repo, recorder),
+            calculateHash = HashCalcUseCase(repo),
+            copyFiles = BatchCopyUseCase(coordinator, prefs),
+            moveFiles = BatchMoveUseCase(coordinator, prefs),
+            dragDrop = DragDropState(),
+            volumeChanges = object : VolumeChangeSource {
+                override val changes: Flow<Unit> = volumeEvents
+            },
+        )
+    }
+
+    @After
+    fun tearDown() = Dispatchers.resetMain()
+
+    private suspend fun loaded(): BrowserState = viewModel.state.first { !it.isLoading && it.currentPath != null }
+
+    @Test
+    fun `opens the volume root with folders first`() = runTest {
+        val state = loaded()
+
+        assertEquals(tmp.root.path, state.currentPath)
+        assertEquals(listOf("alpha", "zeta", "b.txt"), state.items.map { it.name })
+        assertNull(state.parentPath)
+        assertEquals(listOf("Internal"), state.breadcrumb.map { it.label })
+    }
+
+    @Test
+    fun `navigating into a folder and back up`() = runTest {
+        val root = loaded()
+        val alpha = root.items.first { it.name == "alpha" }
+
+        viewModel.onEvent(BrowserEvent.OpenItem(alpha))
+        val inside = viewModel.state.first { it.currentPath == alpha.path && !it.isLoading }
+        assertEquals(tmp.root.path, inside.parentPath)
+        assertEquals(listOf("Internal", "alpha"), inside.breadcrumb.map { it.label })
+
+        viewModel.onEvent(BrowserEvent.NavigateUp)
+        assertEquals(tmp.root.path, viewModel.state.first { it.currentPath == tmp.root.path && !it.isLoading }.currentPath)
+    }
+
+    @Test
+    fun `selection can be toggled, extended to all and cleared`() = runTest {
+        val items = loaded().items
+
+        viewModel.onEvent(BrowserEvent.ToggleSelection(items.first()))
+        assertEquals(1, viewModel.state.value.selectedItems.size)
+        assertTrue(viewModel.state.value.isSelecting)
+
+        viewModel.onEvent(BrowserEvent.SelectAll)
+        assertEquals(items.size, viewModel.state.value.selectedItems.size)
+
+        viewModel.onEvent(BrowserEvent.ClearSelection)
+        assertFalse(viewModel.state.value.isSelecting)
+    }
+
+    @Test
+    fun `search filters the visible items by name`() = runTest {
+        loaded()
+
+        viewModel.onEvent(BrowserEvent.ToggleSearch)
+        viewModel.onEvent(BrowserEvent.SetSearchQuery("ZET"))
+
+        assertEquals(listOf("zeta"), viewModel.state.value.visibleItems.map { it.name })
+    }
+
+    @Test
+    fun `sorting twice by the same field flips the direction`() = runTest {
+        loaded()
+
+        viewModel.onEvent(BrowserEvent.SortBy(SortField.SIZE))
+        assertEquals(SortOrder(SortField.SIZE, true), viewModel.state.first { it.sortOrder.field == SortField.SIZE }.sortOrder)
+
+        viewModel.onEvent(BrowserEvent.SortBy(SortField.SIZE))
+        assertFalse(viewModel.state.first { it.sortOrder.field == SortField.SIZE && !it.sortOrder.ascending }.sortOrder.ascending)
+    }
+
+    @Test
+    fun `the view mode toggles between list and grid and is shared through the preferences`() = runTest {
+        assertEquals(ViewMode.LIST, loaded().viewMode)
+
+        viewModel.onEvent(BrowserEvent.ToggleViewMode)
+        advanceUntilIdle()
+        assertEquals("preference after the first toggle", ViewMode.GRID, prefs.flow.value.viewMode)
+        assertEquals("panel state after the first toggle", ViewMode.GRID, viewModel.state.value.viewMode)
+
+        viewModel.onEvent(BrowserEvent.ToggleViewMode)
+        advanceUntilIdle()
+        assertEquals("preference after the second toggle", ViewMode.LIST, prefs.flow.value.viewMode)
+        assertEquals("panel state after the second toggle", ViewMode.LIST, viewModel.state.value.viewMode)
+    }
+
+    @Test
+    fun `new folder dialog creates the folder`() = runTest {
+        loaded()
+
+        viewModel.onEvent(BrowserEvent.RequestNewFolder)
+        assertEquals(BrowserDialog.NewFolder, viewModel.state.value.dialog)
+        viewModel.onEvent(BrowserEvent.ConfirmName("created"))
+
+        val state = viewModel.state.first { s -> s.items.any { it.name == "created" } }
+        assertNull(state.dialog)
+        assertTrue(tmp.root.resolve("created").isDirectory)
+    }
+
+    @Test
+    fun `delete asks for confirmation then removes the file`() = runTest {
+        val file = loaded().items.first { it.name == "b.txt" }
+
+        viewModel.onEvent(BrowserEvent.RequestDelete(listOf(file)))
+        assertTrue(viewModel.state.value.dialog is BrowserDialog.ConfirmDelete)
+        assertTrue(tmp.root.resolve("b.txt").exists())
+
+        viewModel.onEvent(BrowserEvent.ConfirmDelete)
+        viewModel.state.first { s -> s.items.none { it.name == "b.txt" } }
+        assertFalse(tmp.root.resolve("b.txt").exists())
+    }
+
+    @Test
+    fun `copy and cut fill the shared clipboard and cancel empties it`() = runTest {
+        val file = loaded().items.first { it.name == "b.txt" }
+
+        viewModel.onEvent(BrowserEvent.Copy(listOf(file)))
+        assertEquals(OperationType.COPY, clipboard.state.value?.operation)
+
+        viewModel.onEvent(BrowserEvent.Cut(listOf(file)))
+        assertEquals(OperationType.CUT, clipboard.state.value?.operation)
+        assertEquals(tmp.root.path, clipboard.state.value?.sourcePath)
+
+        viewModel.onEvent(BrowserEvent.CancelClipboard)
+        assertNull(clipboard.state.value)
+    }
+
+    @Test
+    fun `properties dialog computes the hashes`() = runTest {
+        val file = loaded().items.first { it.name == "b.txt" }
+
+        viewModel.onEvent(BrowserEvent.ShowProperties(file))
+        viewModel.onEvent(BrowserEvent.ComputeHash)
+
+        val dialog = viewModel.state.first { (it.dialog as? BrowserDialog.Properties)?.hash is com.qtekfun.ultimatefiles.core.model.HashState.Done }
+            .dialog as BrowserDialog.Properties
+        val done = dialog.hash as com.qtekfun.ultimatefiles.core.model.HashState.Done
+        assertEquals("5d41402abc4b2a76b9719d911017c592", done.hashes.md5)
+    }
+
+    @Test
+    fun `delete is recorded in the history`() = runTest {
+        val file = loaded().items.first { it.name == "b.txt" }
+
+        viewModel.onEvent(BrowserEvent.RequestDelete(listOf(file)))
+        viewModel.onEvent(BrowserEvent.ConfirmDelete)
+        viewModel.state.first { s -> s.items.none { it.name == "b.txt" } }
+
+        assertEquals(1, history.added.size)
+        assertEquals("b.txt", history.added.first().firstItemName)
+    }
+
+    @Test
+    fun `panel falls back to an existing folder when its folder disappears`() = runTest {
+        val alpha = loaded().items.first { it.name == "alpha" }
+        viewModel.onEvent(BrowserEvent.OpenItem(alpha))
+        viewModel.state.first { it.currentPath == alpha.path && !it.isLoading }
+
+        // Simulates an ejected drive / folder removed from outside the app.
+        tmp.root.resolve("alpha").deleteRecursively()
+        volumeEvents.tryEmit(Unit)
+
+        val state = viewModel.state.first { it.currentPath == tmp.root.path && !it.isLoading }
+        assertEquals(listOf("Internal"), state.breadcrumb.map { it.label })
+    }
+}

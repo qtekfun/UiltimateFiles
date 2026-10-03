@@ -30,7 +30,7 @@ version, which is what F-Droid needs.
    check that the build server image provides that platform.
 3. **Screenshots** in `fastlane/metadata/android/<locale>/images/phoneScreenshots/`.
 
-## Draft recipe for fdroiddata (`metadata/com.qtekfun.fexplo.yml`)
+## Draft recipe for fdroiddata (`metadata/com.qtekfun.ultimatefiles.yml`)
 
 ```yaml
 Categories:

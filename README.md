@@ -12,7 +12,7 @@ Play Services, sin analíticas, sin dependencias cerradas.
 - **Acciones sin FAB**: barra superior contextual al seleccionar, menú por elemento, barra de pegado acoplada abajo.
 - **Copias y movimientos en segundo plano** con servicio en primer plano: notificación con progreso, velocidad y
   tiempo restante, visible en la pantalla de bloqueo, con **pausar/reanudar** y cancelar.
-- **Ficheros enormes**: se escriben con nombre temporal (`*.fexplo-part`) y se renombran al terminar; verificación
+- **Ficheros enormes**: se escriben con nombre temporal (`*.ultimatefiles-part`) y se renombran al terminar; verificación
   SHA-256 opcional antes de borrar el origen en un movimiento; conflictos (sobrescribir, omitir, renombrar, aplicar a todos).
 - **Nextcloud / WebDAV**: inicio de sesión con *Login Flow* en el navegador (nunca ves ni guardas tu contraseña,
   solo una contraseña de aplicación revocable, cifrada con el Keystore), subida por trozos y descarga reanudable.
@@ -50,5 +50,9 @@ generado: no sustituyen una prueba real en un dispositivo.
   [docs/FDROID.md](docs/FDROID.md).
 
 ## Nombre y paquete
-La app se llama **UltimateFiles**. El identificador técnico (`com.qtekfun.fexplo`) se mantiene para que las
-instalaciones existentes se actualicen sin perder datos. El repositorio es `qtekfun/UltimateFiles`.
+La app se llama **UltimateFiles**, el identificador de la aplicación es `com.qtekfun.ultimatefiles` y el repositorio es
+`qtekfun/UltimateFiles`.
+
+Las versiones anteriores a este cambio se publicaron con otro identificador, así que Android las trata como otra app: la
+nueva se instala al lado y no hereda sus ajustes ni sus cuentas. Para pasar los datos, exporta antes una copia de seguridad
+desde la versión antigua (Ajustes → Copia de seguridad) e impórtala en la nueva.

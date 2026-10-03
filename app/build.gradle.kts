@@ -15,11 +15,11 @@ val ciVersionName = (findProperty("versionName") as String?) ?: versionFile.getP
 val signingKeystore: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
 android {
-    namespace = "com.qtekfun.fexplo"
+    namespace = "com.qtekfun.ultimatefiles"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.qtekfun.fexplo"
+        applicationId = "com.qtekfun.ultimatefiles"
         minSdk = 26
         targetSdk = 35
         versionCode = ciVersionCode
