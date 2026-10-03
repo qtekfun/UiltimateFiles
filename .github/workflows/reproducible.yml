@@ -56,9 +56,9 @@ jobs:
       - name: Compare the way F-Droid does (apksigcopier)
         run: |
           pip install --quiet apksigcopier
+          sudo apt-get update -qq && sudo apt-get install -y -qq apksigner
           keytool -genkeypair -keystore /tmp/test.jks -storepass testtest -keypass testtest -alias t \
             -keyalg RSA -keysize 2048 -validity 2 -dname "CN=test"
-          apksigner="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
-          "$apksigner" sign --ks /tmp/test.jks --ks-pass pass:testtest --key-pass pass:testtest --out /tmp/a-signed.apk /tmp/a.apk
+          apksigner sign --ks /tmp/test.jks --ks-pass pass:testtest --key-pass pass:testtest --out /tmp/a-signed.apk /tmp/a.apk
           # Build A signed with a throw-away key stands in for the published APK; build B is what F-Droid would produce.
           apksigcopier compare /tmp/a-signed.apk --unsigned /tmp/b.apk
