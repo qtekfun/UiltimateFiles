@@ -148,7 +148,7 @@ class SftpTest {
         val account = connectTrusted()
         val local = LocalFileSystemRepository(tmp.root, "Internal") { null }
         val sftp = SftpFileSystemRepository(accounts, connector)
-        val router = RoutingFileSystemRepository(local, local, local, sftp)
+        val router = RoutingFileSystemRepository(local, local, local, sftp, local)
         val engine = TransferEngine(router, FileStreamCopier(), bigFileBytes = 2_000)
         val source = tmp.newFolder("footage")
         val bytes = ByteArray(4_500) { (it * 7).toByte() }

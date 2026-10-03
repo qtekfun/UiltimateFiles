@@ -39,6 +39,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
  * works on every backend. Extraction is all-or-nothing per archive: it goes into a new folder that is removed
  * again when anything fails, and entries that would escape that folder (`../`) are refused.
  */
+/** [repository] must be the app-wide router: 7z archives are read through its `archive://` backend. */
 class ArchiveEngine(
     private val repository: FileSystemRepository,
     private val gate: PauseGate,
@@ -127,8 +128,8 @@ class ArchiveEngine(
             totalFiles = request.items.size
             publish(TransferStatus.RUNNING)
             for (archive in request.items) {
-                val format = ArchiveFormat.of(archive.name) ?: throw IOException("Unsupported archive: ${archive.name}")
-                extract(archive, format)
+                val format = ArchiveFormat.of(archive.name) ?: throw ArchiveFormatNotSupported(archive.name)
+                if (format == ArchiveFormat.SEVEN_Z) extractThroughRepository(archive) else extract(archive, format)
                 doneFiles++
             }
         }
@@ -146,6 +147,7 @@ class ArchiveEngine(
                         ArchiveFormat.ZIP -> ZipArchiveInputStream(counting)
                         ArchiveFormat.TAR -> TarArchiveInputStream(counting)
                         ArchiveFormat.TAR_GZ -> TarArchiveInputStream(GzipCompressorInputStream(counting))
+                        ArchiveFormat.SEVEN_Z -> throw IOException("7z archives are read through the archive repository")
                     }
                     val dirs = HashMap<String, String>()
                     dirs[""] = root.path
@@ -176,6 +178,47 @@ class ArchiveEngine(
             }
         }
 
+        /**
+         * 7z needs random access, so it cannot be streamed like the others: the archive repository (which caches a local
+         * copy) presents it as a folder and this copies that folder out. Progress counts unpacked bytes.
+         */
+        private suspend fun extractThroughRepository(archive: FileItem) {
+            current = archive.name
+            val taken = repository.listFiles(request.targetDirectory).getOrThrow().map { it.name.lowercase() }.toSet()
+            val folderName = uniqueName(ArchiveFormat.SEVEN_Z.baseName(archive.name)) { it.lowercase() in taken }
+            val source = ArchivePaths.rootOf(archive.path)
+            val unpacked = sizeOf(source)
+            totalBytes += unpacked - archive.sizeBytes
+            publish(TransferStatus.RUNNING)
+            val root = repository.createDirectory(request.targetDirectory, folderName).getOrThrow()
+            try {
+                copyTree(source, root.path)
+            } catch (e: Exception) {
+                withContext(NonCancellable) { removeQuietly(request.targetDirectory, folderName) }
+                throw e
+            }
+        }
+
+        private suspend fun sizeOf(dir: String): Long =
+            repository.listFiles(dir).getOrThrow().sumOf { if (it.isDirectory) sizeOf(it.path) else it.sizeBytes }
+
+        private suspend fun copyTree(dir: String, targetDir: String) {
+            for (child in repository.listFiles(dir).getOrThrow()) {
+                if (child.isDirectory) {
+                    copyTree(child.path, repository.createDirectory(targetDir, child.name).getOrThrow().path)
+                    continue
+                }
+                current = child.name
+                val mime = MimeTypes.fromName(child.name) ?: MimeTypes.OCTET_STREAM
+                repository.openInput(child).getOrThrow().use { input ->
+                    repository.openOutput(targetDir, child.name, mime, overwrite = true).getOrThrow().use { output ->
+                        pump(input, output, countBytes = true)
+                    }
+                }
+                publish(TransferStatus.RUNNING)
+            }
+        }
+
         private suspend fun ensureDirectory(parts: List<String>, dirs: MutableMap<String, String>): String {
             var key = ""
             var path = dirs.getValue("")
@@ -189,7 +232,12 @@ class ArchiveEngine(
         // ---- shared ---------------------------------------------------------------------------------------
 
         /** Copies [input] to [output] in chunks, honouring cancellation and the pause gate between chunks. */
-        private suspend fun pump(input: InputStream, output: OutputStream, onChunk: () -> Unit = {}) {
+        private suspend fun pump(
+            input: InputStream,
+            output: OutputStream,
+            countBytes: Boolean = request.operation == OperationType.COMPRESS,
+            onChunk: () -> Unit = {},
+        ) {
             val buffer = ByteArray(BUFFER_SIZE)
             while (true) {
                 currentCoroutineContext().ensureActive()
@@ -197,7 +245,7 @@ class ArchiveEngine(
                 val read = input.read(buffer)
                 if (read < 0) break
                 output.write(buffer, 0, read)
-                if (request.operation == OperationType.COMPRESS) doneBytes += read
+                if (countBytes) doneBytes += read
                 onChunk()
                 tick()
             }

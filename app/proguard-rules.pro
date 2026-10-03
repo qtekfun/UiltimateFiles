@@ -21,3 +21,7 @@
 -dontwarn jdk.**
 -dontwarn java.awt.**
 -dontwarn org.slf4j.**
+
+# commons-compress touches optional codecs (zstd, brotli, asm…) that are not shipped.
+-dontwarn org.apache.commons.compress.**
+-dontwarn org.tukaani.**

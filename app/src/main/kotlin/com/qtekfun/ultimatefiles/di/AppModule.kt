@@ -17,6 +17,7 @@ import com.qtekfun.ultimatefiles.data.network.SftpAccountService
 import com.qtekfun.ultimatefiles.data.network.SshConnector
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.network.WebDavClient
+import com.qtekfun.ultimatefiles.data.repository.ArchiveFileSystemRepository
 import com.qtekfun.ultimatefiles.data.repository.DataStoreAccountRepository
 import com.qtekfun.ultimatefiles.data.repository.FileTransferHistoryRepository
 import com.qtekfun.ultimatefiles.data.repository.LocalFileSystemRepository
@@ -79,12 +80,17 @@ val appModule = module {
     single { SshConnector() }
     single { SftpFileSystemRepository(accounts = get(), connector = get()) }
     single { SftpAccountService(accounts = get(), connector = get()) }
+    single {
+        val scope = this
+        ArchiveFileSystemRepository(source = { scope.get<FileSystemRepository>() }, cacheDir = File(androidContext().cacheDir, "archives"))
+    }
     single<FileSystemRepository> {
         RoutingFileSystemRepository(
             local = get<LocalFileSystemRepository>(),
             saf = get<SafFileSystemRepository>(),
             webDav = get<WebDavFileSystemRepository>(),
             sftp = get<SftpFileSystemRepository>(),
+            archive = get<ArchiveFileSystemRepository>(),
         )
     }
 

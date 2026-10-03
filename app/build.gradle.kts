@@ -96,6 +96,7 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.okhttp)
     implementation(libs.commons.compress)
+    implementation(libs.xz) // LZMA for 7z
     implementation(libs.sshj)
     implementation(libs.slf4j.nop) // sshj logs through SLF4J; nothing is written anywhere
 
