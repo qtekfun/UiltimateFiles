@@ -33,7 +33,7 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 - **Bottom Sheet de Propiedades:** Nombre, ruta completa, tamaño exacto (bytes y formato legible), fecha modificación, atributos/permisos y cálculo asíncrono de hash (MD5 y SHA-256).
 
 ## 3. Fuera de Alcance para el MVP (Out of Scope)
-- Conector de red SMB y autenticación SFTP con clave privada - *Fase 2*. (WebDAV/Nextcloud y SFTP con contraseña ya incluidos, ver Fase 7 del plan.)
+- Autenticación SFTP con clave privada y cifrado/firma SMB explícitos - *Fase 2*. (WebDAV/Nextcloud y SFTP con contraseña ya incluidos, ver Fase 7 del plan.)
 - Crear 7z y archivos comprimidos con contraseña (se pueden explorar y extraer ZIP, 7z, TAR y TAR.GZ, ver sección 4).
 - Visores para formatos que no sean imagen, texto, PDF, audio o vídeo (el resto se delega mediante Intents a apps externas).
 - Acceso Root.
@@ -45,11 +45,11 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 - Certificados autofirmados con huella fijada por cuenta y HTTP opcional, con confirmación explícita.
 - Copias fiables con la pantalla apagada (exención de batería, Wi-Fi lock, diario de copias interrumpidas, ajustes de fiabilidad).
 - Comprimir en ZIP, extraer ZIP/7z/TAR/TAR.GZ por la cola de transferencias y explorarlos como carpetas de solo lectura; "Abrir con" desde otras apps.
-- Cuentas SFTP (contraseña, huella del servidor fijada por cuenta).
+- Cuentas SMB (usuario/contraseña, sin verificar contra un servidor real) y SFTP (contraseña, huella del servidor fijada por cuenta).
 - Visores integrados: imagen (zoom), texto, PDF, audio y vídeo.
 - Vista en cuadrícula, abrir APK, exportar/importar ajustes y cuentas.
 - Las subidas a Nextcloud interrumpidas (p. ej. la app muere) se reanudan al repetir la copia: solo se vuelven a enviar los trozos que cambian.
 
 ## 5. Pendiente / ideas
-- SMB (SFTP ya está) y ver sección 3.
+- Probar SMB con servidores reales (ver sección 3).
 - Pruebas instrumentadas de UI y prueba real en dispositivo con ficheros de varios GB.

@@ -160,6 +160,11 @@
     <string name="trust_hostkey_title">¿Confiar en este servidor?</string>
     <string name="trust_hostkey_message">%1$s no es de confianza todavía. Compara esta huella con la que informa el servidor (por ejemplo con ssh-keygen -lf sobre su clave de host) antes de continuar.</string>
     <string name="trust_hostkey_type">Tipo de clave: %1$s</string>
+    <string name="account_type_smb">SMB / recurso de Windows</string>
+    <string name="account_smb_hint">Se conecta a un recurso compartido de Windows, Samba o NAS con tu usuario y contraseña. El tráfico no va cifrado salvo que el servidor lo exija.</string>
+    <string name="account_share">Nombre del recurso</string>
+    <string name="account_domain">Dominio (opcional)</string>
+    <string name="account_error_share">Ese recurso no existe en el servidor.</string>
     <string name="account_label">Nombre (opcional)</string>
     <string name="account_connect">Iniciar sesión en el navegador</string>
     <string name="account_error_url">Esa dirección no es válida. Usa una dirección https://.</string>

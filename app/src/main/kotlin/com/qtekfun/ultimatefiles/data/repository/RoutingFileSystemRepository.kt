@@ -14,17 +14,19 @@ class RoutingFileSystemRepository(
     private val webDav: FileSystemRepository,
     private val sftp: FileSystemRepository,
     private val archive: FileSystemRepository,
+    private val smb: FileSystemRepository = archive,
 ) : FileSystemRepository {
 
     private fun backendFor(path: String) = when {
         path.startsWith(SAF_SCHEME) -> saf
         path.startsWith(WebDavFileSystemRepository.SCHEME) -> webDav
         path.startsWith(SftpFileSystemRepository.SCHEME) -> sftp
+        path.startsWith(SmbFileSystemRepository.SCHEME) -> smb
         ArchivePaths.isArchivePath(path) -> archive
         else -> local
     }
 
-    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes() + webDav.volumes() + sftp.volumes() + archive.volumes()
+    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes() + webDav.volumes() + sftp.volumes() + smb.volumes() + archive.volumes()
 
     override suspend fun listFiles(uriOrPath: String) = backendFor(uriOrPath).listFiles(uriOrPath)
 

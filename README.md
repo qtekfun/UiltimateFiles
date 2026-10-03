@@ -20,6 +20,8 @@ Play Services, sin analíticas, sin dependencias cerradas.
   por cuenta, nunca se acepta "todo") o permitir HTTP tras una confirmación explícita.
 - **SFTP**: cuentas con usuario y contraseña; la primera vez ves la huella SHA256 del servidor y la fijas por cuenta (si
   cambia, se rechaza). Sin reanudación de copias y sin clave privada por ahora.
+- **SMB** (Windows, Samba, NAS): cuentas con dominio opcional, usuario y contraseña. **Sin probar contra ningún servidor real**
+  (solo compila y se comprueban sus rutas); sin cifrado propio ni reanudación.
 - **Archivos comprimidos**: un toque en un ZIP, 7z, TAR o TAR.GZ lo abre como una carpeta de solo lectura (también si está
   en un servidor, o dentro de otro comprimido); copiar desde ahí funciona como cualquier copia. "Extraer aquí" y
   "Comprimir en ZIP" están en el menú de cada archivo y en el de la selección, por la misma cola que las copias

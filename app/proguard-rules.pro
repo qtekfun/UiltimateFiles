@@ -25,3 +25,12 @@
 # commons-compress touches optional codecs (zstd, brotli, asm…) that are not shipped.
 -dontwarn org.apache.commons.compress.**
 -dontwarn org.tukaani.**
+
+# SMB (smbj): event bus and protocol classes are found by reflection; Kerberos/JNDI parts do not exist on Android.
+-keep class net.engio.mbassy.** { *; }
+-keep class com.rapid7.** { *; }
+-dontwarn net.engio.mbassy.**
+-dontwarn javax.el.**
+-dontwarn javax.annotation.**
+-dontwarn org.ietf.jgss.**
+-dontwarn com.hierynomus.**

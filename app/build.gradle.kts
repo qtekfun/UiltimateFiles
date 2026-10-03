@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.commons.compress)
     implementation(libs.xz) // LZMA for 7z
     implementation(libs.sshj)
+    implementation(libs.smbj)
     implementation(libs.slf4j.nop) // sshj logs through SLF4J; nothing is written anywhere
 
     debugImplementation(libs.androidx.compose.ui.tooling)

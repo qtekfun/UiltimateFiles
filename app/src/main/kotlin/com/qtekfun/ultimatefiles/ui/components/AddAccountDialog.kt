@@ -56,10 +56,24 @@ fun AddAccountDialog(
         pinnedFingerprint: String?,
         onDone: (Result<Unit>) -> Unit,
     ) -> Unit,
+    onConnectSmb: (
+        host: String,
+        port: Int,
+        share: String,
+        domain: String,
+        username: String,
+        password: String,
+        label: String,
+        onDone: (Result<Unit>) -> Unit,
+    ) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var sftp by remember { mutableStateOf(false) }
+    var kind by remember { mutableStateOf(AccountKind.NEXTCLOUD) }
+    val sftp = kind == AccountKind.SFTP
+    val smb = kind == AccountKind.SMB
+    var share by remember { mutableStateOf("") }
+    var domain by remember { mutableStateOf("") }
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("22") }
     var user by remember { mutableStateOf("") }
@@ -105,6 +119,15 @@ fun AddAccountDialog(
         }
     }
 
+    fun connectSmb() {
+        busy = true
+        error = null
+        onConnectSmb(host, port.toIntOrNull() ?: 0, share, domain, user, password, label) { result ->
+            busy = false
+            result.fold(onSuccess = { onDismiss() }, onFailure = { error = it })
+        }
+    }
+
     hostKey?.let { asked ->
         HostKeyPromptDialog(
             host = host,
@@ -140,11 +163,15 @@ fun AddAccountDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !sftp, enabled = !busy, onClick = { sftp = false }, label = { Text(stringResource(R.string.account_type_nextcloud)) })
-                    FilterChip(selected = sftp, enabled = !busy, onClick = { sftp = true }, label = { Text(stringResource(R.string.account_type_sftp)) })
+                    FilterChip(selected = kind == AccountKind.NEXTCLOUD, enabled = !busy, onClick = { kind = AccountKind.NEXTCLOUD }, label = { Text(stringResource(R.string.account_type_nextcloud)) })
+                    FilterChip(selected = sftp, enabled = !busy, onClick = { kind = AccountKind.SFTP; port = "22" }, label = { Text(stringResource(R.string.account_type_sftp)) })
+                    FilterChip(selected = smb, enabled = !busy, onClick = { kind = AccountKind.SMB; port = "445" }, label = { Text(stringResource(R.string.account_type_smb)) })
                 }
-                if (sftp) {
-                    Text(stringResource(R.string.account_sftp_hint), style = MaterialTheme.typography.bodySmall)
+                if (sftp || smb) {
+                    Text(
+                        stringResource(if (smb) R.string.account_smb_hint else R.string.account_sftp_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     OutlinedTextField(
                         value = host,
                         onValueChange = { host = it },
@@ -163,6 +190,24 @@ fun AddAccountDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    if (smb) {
+                        OutlinedTextField(
+                            value = share,
+                            onValueChange = { share = it },
+                            enabled = !busy,
+                            label = { Text(stringResource(R.string.account_share)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = domain,
+                            onValueChange = { domain = it },
+                            enabled = !busy,
+                            label = { Text(stringResource(R.string.account_domain)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     OutlinedTextField(
                         value = user,
                         onValueChange = { user = it },
@@ -210,15 +255,25 @@ fun AddAccountDialog(
                     )
                 }
                 if (busy) {
-                    if (!sftp) Text(stringResource(R.string.account_waiting), style = MaterialTheme.typography.bodyMedium)
+                    if (kind == AccountKind.NEXTCLOUD) Text(stringResource(R.string.account_waiting), style = MaterialTheme.typography.bodyMedium)
                     CircularProgressIndicator()
                 }
             }
         },
         confirmButton = {
             TextButton(
-                enabled = !busy && if (sftp) host.isNotBlank() && user.isNotBlank() && password.isNotEmpty() else server.isNotBlank(),
-                onClick = { if (sftp) connectSftp(null) else connect(TrustChoice()) },
+                enabled = !busy && when (kind) {
+                    AccountKind.NEXTCLOUD -> server.isNotBlank()
+                    AccountKind.SFTP -> host.isNotBlank() && user.isNotBlank() && password.isNotEmpty()
+                    AccountKind.SMB -> host.isNotBlank() && share.isNotBlank() && user.isNotBlank() && password.isNotEmpty()
+                },
+                onClick = {
+                    when (kind) {
+                        AccountKind.NEXTCLOUD -> connect(TrustChoice())
+                        AccountKind.SFTP -> connectSftp(null)
+                        AccountKind.SMB -> connectSmb()
+                    }
+                },
             ) { Text(stringResource(R.string.account_connect)) }
         },
         dismissButton = {
@@ -227,7 +282,11 @@ fun AddAccountDialog(
     )
 }
 
+private enum class AccountKind { NEXTCLOUD, SFTP, SMB }
+
 private fun Throwable.messageRes(): Int = when {
+    message?.contains("LOGON_FAILURE") == true || message?.contains("ACCESS_DENIED") == true -> R.string.account_error_auth
+    message?.contains("BAD_NETWORK_NAME") == true -> R.string.account_error_share
     this is InvalidServerUrlException -> R.string.account_error_url
     this is LoginFlowExpiredException -> R.string.account_error_expired
     this is javax.net.ssl.SSLException -> R.string.account_error_certificate

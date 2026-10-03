@@ -11,6 +11,7 @@ import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
 import com.qtekfun.ultimatefiles.data.network.TrustChoice
 import com.qtekfun.ultimatefiles.data.network.SftpAccountService
+import com.qtekfun.ultimatefiles.data.network.SmbAccountService
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.repository.SafFileSystemRepository
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
@@ -52,6 +53,7 @@ class MainViewModel(
     private val accountService: WebDavAccountService,
     private val accountRepository: AccountRepository,
     private val sftpAccountService: SftpAccountService,
+    private val smbAccountService: SmbAccountService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -136,6 +138,24 @@ class MainViewModel(
         }
     }
 
+    fun connectSmb(
+        host: String,
+        port: Int,
+        share: String,
+        domain: String,
+        username: String,
+        password: String,
+        label: String,
+        onDone: (Result<Unit>) -> Unit,
+    ) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = smbAccountService.connect(host, port, share, domain, username, password, label).map { }
+            if (result.isSuccess) refreshVolumes()
+            onDone(result)
+        }
+    }
+
     fun cancelConnect() {
         loginJob?.cancel()
         loginJob = null
@@ -144,7 +164,7 @@ class MainViewModel(
     /** Forgets the account behind a network [volume]; nothing is deleted on the server. */
     fun removeAccount(volume: StorageVolume) {
         viewModelScope.launch {
-            accountRepository.remove(volume.id.removePrefix("dav:").removePrefix("sftp:"))
+            accountRepository.remove(volume.id.removePrefix("dav:").removePrefix("sftp:").removePrefix("smb:"))
             refreshVolumes()
         }
     }

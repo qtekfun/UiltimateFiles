@@ -1,7 +1,7 @@
 package com.qtekfun.ultimatefiles.core.model
 
 /** How an account's server is reached. */
-enum class AccountProtocol { WEBDAV, SFTP }
+enum class AccountProtocol { WEBDAV, SFTP, SMB }
 
 /**
  * A remote account: by default a WebDAV server the user connected (Nextcloud, ownCloud or any other).
@@ -10,7 +10,8 @@ enum class AccountProtocol { WEBDAV, SFTP }
  * A pinned certificate replaces the system trust store for this server only: exactly that certificate is accepted.
  *
  * An [AccountProtocol.SFTP] account stores `sftp://host:port` in [baseUrl] and the SSH host key fingerprint
- * (`SHA256:…`, as `ssh-keygen -lf` prints it) in [pinnedCertSha256].
+ * (`SHA256:…`, as `ssh-keygen -lf` prints it) in [pinnedCertSha256]. An [AccountProtocol.SMB] account stores
+ * `smb://host:port/share` in [baseUrl] and `DOMAIN\\user` (or just `user`) in [username].
  */
 data class WebDavAccount(
     val id: String,
