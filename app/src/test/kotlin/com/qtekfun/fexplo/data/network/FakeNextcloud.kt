@@ -28,6 +28,13 @@ internal class FakeNextcloud(private val user: String = "alice", private val pas
     }
     private val uploads = mutableMapOf<String, Upload>()
 
+    /** Login Flow v2: the poll answers 404 until the test calls [approveLogin]. */
+    @Volatile var loginApproved = false
+    val pollCount = java.util.concurrent.atomic.AtomicInteger()
+    val rootUrl: String get() = "http://127.0.0.1:${server.address.port}"
+
+    fun approveLogin() { loginApproved = true }
+
     val baseUrl: String get() = "http://127.0.0.1:${server.address.port}$filesPrefix"
 
     init {
@@ -48,6 +55,18 @@ internal class FakeNextcloud(private val user: String = "alice", private val pas
     private fun handle(ex: HttpExchange) {
         val path = ex.requestURI.path
         synchronized(log) { log += "${ex.requestMethod} ${path.removePrefix("/remote.php/dav")}" }
+        if (path == "/index.php/login/v2" && ex.requestMethod == "POST") {
+            return json(ex, """{"poll":{"token":"tok123","endpoint":"$rootUrl/index.php/login/v2/poll"},"login":"$rootUrl/index.php/login/v2/flow/tok123"}""")
+        }
+        if (path == "/index.php/login/v2/poll" && ex.requestMethod == "POST") {
+            pollCount.incrementAndGet()
+            val token = ex.requestBody.readBytes().decodeToString()
+            return if (token == "token=tok123" && loginApproved) {
+                json(ex, """{"server":"$rootUrl","loginName":"$user","appPassword":"$password"}""")
+            } else {
+                respond(ex, 404)
+            }
+        }
         val expected = "Basic " + Base64.getEncoder().encodeToString("$user:$password".toByteArray())
         if (ex.requestHeaders.getFirst("Authorization") != expected) return respond(ex, 401)
         when {
@@ -174,6 +193,13 @@ internal class FakeNextcloud(private val user: String = "alice", private val pas
 
     private fun relativeFiles(destination: String?): String =
         URI(destination!!).path.removePrefix(filesPrefix).trim('/')
+
+    private fun json(ex: HttpExchange, body: String) {
+        val bytes = body.toByteArray()
+        ex.responseHeaders.add("Content-Type", "application/json")
+        ex.sendResponseHeaders(200, bytes.size.toLong())
+        ex.responseBody.write(bytes)
+    }
 
     private fun respond(ex: HttpExchange, code: Int) = ex.sendResponseHeaders(code, -1)
 }

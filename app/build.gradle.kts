@@ -94,5 +94,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json) // the Android stub of org.json does nothing on the JVM
     testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -83,13 +84,24 @@ class MainViewModel(
         }
     }
 
-    /** Connects a Nextcloud/WebDAV server; [onDone] runs on the main thread with the outcome. */
-    fun connectAccount(serverUrl: String, username: String, password: String, label: String, onDone: (Result<Unit>) -> Unit) {
-        viewModelScope.launch {
-            val result = accountService.connect(serverUrl, username, password, label).map { }
+    private var loginJob: Job? = null
+
+    /**
+     * Signs in to a Nextcloud server through Login Flow v2. [openBrowser] gets the approval page;
+     * [onDone] runs on the main thread with the outcome. A second call replaces a pending one.
+     */
+    fun connectAccount(serverUrl: String, label: String, openBrowser: (String) -> Unit, onDone: (Result<Unit>) -> Unit) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = accountService.connectWithLoginFlow(serverUrl, label, openBrowser).map { }
             if (result.isSuccess) refreshVolumes()
             onDone(result)
         }
+    }
+
+    fun cancelConnect() {
+        loginJob?.cancel()
+        loginJob = null
     }
 
     /** Forgets the account behind a network [volume]; nothing is deleted on the server. */

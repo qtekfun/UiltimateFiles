@@ -177,7 +177,11 @@ fun MainScreen() {
     }
 
     if (showAddAccount) {
-        AddAccountDialog(onConnect = viewModel::connectAccount, onDismiss = { showAddAccount = false })
+        AddAccountDialog(
+            onConnect = viewModel::connectAccount,
+            onCancel = viewModel::cancelConnect,
+            onDismiss = { showAddAccount = false },
+        )
     }
     accountToRemove?.let { volume ->
         AlertDialog(
