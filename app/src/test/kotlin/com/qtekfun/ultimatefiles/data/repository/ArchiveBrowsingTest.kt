@@ -48,8 +48,8 @@ class ArchiveBrowsingTest {
     }
 
     private fun sevenZip(): File = File(dir, "pack.7z").also { file ->
-        val a = tmp.newFile("a.txt").apply { writeText("seven a") }
-        val b = tmp.newFile("b.txt").apply { writeText("seven b") }
+        val a = File(tmp.root, "a.txt").apply { writeText("seven a") }
+        val b = File(tmp.root, "b.txt").apply { writeText("seven b") }
         SevenZOutputFile(file).use { out ->
             for ((real, name) in listOf(a to "a.txt", b to "folder/b.txt")) {
                 out.putArchiveEntry(out.createArchiveEntry(real, name))
@@ -74,23 +74,23 @@ class ArchiveBrowsingTest {
 
     @Test
     fun `a zip is browsable as folders`() = runTest {
-        val root = ArchivePaths.rootOf(zip().path)
+        val file = zip()
 
-        assertEquals(listOf("readme.txt", "sub"), names(root))
-        assertEquals(listOf("deep"), names(ArchivePaths.pathOf(zip().path, "sub")))
-        assertEquals("deep", read(ArchivePaths.pathOf(zip().path, "sub/deep/x.txt")))
-        assertEquals(5L, router.stat(ArchivePaths.pathOf(zip().path, "readme.txt")).getOrThrow().sizeBytes)
+        assertEquals(listOf("readme.txt", "sub"), names(ArchivePaths.rootOf(file.path)))
+        assertEquals(listOf("deep"), names(ArchivePaths.pathOf(file.path, "sub")))
+        assertEquals("deep", read(ArchivePaths.pathOf(file.path, "sub/deep/x.txt")))
+        assertEquals(5L, router.stat(ArchivePaths.pathOf(file.path, "readme.txt")).getOrThrow().sizeBytes)
     }
 
     @Test
     fun `7z and tar gz are browsable too`() = runTest {
-        val seven = ArchivePaths.rootOf(sevenZip().path)
-        assertEquals(listOf("a.txt", "folder"), names(seven))
-        assertEquals("seven b", read(ArchivePaths.pathOf(sevenZip().path, "folder/b.txt")))
+        val seven = sevenZip()
+        assertEquals(listOf("a.txt", "folder"), names(ArchivePaths.rootOf(seven.path)))
+        assertEquals("seven b", read(ArchivePaths.pathOf(seven.path, "folder/b.txt")))
 
-        val tar = ArchivePaths.rootOf(tarGz().path)
-        assertEquals(listOf("folder"), names(tar))
-        assertEquals("tar body", read(ArchivePaths.pathOf(tarGz().path, "folder/t.txt")))
+        val tar = tarGz()
+        assertEquals(listOf("folder"), names(ArchivePaths.rootOf(tar.path)))
+        assertEquals("tar body", read(ArchivePaths.pathOf(tar.path, "folder/t.txt")))
     }
 
     @Test
