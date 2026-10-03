@@ -78,6 +78,14 @@ fun BrowserScreen(
                 } catch (e: RuntimeException) {
                     snackbar.showSnackbar(resources.getString(R.string.error_open_failed, e.message.orEmpty()))
                 }
+                is BrowserEffect.OpenViewer -> try {
+                    val viewer = intents.viewer(effect.item)
+                    if (viewer != null) context.startActivity(viewer) else context.startActivity(intents.view(effect.item, false))
+                } catch (e: ActivityNotFoundException) {
+                    snackbar.showSnackbar(resources.getString(R.string.error_no_app))
+                } catch (e: RuntimeException) {
+                    snackbar.showSnackbar(resources.getString(R.string.error_open_failed, e.message.orEmpty()))
+                }
                 is BrowserEffect.ShareFiles -> try {
                     context.startActivity(intents.share(effect.items))
                 } catch (e: ActivityNotFoundException) {

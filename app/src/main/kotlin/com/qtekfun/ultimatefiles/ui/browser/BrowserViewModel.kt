@@ -7,6 +7,7 @@ import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.HashState
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.TransferRequest
+import com.qtekfun.ultimatefiles.domain.usecase.ViewerKind
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortOrder
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
@@ -117,6 +118,7 @@ class BrowserViewModel(
             is BrowserEvent.OpenItem -> when {
                 event.item.isDirectory -> load(event.item.path)
                 event.item.isRemote() -> emit(BrowserEffect.Message(R.string.error_remote_open))
+                ViewerKind.of(event.item.name, event.item.mimeType) != null -> emit(BrowserEffect.OpenViewer(event.item))
                 else -> emit(BrowserEffect.OpenFile(event.item, false))
             }
             is BrowserEvent.OpenWith ->

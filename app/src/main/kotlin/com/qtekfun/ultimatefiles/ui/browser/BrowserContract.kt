@@ -75,6 +75,7 @@ sealed interface BrowserEvent {
 /** One-shot results that need an Android context (intents, snackbars). */
 sealed interface BrowserEffect {
     data class OpenFile(val item: FileItem, val chooser: Boolean) : BrowserEffect
+    data class OpenViewer(val item: FileItem) : BrowserEffect
     data class ShareFiles(val items: List<FileItem>) : BrowserEffect
     data class Message(@StringRes val resId: Int, val detail: String? = null) : BrowserEffect
 }

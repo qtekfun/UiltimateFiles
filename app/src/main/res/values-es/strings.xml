@@ -188,6 +188,9 @@
     <string name="check_vendor_steps">En los ajustes del sistema abre Batería de UltimateFiles y permite la actividad en segundo plano / inicio automático, bloquea la app en recientes y activa su icono en la barra de estado en los ajustes de notificaciones.</string>
     <string name="check_open_app_settings">Ajustes de la app</string>
     <string name="check_all_ok">Todo en orden.</string>
+    <string name="viewer_unsupported">Este archivo no se puede mostrar aquí.</string>
+    <string name="viewer_error">No se puede mostrar este archivo</string>
+    <string name="viewer_truncated">Se muestra solo el primer megabyte.</string>
     <string name="settings_backup">Copia de seguridad</string>
     <string name="settings_export">Exportar ajustes y cuentas</string>
     <string name="settings_export_summary">Guarda tus ajustes y cuentas de Nextcloud en un archivo</string>
