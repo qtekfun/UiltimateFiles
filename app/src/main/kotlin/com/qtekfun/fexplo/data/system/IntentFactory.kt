@@ -35,11 +35,11 @@ class IntentFactory(private val context: Context) {
         return Intent.createChooser(intent, null)
     }
 
-    /** Opening an APK needs the user to allow Fexplo as an install source (Android 8+). */
+    /** Opening an APK needs the user to allow UltimateFiles as an install source (Android 8+). */
     fun needsInstallPermission(item: FileItem): Boolean =
         (item.mimeType ?: MimeTypes.fromName(item.name)) == APK_MIME && !context.packageManager.canRequestPackageInstalls()
 
-    /** The system page where the user allows installing apps from Fexplo. */
+    /** The system page where the user allows installing apps from UltimateFiles. */
     fun installPermissionSettings(): Intent =
         Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
 

@@ -21,8 +21,8 @@ class LoginFlowCredentials(val server: String, val loginName: String, val appPas
 class LoginFlowExpiredException : IOException("The sign-in was not approved in time")
 
 /**
- * Nextcloud Login Flow v2: the user signs in (password, 2FA, SSO…) in their browser and approves Fexplo, which then
- * receives an app password it can revoke from the server. Fexplo never sees the account password.
+ * Nextcloud Login Flow v2: the user signs in (password, 2FA, SSO…) in their browser and approves UltimateFiles, which then
+ * receives an app password it can revoke from the server. UltimateFiles never sees the account password.
  */
 class NextcloudLoginFlow(
     private val http: OkHttpClient = WebDavClient.defaultHttpClient(),

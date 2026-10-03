@@ -51,4 +51,4 @@ generado: no sustituyen una prueba real en un dispositivo.
 
 ## Nombre y paquete
 La app se llama **UltimateFiles**. El identificador técnico (`com.qtekfun.fexplo`) se mantiene para que las
-instalaciones existentes se actualicen sin perder datos. El repositorio es `qtekfun/UiltimateFiles`.
+instalaciones existentes se actualicen sin perder datos. El repositorio es `qtekfun/UltimateFiles`.

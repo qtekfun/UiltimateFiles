@@ -22,7 +22,7 @@ class WebDavAccountService(
 ) {
     /**
      * Signs in through Nextcloud's Login Flow v2: [openBrowser] receives the page where the user approves
-     * Fexplo, then this suspends until they do (or the flow expires) and stores the app password the server issues.
+     * UltimateFiles, then this suspends until they do (or the flow expires) and stores the app password the server issues.
      */
     suspend fun connectWithLoginFlow(
         serverUrl: String,
