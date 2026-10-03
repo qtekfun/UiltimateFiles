@@ -71,8 +71,6 @@ class ArchiveEngine(
 
         // ---- compress -------------------------------------------------------------------------------------
 
-        private class Entry(val name: String, val item: FileItem)
-
         private suspend fun compress() {
             val entries = ArrayList<Entry>()
             request.items.forEach { collect(it, it.name, entries) }
@@ -236,6 +234,8 @@ class ArchiveEngine(
             out.send(snapshot(status, error))
         }
     }
+
+    private class Entry(val name: String, val item: FileItem)
 
     private class CountingInputStream(input: InputStream) : FilterInputStream(input) {
         var count = 0L
