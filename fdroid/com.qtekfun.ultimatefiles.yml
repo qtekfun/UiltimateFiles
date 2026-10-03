@@ -24,7 +24,7 @@ Builds:
     gradle:
       - yes
 
-AllowedAPKSigningKeys: REPLACE_WITH_THE_CERTIFICATE_SHA256
+AllowedAPKSigningKeys: 3d7400fcfd32758d117bb79f86fdda8b007f058966c16c1bde8d97143317b2b8
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
