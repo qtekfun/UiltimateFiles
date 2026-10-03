@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">Fexplo</string>
     <string name="panel_tab_format">Panel %1$d</string>
-    <string name="placeholder_welcome">Fexplo file manager</string>
     <string name="storage_internal">Internal storage</string>
     <string name="transfer_channel_name">File transfers</string>
     <string name="transfer_title">Transferring files</string>
@@ -61,4 +60,30 @@
     <string name="hash_failed">Could not calculate hashes</string>
     <string name="hash_md5">MD5</string>
     <string name="hash_sha256">SHA-256</string>
+    <string name="field_name">Name</string>
+    <string name="action_ok">OK</string>
+    <string name="action_close_search">Close search</string>
+    <string name="search_hint">Filter this folder</string>
+    <string name="folder_empty">This folder is empty</string>
+    <string name="delete_title">Delete</string>
+    <string name="delete_message_single">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="delete_message_multiple">Delete %1$d items? This cannot be undone.</string>
+    <string name="drop_title">Copy or move?</string>
+    <string name="drop_message">%1$d items dropped here.</string>
+    <string name="drop_copy">Copy</string>
+    <string name="drop_move">Move</string>
+    <string name="transfer_speed">%1$s/s</string>
+    <string name="error_no_app">No app can open this file</string>
+    <string name="error_share_folders">Folders cannot be shared</string>
+    <string name="error_operation_failed">Operation failed</string>
+    <string name="error_no_storage">No storage available</string>
+    <string name="error_load_folder">Could not open this folder: %1$s</string>
+    <string name="shortcut_downloads">Downloads</string>
+    <string name="shortcut_documents">Documents</string>
+    <string name="shortcut_photos">Photos</string>
+    <string name="drawer_add_storage">Add USB / SD folder</string>
+    <string name="drawer_eject">Safely remove</string>
+    <string name="permission_title">Storage access needed</string>
+    <string name="permission_message">Fexplo needs access to all files to browse and manage your storage.</string>
+    <string name="permission_grant">Grant access</string>
 </resources>
