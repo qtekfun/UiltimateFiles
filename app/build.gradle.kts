@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,7 +7,7 @@ plugins {
 
 // The committed version (version.properties) is what F-Droid builds; CI release builds override it with
 // -PversionCode=… -PversionName=… so every merge to master gets a unique, increasing build number.
-val versionFile = java.util.Properties().apply { rootProject.file("version.properties").inputStream().use { load(it) } }
+val versionFile = Properties().apply { rootProject.file("version.properties").inputStream().use { load(it) } }
 val ciVersionCode = (findProperty("versionCode") as String?)?.toIntOrNull() ?: versionFile.getProperty("versionCode").toInt()
 val ciVersionName = (findProperty("versionName") as String?) ?: versionFile.getProperty("versionName")
 
