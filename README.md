@@ -21,6 +21,7 @@ Play Services, sin analíticas, sin dependencias cerradas.
 - **Comprimir y extraer**: "Comprimir en ZIP" y "Extraer aquí" (ZIP, TAR, TAR.GZ) desde el menú de la selección, por la
   misma cola que las copias (progreso, pausa, historial). Extraer crea una carpeta nueva, se deshace entera si falla y
   rechaza entradas con `../`. 7z no está soportado.
+- **Visores integrados**: imagen (con zoom), texto, PDF, audio y vídeo; "Abrir con…" delega en otras apps.
 - **Historial** de tareas, incluidas las que están en curso o en cola.
 - **Propiedades** con permisos y hashes MD5/SHA-256.
 - **Ajustes**: tema (sistema, claro, oscuro, AMOLED), colores dinámicos, verificar copias, y **copia de seguridad**
