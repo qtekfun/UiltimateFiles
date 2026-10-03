@@ -2,6 +2,11 @@ package com.qtekfun.ultimatefiles.data.network
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import com.sun.net.httpserver.HttpsConfigurator
+import com.sun.net.httpserver.HttpsServer
+import java.security.KeyStore
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URI
@@ -11,8 +16,33 @@ import java.util.Base64
  * A tiny in-memory Nextcloud: the `files` and `uploads` DAV endpoints with Basic auth, PROPFIND, MKCOL, PUT,
  * GET (with `Range`), DELETE, MOVE and the v2 chunked-upload assembly. Enough to exercise the real client.
  */
-internal class FakeNextcloud(private val user: String = "alice", private val password: String = "secret") : AutoCloseable {
-    private val server = HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0)
+internal class FakeNextcloud(
+    private val user: String = "alice",
+    private val password: String = "secret",
+    /** Serve HTTPS with the self-signed certificate in `selfsigned.p12` (not trusted by the system). */
+    private val tls: Boolean = false,
+) : AutoCloseable {
+    private val server: HttpServer = if (tls) {
+        val keyStore = KeyStore.getInstance("PKCS12").apply {
+            FakeNextcloud::class.java.getResourceAsStream("/selfsigned.p12")!!.use { load(it, "changeit".toCharArray()) }
+        }
+        val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()).apply { init(keyStore, "changeit".toCharArray()) }
+        val context = SSLContext.getInstance("TLS").apply { init(factory.keyManagers, null, null) }
+        HttpsServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0).apply {
+            httpsConfigurator = HttpsConfigurator(context)
+        }
+    } else {
+        HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0)
+    }
+
+    /** SHA-256 of the certificate served when [tls] is on, in the notation the app uses. */
+    val certificateSha256: String by lazy {
+        val keyStore = KeyStore.getInstance("PKCS12").apply {
+            FakeNextcloud::class.java.getResourceAsStream("/selfsigned.p12")!!.use { load(it, "changeit".toCharArray()) }
+        }
+        val cert = keyStore.getCertificate("test") as java.security.cert.X509Certificate
+        java.security.MessageDigest.getInstance("SHA-256").digest(cert.encoded).joinToString("") { "%02x".format(it) }
+    }
     private val filesPrefix = "/remote.php/dav/files/$user"
     private val uploadsPrefix = "/remote.php/dav/uploads/$user"
 
@@ -31,11 +61,11 @@ internal class FakeNextcloud(private val user: String = "alice", private val pas
     /** Login Flow v2: the poll answers 404 until the test calls [approveLogin]. */
     @Volatile var loginApproved = false
     val pollCount = java.util.concurrent.atomic.AtomicInteger()
-    val rootUrl: String get() = "http://127.0.0.1:${server.address.port}"
+    val rootUrl: String get() = "${if (tls) "https" else "http"}://127.0.0.1:${server.address.port}"
 
     fun approveLogin() { loginApproved = true }
 
-    val baseUrl: String get() = "http://127.0.0.1:${server.address.port}$filesPrefix"
+    val baseUrl: String get() = "$rootUrl$filesPrefix"
 
     init {
         server.createContext("/") { exchange ->

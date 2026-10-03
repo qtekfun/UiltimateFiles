@@ -21,6 +21,10 @@ class WebDavClient(
     private val http: OkHttpClient = defaultHttpClient(),
     private val retryDelayMillis: Long = 1_000,
 ) {
+    /** The same client, but trusting only the certificate with this SHA-256 (self-signed servers); `this` without a pin. */
+    fun pinnedTo(sha256: String?): WebDavClient =
+        if (sha256.isNullOrBlank()) this else WebDavClient(PinnedTls.clientFor(http, sha256), retryDelayMillis)
+
     fun propfind(session: WebDavSession, path: String, depth: Int): List<DavEntry> =
         propfindAt(session.urlFor(path), session, path, depth)
 
@@ -173,7 +177,9 @@ class WebDavClient(
             try {
                 return block()
             } catch (e: IOException) {
-                val permanent = e is WebDavException && e.code < 500 && e.code != 408 && e.code != 429
+                // A certificate that does not match will not match on the next try either.
+                val permanent = (e is WebDavException && e.code < 500 && e.code != 408 && e.code != 429) ||
+                    e is javax.net.ssl.SSLException
                 if (permanent || ++attempt >= MAX_ATTEMPTS) throw e
                 Thread.sleep(retryDelayMillis * attempt)
             }
@@ -217,7 +223,7 @@ class WebDavClient(
                     return read
                 } catch (e: IOException) {
                     closeQuietly()
-                    val permanent = e is WebDavException && e.code < 500
+                    val permanent = (e is WebDavException && e.code < 500) || e is javax.net.ssl.SSLException
                     if (permanent || ++failures > MAX_ATTEMPTS) throw e
                     Thread.sleep(retryDelayMillis * failures)
                 }

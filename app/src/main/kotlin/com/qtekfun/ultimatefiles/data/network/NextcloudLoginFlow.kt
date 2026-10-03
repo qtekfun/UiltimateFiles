@@ -12,7 +12,13 @@ import org.json.JSONObject
 import java.io.IOException
 
 /** Where the user must approve the app, and how to ask the server whether they did. */
-class LoginFlowStart(val loginUrl: String, val pollEndpoint: String, val token: String)
+class LoginFlowStart(
+    val loginUrl: String,
+    val pollEndpoint: String,
+    val token: String,
+    /** How the server was trusted; the polling uses the same. */
+    val trust: TrustChoice = TrustChoice(),
+)
 
 /** What the server hands out once the user approved: a dedicated app password, never the real one. */
 class LoginFlowCredentials(val server: String, val loginName: String, val appPassword: String)
@@ -30,21 +36,39 @@ class NextcloudLoginFlow(
     private val pollIntervalMillis: Long = 2_000,
     private val timeoutMillis: Long = 20 * 60_000L, // the server forgets the flow after 20 minutes
 ) {
-    suspend fun start(serverUrl: String): LoginFlowStart = withContext(Dispatchers.IO) {
-        val root = serverRoot(serverUrl)
+    suspend fun start(serverUrl: String, trust: TrustChoice = TrustChoice()): LoginFlowStart = withContext(Dispatchers.IO) {
+        val httpsOnly = requireHttps && !trust.allowInsecureHttp
+        val root = serverRoot(serverUrl, httpsOnly)
         val request = Request.Builder().url("$root/index.php/login/v2")
             .header("User-Agent", USER_AGENT) // shown to the user as the device name
             .post(FormBody.Builder().build())
             .build()
-        http.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw WebDavException(response.code, "Login flow not available (${response.code})")
-            val json = JSONObject(response.body!!.string())
+        val client = PinnedTls.clientFor(http, trust.pinnedSha256)
+        val response = try {
+            client.newCall(request).execute()
+        } catch (e: javax.net.ssl.SSLException) {
+            throw untrustedOrOriginal(e, root, trust)
+        }
+        response.use {
+            if (!it.isSuccessful) throw WebDavException(it.code, "Login flow not available (${it.code})")
+            val json = JSONObject(it.body!!.string())
             val poll = json.getJSONObject("poll")
-            val start = LoginFlowStart(json.getString("login"), poll.getString("endpoint"), poll.getString("token"))
-            if (requireHttps && !(start.loginUrl.startsWith("https://") && start.pollEndpoint.startsWith("https://"))) {
-                throw InvalidServerUrlException("The server answered with a non-HTTPS address")
+            val start = LoginFlowStart(json.getString("login"), poll.getString("endpoint"), poll.getString("token"), trust)
+            if (httpsOnly && !(start.loginUrl.startsWith("https://") && start.pollEndpoint.startsWith("https://"))) {
+                throw InsecureServerException("The server answered with a non-HTTPS address")
             }
             start
+        }
+    }
+
+    /** A handshake failure against an unpinned server becomes a question for the user, with the certificate to look at. */
+    private fun untrustedOrOriginal(e: javax.net.ssl.SSLException, root: String, trust: TrustChoice): Exception {
+        if (trust.pinnedSha256 != null) return e // the pinned certificate changed: that is a warning, not a question
+        val url = root.toHttpUrlOrNull() ?: return e
+        return try {
+            UntrustedCertificateException(PinnedTls.probe(url.host, url.port))
+        } catch (probeFailure: Exception) {
+            e
         }
     }
 
@@ -54,7 +78,7 @@ class NextcloudLoginFlow(
             .header("User-Agent", USER_AGENT)
             .post(FormBody.Builder().add("token", start.token).build())
             .build()
-        http.newCall(request).execute().use { response ->
+        PinnedTls.clientFor(http, start.trust.pinnedSha256).newCall(request).execute().use { response ->
             when {
                 response.code == 404 -> null
                 response.isSuccessful -> {
@@ -87,10 +111,10 @@ class NextcloudLoginFlow(
         throw LoginFlowExpiredException()
     }
 
-    private fun serverRoot(serverUrl: String): String {
+    private fun serverRoot(serverUrl: String, httpsOnly: Boolean): String {
         val trimmed = serverUrl.trim().trimEnd('/')
         val parsed = trimmed.toHttpUrlOrNull() ?: throw InvalidServerUrlException("Not a valid address: $serverUrl")
-        if (requireHttps && !parsed.isHttps) throw InvalidServerUrlException("Only HTTPS addresses are supported")
+        if (httpsOnly && !parsed.isHttps) throw InsecureServerException("Only HTTPS addresses are supported")
         // Accept a pasted DAV or login URL: the flow lives at the Nextcloud root.
         return trimmed.substringBefore("/remote.php").substringBefore("/index.php").trimEnd('/')
     }

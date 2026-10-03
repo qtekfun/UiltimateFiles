@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
+import android.net.wifi.WifiManager
 import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
@@ -27,6 +28,7 @@ class FileTransferForegroundService : Service(), KoinComponent {
 
     @Volatile private var lastStartId = 0
     private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -43,25 +45,45 @@ class FileTransferForegroundService : Service(), KoinComponent {
             ACTION_CANCEL -> coordinator.cancelAll()
             ACTION_TOGGLE_PAUSE -> coordinator.togglePause()
         }
-        if (coordinator.claimWorker()) {
-            scope.launch { drainQueue() }
-        } else if (coordinator.isIdle()) {
-            finish(null)
+        // A null intent means the system restarted the service after killing it mid-copy: pick the journal back up.
+        val restarted = intent == null
+        scope.launch {
+            if (restarted) coordinator.restoreInterrupted()
+            if (coordinator.claimWorker()) {
+                drainQueue()
+            } else if (coordinator.isIdle()) {
+                finish(null)
+            }
         }
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
-    /** Keeps the CPU running while a long copy goes on with the screen off. */
+    /**
+     * Keeps the CPU and the Wi-Fi radio running while a long copy goes on with the screen off. Doze ignores both locks
+     * for apps that are not exempt from battery optimisation, which is why Settings asks for that exemption.
+     */
     private fun acquireWakeLock() {
-        if (wakeLock?.isHeld == true) return
-        wakeLock = getSystemService(PowerManager::class.java)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ultimatefiles:transfer")
-            .apply { acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
+        if (wakeLock?.isHeld != true) {
+            wakeLock = getSystemService(PowerManager::class.java)
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ultimatefiles:transfer")
+                .apply { acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
+        }
+        if (wifiLock?.isHeld != true) {
+            @Suppress("DEPRECATION") // still the only mode that keeps the radio awake with the screen off
+            wifiLock = applicationContext.getSystemService(WifiManager::class.java)
+                ?.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "ultimatefiles:transfer")
+                ?.apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+        }
     }
 
     private fun releaseWakeLock() {
         wakeLock?.takeIf { it.isHeld }?.release()
         wakeLock = null
+        wifiLock?.takeIf { it.isHeld }?.release()
+        wifiLock = null
     }
 
     private suspend fun drainQueue() {

@@ -59,6 +59,10 @@ import com.qtekfun.ultimatefiles.data.system.IntentFactory
 import com.qtekfun.ultimatefiles.ui.browser.BrowserEvent
 import com.qtekfun.ultimatefiles.ui.browser.BrowserViewModel
 import com.qtekfun.ultimatefiles.ui.components.AddAccountDialog
+import com.qtekfun.ultimatefiles.ui.components.BatteryHintDialog
+import com.qtekfun.ultimatefiles.ui.components.InterruptedTransfersDialog
+import com.qtekfun.ultimatefiles.ui.components.rememberIgnoringBatteryOptimizations
+import com.qtekfun.ultimatefiles.ui.components.requestIgnoreBatteryOptimizations
 import com.qtekfun.ultimatefiles.ui.components.ConflictDialog
 import com.qtekfun.ultimatefiles.ui.components.DropActionDialog
 import com.qtekfun.ultimatefiles.ui.components.TransferProgressBar
@@ -190,6 +194,32 @@ fun MainScreen() {
                 onCancel = viewModel::cancelTransfers,
             )
         }
+    }
+
+    val interrupted by viewModel.interrupted.collectAsStateWithLifecycle()
+    if (interrupted.isNotEmpty()) {
+        InterruptedTransfersDialog(
+            tasks = interrupted,
+            onResume = viewModel::resumeInterrupted,
+            onDiscard = viewModel::discardInterrupted,
+        )
+    }
+
+    val batteryExempt by rememberIgnoringBatteryOptimizations()
+    val hints = remember { context.getSharedPreferences("hints", android.content.Context.MODE_PRIVATE) }
+    var batteryHintAnswered by remember { mutableStateOf(hints.getBoolean(KEY_BATTERY_HINT, false)) }
+    if (transfer.active != null && !batteryExempt && !batteryHintAnswered) {
+        BatteryHintDialog(
+            onAllow = {
+                batteryHintAnswered = true
+                hints.edit().putBoolean(KEY_BATTERY_HINT, true).apply()
+                requestIgnoreBatteryOptimizations(context)
+            },
+            onDismiss = {
+                batteryHintAnswered = true
+                hints.edit().putBoolean(KEY_BATTERY_HINT, true).apply()
+            },
+        )
     }
 
     if (showAddAccount) {
@@ -334,3 +364,5 @@ private fun ShortcutKind.icon(): ImageVector = when (this) {
     ShortcutKind.DOCUMENTS -> Icons.Filled.Description
     ShortcutKind.PHOTOS -> Icons.Filled.PhotoLibrary
 }
+
+private const val KEY_BATTERY_HINT = "battery_hint_answered"

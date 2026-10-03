@@ -104,3 +104,95 @@ class TransferPauseTest {
         assertFalse(engine.pauseGate.paused.value)
     }
 }
+
+class TransferJournalTest {
+    @get:Rule val tmp = TemporaryFolder()
+
+    private class MemoryJournal(var stored: List<TransferRequest> = emptyList()) : TransferJournal {
+        override fun load(): List<TransferRequest> = stored
+        override fun save(requests: List<TransferRequest>) { stored = requests }
+    }
+
+    private class NoHistory : TransferHistoryRepository {
+        override val entries: Flow<List<HistoryEntry>> = MutableStateFlow(emptyList())
+        override suspend fun add(entry: HistoryEntry) = Unit
+        override suspend fun clear() = Unit
+    }
+
+    private fun setUp(journal: TransferJournal): Pair<LocalFileSystemRepository, TransferCoordinator> {
+        val repo = LocalFileSystemRepository(tmp.root, "Internal") { null }
+        val engine = TransferEngine(repo, FileStreamCopier())
+        val coordinator = TransferCoordinator(engine, TransferHistoryRecorder(NoHistory(), repo), journal = journal) { }
+        return repo to coordinator
+    }
+
+    @Test
+    fun `an unfinished batch is in the journal and leaves it when it ends`() = runBlocking {
+        val journal = MemoryJournal()
+        val (repo, coordinator) = setUp(journal)
+        val dst = tmp.newFolder("dst")
+        val file = File(tmp.newFolder("src"), "a.txt").apply { writeText("hi") }
+        val request = TransferRequest(OperationType.COPY, listOf(repo.stat(file.path).getOrThrow()), dst.path)
+
+        coordinator.enqueue(request)
+        assertEquals(listOf(request), journal.stored)
+
+        assertTrue(coordinator.claimWorker())
+        coordinator.run(coordinator.next()!!)
+        assertTrue("finished work must not be offered again", journal.stored.isEmpty())
+    }
+
+    @Test
+    fun `cancelling empties the journal`() = runBlocking {
+        val journal = MemoryJournal()
+        val (repo, coordinator) = setUp(journal)
+        val dst = tmp.newFolder("dst")
+        val file = File(tmp.newFolder("src"), "a.txt").apply { writeText("hi") }
+        coordinator.enqueue(TransferRequest(OperationType.COPY, listOf(repo.stat(file.path).getOrThrow()), dst.path))
+
+        coordinator.cancelAll()
+
+        assertTrue(journal.stored.isEmpty())
+    }
+
+    @Test
+    fun `what a killed process left behind is offered and resumed without the vanished items`() = runBlocking {
+        val src = tmp.newFolder("src")
+        val kept = File(src, "kept.txt").apply { writeText("data") }
+        val moved = File(src, "moved.txt").apply { writeText("gone") }
+        val repoForItems = LocalFileSystemRepository(tmp.root, "Internal") { null }
+        val keptItem = repoForItems.stat(kept.path).getOrThrow()
+        val movedItem = repoForItems.stat(moved.path).getOrThrow()
+        moved.delete() // the previous run had already moved this one
+        val dst = tmp.newFolder("dst")
+        val journal = MemoryJournal(listOf(TransferRequest(OperationType.CUT, listOf(keptItem, movedItem), dst.path)))
+        val (_, coordinator) = setUp(journal)
+
+        coordinator.loadInterrupted()
+        assertEquals(1, coordinator.interrupted.value.size)
+
+        coordinator.restoreInterrupted()
+        assertTrue(coordinator.interrupted.value.isEmpty())
+        assertEquals("only the surviving item is queued again", listOf("kept.txt"), journal.stored.single().items.map { it.name })
+
+        assertTrue(coordinator.claimWorker())
+        coordinator.run(coordinator.next()!!)
+
+        assertEquals("data", File(dst, "kept.txt").readText())
+        assertFalse(kept.exists())
+        assertTrue(journal.stored.isEmpty())
+    }
+
+    @Test
+    fun `discarding forgets the interrupted batches`() = runBlocking {
+        val journal = MemoryJournal(listOf(TransferRequest(OperationType.COPY, emptyList(), "/x")))
+        val (_, coordinator) = setUp(journal)
+        coordinator.loadInterrupted()
+        assertEquals(1, coordinator.interrupted.value.size)
+
+        coordinator.discardInterrupted()
+
+        assertTrue(coordinator.interrupted.value.isEmpty())
+        assertTrue(journal.stored.isEmpty())
+    }
+}

@@ -39,13 +39,27 @@ class DataStoreAccountRepository(
     }
 
     private fun serialize(rows: List<Row>): String = rows.joinToString("\n") { row ->
-        listOf(row.account.id, row.account.label, row.account.baseUrl, row.account.username, row.secret)
-            .joinToString("\t") { Tsv.escape(it) }
+        listOf(
+            row.account.id,
+            row.account.label,
+            row.account.baseUrl,
+            row.account.username,
+            row.secret,
+            row.account.pinnedCertSha256.orEmpty(),
+            row.account.allowInsecureHttp.toString(),
+        ).joinToString("\t") { Tsv.escape(it) }
     }
 
     private fun parse(text: String?): List<Row> = text.orEmpty().lines().mapNotNull { line ->
         val f = line.split('\t')
-        if (f.size < 5) null else Row(WebDavAccount(Tsv.unescape(f[0]), Tsv.unescape(f[1]), Tsv.unescape(f[2]), Tsv.unescape(f[3])), Tsv.unescape(f[4]))
+        if (f.size < 5) {
+            null
+        } else {
+            // Older lines have five columns; the pin and the HTTP flag were added later.
+            val pinned = f.getOrNull(5)?.let(Tsv::unescape)?.takeIf { it.isNotEmpty() }
+            val insecure = f.getOrNull(6)?.let(Tsv::unescape) == "true"
+            Row(WebDavAccount(Tsv.unescape(f[0]), Tsv.unescape(f[1]), Tsv.unescape(f[2]), Tsv.unescape(f[3]), pinned, insecure), Tsv.unescape(f[4]))
+        }
     }
 
     private companion object {

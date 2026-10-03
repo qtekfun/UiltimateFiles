@@ -8,7 +8,10 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.UUID
 
 /** Raised when the address the user typed cannot be used. */
-class InvalidServerUrlException(message: String) : IllegalArgumentException(message)
+open class InvalidServerUrlException(message: String) : IllegalArgumentException(message)
+
+/** The address is a plain `http://` one: usable only if the user explicitly accepts sending everything unencrypted. */
+class InsecureServerException(message: String) : InvalidServerUrlException(message)
 
 /**
  * Turns what the user typed into a DAV root and checks it works before saving.
@@ -27,29 +30,45 @@ class WebDavAccountService(
     suspend fun connectWithLoginFlow(
         serverUrl: String,
         label: String,
+        trust: TrustChoice = TrustChoice(),
         openBrowser: (String) -> Unit,
     ): Result<WebDavAccount> = try {
-        val start = loginFlow.start(serverUrl)
+        val start = loginFlow.start(serverUrl, trust)
         openBrowser(start.loginUrl) // runs in the caller's context (the UI thread for the ViewModel)
         val credentials = loginFlow.awaitCredentials(start)
-        connect(credentials.server, credentials.loginName, credentials.appPassword, label)
+        connect(credentials.server, credentials.loginName, credentials.appPassword, label, trust)
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    suspend fun connect(serverUrl: String, username: String, password: String, label: String): Result<WebDavAccount> =
+    suspend fun connect(
+        serverUrl: String,
+        username: String,
+        password: String,
+        label: String,
+        trust: TrustChoice = TrustChoice(),
+    ): Result<WebDavAccount> =
         withContext(Dispatchers.IO) {
             try {
-                val baseUrl = buildBaseUrl(serverUrl, username, requireHttps)
+                val baseUrl = buildBaseUrl(serverUrl, username, requireHttps && !trust.allowInsecureHttp)
                 val session = WebDavSession(baseUrl.toHttpUrlOrNull()!!, username, password)
-                client.propfind(session, "", depth = 0) // fails with 401 on bad credentials, 404 on a wrong path
+                try {
+                    // Fails with 401 on bad credentials, 404 on a wrong path.
+                    client.pinnedTo(trust.pinnedSha256).propfind(session, "", depth = 0)
+                } catch (e: javax.net.ssl.SSLException) {
+                    if (trust.pinnedSha256 != null) throw e
+                    throw runCatching { UntrustedCertificateException(PinnedTls.probe(session.baseUrl.host, session.baseUrl.port)) }
+                        .getOrDefault(e)
+                }
                 val account = WebDavAccount(
                     id = UUID.randomUUID().toString(),
                     label = label.trim().ifEmpty { session.baseUrl.host },
                     baseUrl = baseUrl,
                     username = username,
+                    pinnedCertSha256 = trust.pinnedSha256?.let(PinnedTls::normalize),
+                    allowInsecureHttp = trust.allowInsecureHttp,
                 )
                 accounts.add(account, password)
                 Result.success(account)
@@ -65,7 +84,7 @@ class WebDavAccountService(
         fun buildBaseUrl(serverUrl: String, username: String, requireHttps: Boolean = true): String {
             val trimmed = serverUrl.trim().trimEnd('/')
             val parsed = trimmed.toHttpUrlOrNull() ?: throw InvalidServerUrlException("Not a valid address: $serverUrl")
-            if (requireHttps && !parsed.isHttps) throw InvalidServerUrlException("Only HTTPS addresses are supported")
+            if (requireHttps && !parsed.isHttps) throw InsecureServerException("Only HTTPS addresses are supported")
             val path = parsed.encodedPath
             val alreadyDav = path.contains("remote.php") || path.contains("/dav") || path.contains("webdav")
             if (alreadyDav) return trimmed

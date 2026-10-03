@@ -70,6 +70,8 @@ class BackupManager(
                         .put("label", account.label)
                         .put("baseUrl", account.baseUrl)
                         .put("username", account.username)
+                        .put("pinnedCertSha256", account.pinnedCertSha256 ?: JSONObject.NULL)
+                        .put("allowInsecureHttp", account.allowInsecureHttp)
                         .put("password", accounts.passwordOf(account.id).orEmpty()),
                 )
             }
@@ -109,7 +111,14 @@ class BackupManager(
         if (decrypted != null) {
             for (i in 0 until decrypted.length()) {
                 val row = decrypted.getJSONObject(i)
-                val account = WebDavAccount(row.getString("id"), row.getString("label"), row.getString("baseUrl"), row.getString("username"))
+                val account = WebDavAccount(
+                    id = row.getString("id"),
+                    label = row.getString("label"),
+                    baseUrl = row.getString("baseUrl"),
+                    username = row.getString("username"),
+                    pinnedCertSha256 = row.optString("pinnedCertSha256", "").takeIf { it.isNotEmpty() && it != "null" },
+                    allowInsecureHttp = row.optBoolean("allowInsecureHttp", false),
+                )
                 accounts.add(account, row.getString("password")) // same id: replaces, so importing twice is harmless
                 added++
             }

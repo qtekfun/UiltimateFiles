@@ -20,14 +20,21 @@ class TransferNotifications(private val context: Context) {
     private val manager = context.getSystemService(NotificationManager::class.java)
 
     init {
-        // Channel settings cannot be changed after creation, so lock-screen visibility needs a new channel.
-        manager.deleteNotificationChannel(OLD_CHANNEL_ID)
+        // Channel settings cannot be changed after creation, so a different importance needs a new channel.
+        OLD_CHANNEL_IDS.forEach(manager::deleteNotificationChannel)
         manager.createNotificationChannel(
+            // Default importance, because many lock screens only list low-importance (silent) notifications when the
+            // user opted in; the channel itself makes no sound, vibration or badge, and updates never alert again.
             NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.transfer_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply { lockscreenVisibility = Notification.VISIBILITY_PUBLIC },
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                setSound(null, null)
+                enableVibration(false)
+                setShowBadge(false)
+            },
         )
     }
 
@@ -120,7 +127,7 @@ class TransferNotifications(private val context: Context) {
     companion object {
         const val ONGOING_ID = 1
         const val RESULT_ID = 2
-        private const val OLD_CHANNEL_ID = "transfers"
-        private const val CHANNEL_ID = "transfers_lockscreen"
+        private val OLD_CHANNEL_IDS = listOf("transfers", "transfers_lockscreen")
+        const val CHANNEL_ID = "transfers_progress"
     }
 }

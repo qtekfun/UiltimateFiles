@@ -49,7 +49,7 @@ class BackupManagerTest {
     private val sourceAccounts = MemoryAccounts()
     private val source = BackupManager(sourcePrefs, sourceAccounts, kdfIterations = 1_000)
 
-    private val account = WebDavAccount("a1", "Home", "https://cloud.example.com/remote.php/dav/files/alice", "alice")
+    private val account = WebDavAccount("a1", "Home", "https://cloud.example.com/remote.php/dav/files/alice", "alice", "cd".repeat(32), allowInsecureHttp = true)
 
     private fun target(): Triple<MemoryPrefs, MemoryAccounts, BackupManager> {
         val prefs = MemoryPrefs()
