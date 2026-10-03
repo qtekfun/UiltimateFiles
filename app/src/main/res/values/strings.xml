@@ -157,6 +157,21 @@
     <string name="account_remove_title">Remove account</string>
     <string name="account_remove_message">Disconnect \"%1$s\" from UltimateFiles? Nothing is deleted on the server.</string>
     <string name="error_remote_open">Copy network files to this device first to open or share them.</string>
+    <string name="settings_battery">Run copies in the background without limits</string>
+    <string name="settings_battery_on">Allowed: copies keep going with the screen off. Some phone makers have their own battery settings too; look for UltimateFiles there if copies still stop.</string>
+    <string name="settings_battery_off">Not allowed: Android may cut the network or stop copies when the screen turns off. Tap to allow.</string>
+    <string name="battery_hint_title">Keep copies running with the screen off</string>
+    <string name="battery_hint_message">To keep a long copy going when the screen turns off, Android has to exempt UltimateFiles from battery optimisation. Without it the connection can be cut and the copy stops. You can change this later in Settings.</string>
+    <string name="battery_hint_allow">Allow</string>
+    <string name="battery_hint_later">Not now</string>
+    <string name="interrupted_title">Copy interrupted</string>
+    <string name="interrupted_message">Android stopped UltimateFiles before these finished. Resuming checks again what was already copied, and Nextcloud uploads continue where they stopped.</string>
+    <plurals name="interrupted_more">
+        <item quantity="one">…and %1$d more</item>
+        <item quantity="other">…and %1$d more</item>
+    </plurals>
+    <string name="interrupted_resume">Resume</string>
+    <string name="interrupted_discard">Discard</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_export">Export settings and accounts</string>
     <string name="settings_export_summary">Save your settings and Nextcloud accounts to a file</string>

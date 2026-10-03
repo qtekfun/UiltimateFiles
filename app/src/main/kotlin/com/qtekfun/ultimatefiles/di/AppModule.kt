@@ -35,7 +35,9 @@ import com.qtekfun.ultimatefiles.domain.history.TransferHistoryRecorder
 import com.qtekfun.ultimatefiles.domain.history.TransferHistoryRepository
 import com.qtekfun.ultimatefiles.domain.repository.UserPreferencesRepository
 import com.qtekfun.ultimatefiles.domain.repository.VolumeChangeSource
+import com.qtekfun.ultimatefiles.data.repository.FileTransferJournal
 import com.qtekfun.ultimatefiles.domain.transfer.TransferCoordinator
+import com.qtekfun.ultimatefiles.domain.transfer.TransferJournal
 import com.qtekfun.ultimatefiles.domain.transfer.TransferServiceLauncher
 import com.qtekfun.ultimatefiles.domain.usecase.BatchCopyUseCase
 import com.qtekfun.ultimatefiles.domain.usecase.BatchMoveUseCase
@@ -84,7 +86,8 @@ val appModule = module {
     single<TransferHistoryRepository> { FileTransferHistoryRepository(File(androidContext().filesDir, "history.tsv")) }
     single { TransferHistoryRecorder(history = get(), files = get()) }
     single<VolumeChangeSource> { CompositeVolumeChangeSource(SystemVolumeMonitor(androidContext()), get()) }
-    single { TransferCoordinator(engine = get(), recorder = get(), launcher = get()) }
+    single<TransferJournal> { FileTransferJournal(File(androidContext().filesDir, "transfer-journal.json")) }
+    single { TransferCoordinator(engine = get(), recorder = get(), journal = get(), launcher = get()) }
     single { TransferNotifications(androidContext()) }
 
     factory { BatchCopyUseCase(get(), get()) }

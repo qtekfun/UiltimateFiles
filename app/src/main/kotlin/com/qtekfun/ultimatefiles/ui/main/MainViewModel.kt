@@ -58,7 +58,17 @@ class MainViewModel(
     val transfer = coordinator.state
     val pendingDrop = dragDrop.pendingDrop
 
+    /** Copies the system stopped before they finished; the screen offers to resume or discard them. */
+    val interrupted = coordinator.interrupted
+
+    fun resumeInterrupted() {
+        viewModelScope.launch { coordinator.restoreInterrupted() }
+    }
+
+    fun discardInterrupted() = coordinator.discardInterrupted()
+
     init {
+        viewModelScope.launch(Dispatchers.IO) { coordinator.loadInterrupted() }
         refreshVolumes()
         viewModelScope.launch {
             volumeChanges.changes.collect {

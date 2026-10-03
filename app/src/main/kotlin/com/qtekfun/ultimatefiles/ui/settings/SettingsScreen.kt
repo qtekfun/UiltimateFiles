@@ -31,12 +31,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
 import com.qtekfun.ultimatefiles.core.model.UserPreferences
+import com.qtekfun.ultimatefiles.ui.components.rememberIgnoringBatteryOptimizations
+import com.qtekfun.ultimatefiles.ui.components.requestIgnoreBatteryOptimizations
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,6 +155,16 @@ fun SettingsScreen(
                     ),
                 )
             }
+            val batteryExempt by rememberIgnoringBatteryOptimizations()
+            val context = LocalContext.current
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_battery)) },
+                supportingContent = {
+                    Text(stringResource(if (batteryExempt) R.string.settings_battery_on else R.string.settings_battery_off))
+                },
+                trailingContent = { Switch(checked = batteryExempt, onCheckedChange = null) },
+                modifier = Modifier.clickable { requestIgnoreBatteryOptimizations(context) },
+            )
             Text(
                 text = stringResource(R.string.settings_backup),
                 style = MaterialTheme.typography.titleSmall,

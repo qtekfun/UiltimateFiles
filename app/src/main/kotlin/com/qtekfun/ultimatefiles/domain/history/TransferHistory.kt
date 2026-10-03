@@ -38,6 +38,9 @@ class TransferHistoryRecorder(
     private val files: FileSystemRepository,
     private val clockMillis: () -> Long = System::currentTimeMillis,
 ) {
+    /** Whether [item] is still there; used to drop already-moved items when an interrupted batch is offered again. */
+    suspend fun exists(item: FileItem): Boolean = files.stat(item.path).isSuccess
+
     /** Display name of the destination folder, or null when it cannot be read. */
     suspend fun targetNameOf(request: TransferRequest): String? = files.stat(request.targetDirectory).getOrNull()?.name
 

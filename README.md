@@ -23,10 +23,17 @@ Play Services, sin analíticas, sin dependencias cerradas.
   exportable/importable (ajustes y cuentas; las contraseñas se cifran con una frase que eliges).
 - **Abrir APK**: pide una vez el permiso "instalar apps desconocidas" y delega en el instalador del sistema.
 
+## Copias largas con la pantalla apagada
+Android puede cortar la red o detener una app cuando se apaga la pantalla (Doze, ahorro de batería de cada fabricante). Para
+que una copia larga sobreviva, UltimateFiles mantiene el CPU y la Wi-Fi activos mientras copia, te pide una vez que lo excluyas
+de la optimización de batería (Ajustes → "Copias en segundo plano sin límites") y guarda un diario de lo que no ha terminado:
+si el sistema mata la app, al volver te ofrece reanudar (en Nextcloud, la subida continúa donde se quedó). Algunos fabricantes
+tienen además su propio gestor de batería; si las copias aún se paran, busca UltimateFiles ahí. Más información: dontkillmyapp.com.
+
 ## Permisos
 Acceso a todos los archivos (`MANAGE_EXTERNAL_STORAGE`), servicio en primer plano de sincronización de datos,
 notificaciones, `WAKE_LOCK` (copias largas con la pantalla apagada), `INTERNET` (solo para Nextcloud/WebDAV) y
-`REQUEST_INSTALL_PACKAGES` (abrir APK). No hay nada que se envíe a terceros.
+`REQUEST_INSTALL_PACKAGES` (abrir APK) y `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (copias largas con la pantalla apagada). No hay nada que se envíe a terceros.
 
 ## Desarrollo
 ```

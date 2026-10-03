@@ -47,11 +47,21 @@ class TransferCoordinator(
     private val engine: TransferEngine,
     private val recorder: TransferHistoryRecorder,
     private val gate: PauseGate = engine.pauseGate,
+    private val journal: TransferJournal = NoJournal,
     private val launcher: TransferServiceLauncher,
 ) : ConflictResolver {
     private val lock = Any()
     private val queue = ArrayDeque<TransferRequest>()
     private var workerRunning = false
+
+    /** Every batch that has not finished (the running one and the queued ones), mirrored in the [journal]. */
+    private val unfinished = ArrayList<TransferRequest>()
+    private var interruptedRequests: List<TransferRequest> = emptyList()
+
+    private val _interrupted = MutableStateFlow<List<TransferSummary>>(emptyList())
+
+    /** Batches a previous run left unfinished because the app was stopped; the user decides whether to resume them. */
+    val interrupted: StateFlow<List<TransferSummary>> = _interrupted.asStateFlow()
 
     private val _state = MutableStateFlow(TransferState())
     val state: StateFlow<TransferState> = _state.asStateFlow()
@@ -59,9 +69,44 @@ class TransferCoordinator(
     @Volatile private var activeJob: Job? = null
     @Volatile private var pendingConflict: CompletableDeferred<ConflictDecision>? = null
 
+    /** Reads the journal; call it off the main thread once at start-up. Does nothing while transfers are in progress. */
+    fun loadInterrupted() {
+        val loaded = synchronized(lock) {
+            if (unfinished.isNotEmpty()) return
+            journal.load().also { interruptedRequests = it }
+        }
+        _interrupted.value = loaded.map(::summaryOf)
+    }
+
+    /** Queues what was interrupted again, skipping items that are gone (a move may have finished them). */
+    suspend fun restoreInterrupted() {
+        val requests = synchronized(lock) {
+            if (interruptedRequests.isEmpty()) interruptedRequests = journal.load()
+            interruptedRequests.also { interruptedRequests = emptyList() }
+        }
+        _interrupted.value = emptyList()
+        // Whatever is not queued again is gone from the journal too.
+        synchronized(lock) { journal.save(unfinished.toList()) }
+        for (request in requests) {
+            val present = request.items.filter { recorder.exists(it) }
+            if (present.isNotEmpty()) enqueue(request.copy(items = present))
+        }
+    }
+
+    /** The user does not want the interrupted batches back. */
+    fun discardInterrupted() {
+        synchronized(lock) {
+            interruptedRequests = emptyList()
+            journal.save(unfinished.toList())
+        }
+        _interrupted.value = emptyList()
+    }
+
     fun enqueue(request: TransferRequest) {
         val queued = synchronized(lock) {
             queue.addLast(request)
+            unfinished.add(request)
+            journal.save(unfinished.toList())
             queue.map(::summaryOf)
         }
         _state.update { it.copy(queuedTasks = queued) }
@@ -114,13 +159,22 @@ class TransferCoordinator(
         }
         val finalProgress = _state.value.progress
         _state.update { it.copy(active = null) }
+        // Finished, failed or cancelled: either way it is no longer "interrupted".
+        synchronized(lock) {
+            unfinished.remove(request)
+            journal.save(unfinished.toList())
+        }
         withContext(NonCancellable) { recorder.recordTransfer(request, finalProgress) }
         return finalProgress
     }
 
     /** Cancels the running transfer and drops everything still queued. */
     fun cancelAll() {
-        synchronized(lock) { queue.clear() }
+        synchronized(lock) {
+            queue.clear()
+            unfinished.clear()
+            journal.save(emptyList())
+        }
         gate.resume()
         _state.update { it.copy(queuedTasks = emptyList(), paused = false) }
         activeJob?.cancel()

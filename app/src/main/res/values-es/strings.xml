@@ -157,6 +157,21 @@
     <string name="account_remove_title">Quitar cuenta</string>
     <string name="account_remove_message">¿Desconectar \"%1$s\" de UltimateFiles? No se borra nada en el servidor.</string>
     <string name="error_remote_open">Copia los archivos de red al dispositivo antes de abrirlos o compartirlos.</string>
+    <string name="settings_battery">Copias en segundo plano sin límites</string>
+    <string name="settings_battery_on">Permitido: las copias siguen con la pantalla apagada. Algunos fabricantes tienen además sus propios ajustes de batería; busca UltimateFiles ahí si las copias aún se detienen.</string>
+    <string name="settings_battery_off">No permitido: Android puede cortar la red o detener las copias al apagarse la pantalla. Toca para permitirlo.</string>
+    <string name="battery_hint_title">Mantén las copias con la pantalla apagada</string>
+    <string name="battery_hint_message">Para que una copia larga siga cuando se apaga la pantalla, Android tiene que excluir a UltimateFiles de la optimización de batería. Sin eso la conexión puede cortarse y la copia se detiene. Puedes cambiarlo luego en Ajustes.</string>
+    <string name="battery_hint_allow">Permitir</string>
+    <string name="battery_hint_later">Ahora no</string>
+    <string name="interrupted_title">Copia interrumpida</string>
+    <string name="interrupted_message">Android detuvo UltimateFiles antes de que terminaran. Al reanudar se vuelve a comprobar lo ya copiado, y las subidas a Nextcloud continúan donde se quedaron.</string>
+    <plurals name="interrupted_more">
+        <item quantity="one">…y %1$d más</item>
+        <item quantity="other">…y %1$d más</item>
+    </plurals>
+    <string name="interrupted_resume">Reanudar</string>
+    <string name="interrupted_discard">Descartar</string>
     <string name="settings_backup">Copia de seguridad</string>
     <string name="settings_export">Exportar ajustes y cuentas</string>
     <string name="settings_export_summary">Guarda tus ajustes y cuentas de Nextcloud en un archivo</string>
