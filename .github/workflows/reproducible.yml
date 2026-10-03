@@ -10,7 +10,6 @@ on:
       - "gradle/**"
       - "*.gradle.kts"
       - "gradle.properties"
-      - "version.properties"
       - ".github/workflows/reproducible.yml"
   workflow_dispatch:
 

@@ -1,13 +1,12 @@
+# Builds the signed release APK for a version tag (vX.Y.Z or vX.Y.Z-rc.N) and publishes it as a GitHub Release with the
+# notes of that version from CHANGELOG.md; every other push to master publishes a nightly pre-release instead
+# (application id com.qtekfun.ultimatefiles.nightly, debug-signed unless the keystore secrets exist). See RELEASING.md.
 name: Release
 
-# Two kinds of build:
-#  - a tag vX.Y.Z is the official release: built from the committed version.properties (so F-Droid can reproduce it),
-#    signed with the release key (the job fails without it) and published as the latest release;
-#  - every other push to master is a "nightly": application id com.qtekfun.ultimatefiles.nightly, published as a pre-release.
 on:
   push:
     branches: [master]
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"]
     paths-ignore:
       - "**.md"
   workflow_dispatch:
@@ -31,55 +30,59 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Compute version
+      - name: Check the version
         id: version
         run: |
           ./scripts/check-version.sh
-          base_name="$(sed -n 's/^versionName=//p' version.properties | tr -d '[:space:]')"
-          base_code="$(sed -n 's/^versionCode=//p' version.properties | tr -d '[:space:]')"
+          version="$(sed -n 's/^appVersion=//p' gradle.properties | tr -d '[:space:]')"
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            if [ "${GITHUB_REF_NAME#v}" != "$base_name" ]; then
-              echo "::error::Tag $GITHUB_REF_NAME does not match versionName $base_name in version.properties"; exit 1
+            if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match appVersion $version in gradle.properties"; exit 1
             fi
             echo "official=true" >> "$GITHUB_OUTPUT"
             echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-            echo "asset=UltimateFiles-$base_name.apk" >> "$GITHUB_OUTPUT"
-            echo "title=UltimateFiles $base_name" >> "$GITHUB_OUTPUT"
+            echo "asset=UltimateFiles-$version.apk" >> "$GITHUB_OUTPUT"
+            echo "title=UltimateFiles $version" >> "$GITHUB_OUTPUT"
+            case "$version" in *-rc.*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;; esac
             echo "gradle_args=" >> "$GITHUB_OUTPUT"
+            # The notes of this version from CHANGELOG.md
+            awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {found=1; next} found && /^## \[/ {exit} found {print}' CHANGELOG.md > notes.md
+            test -s notes.md || { echo "::error::CHANGELOG.md has no '## [$version]' section"; exit 1; }
           else
             run="${{ github.run_number }}"
-            name="$base_name-nightly.$run"
             echo "official=false" >> "$GITHUB_OUTPUT"
             echo "tag=nightly-$run" >> "$GITHUB_OUTPUT"
-            echo "asset=UltimateFiles-$name.apk" >> "$GITHUB_OUTPUT"
+            echo "asset=UltimateFiles-$version-nightly.$run.apk" >> "$GITHUB_OUTPUT"
             echo "title=UltimateFiles nightly $run" >> "$GITHUB_OUTPUT"
-            echo "gradle_args=-Pnightly=true -PversionCode=$(( base_code * 100000 + run )) -PversionName=$name" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "gradle_args=-Pnightly=true -PnightlyRun=$run" >> "$GITHUB_OUTPUT"
+            echo "Nightly build from master. It installs next to the official app (application id com.qtekfun.ultimatefiles.nightly)." > notes.md
           fi
 
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
+      - name: Check
+        run: ./gradlew check
 
-      - name: Decode signing keystore
+      - name: Decode the signing keystore
         id: signing
         env:
-          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          UF_KEYSTORE_BASE64: ${{ secrets.UF_KEYSTORE_BASE64 }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          if [ -n "$UF_KEYSTORE_BASE64" ]; then
+            echo "$UF_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "signed=true" >> "$GITHUB_OUTPUT"
-            echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "UF_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
           elif [ "${{ steps.version.outputs.official }}" = "true" ]; then
-            echo "::error::An official release must be signed: set the SIGNING_* secrets (see docs/SIGNING.md)."; exit 1
+            echo "::error::An official release must be signed: set the UF_* secrets (see RELEASING.md)."; exit 1
           else
             echo "signed=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::SIGNING_KEYSTORE_BASE64 not set; the nightly falls back to the debug key."
+            echo "::warning::UF_KEYSTORE_BASE64 not set; the nightly falls back to the debug key."
           fi
 
-      - name: Build release APK
+      - name: Build the release APK
         env:
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          UF_KEYSTORE_PASSWORD: ${{ secrets.UF_KEYSTORE_PASSWORD }}
+          UF_KEY_ALIAS: ${{ secrets.UF_KEY_ALIAS }}
+          UF_KEY_PASSWORD: ${{ secrets.UF_KEY_PASSWORD }}
         run: ./gradlew assembleRelease ${{ steps.signing.outputs.signed != 'true' && '-PdebugSigning=true' || '' }} ${{ steps.version.outputs.gradle_args }}
 
       - name: Show the signing certificate
@@ -87,17 +90,13 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq apksigner
           apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep -E "certificate (DN|SHA-256)"
 
-      - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk "${{ steps.version.outputs.asset }}"
-
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          name: ${{ steps.version.outputs.title }}
-          generate_release_notes: true
-          prerelease: ${{ steps.version.outputs.official != 'true' }}
-          make_latest: ${{ steps.version.outputs.official == 'true' }}
-          body: ${{ steps.signing.outputs.signed != 'true' && 'Signed with the debug key because no release keystore is configured. Nightly builds install next to the official app (id com.qtekfun.ultimatefiles.nightly).' || (steps.version.outputs.official != 'true' && 'Nightly build from master; it installs next to the official app (id com.qtekfun.ultimatefiles.nightly).' || '') }}
-          files: ${{ steps.version.outputs.asset }}
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "${{ steps.version.outputs.asset }}"
+          flags=""
+          [ "${{ steps.version.outputs.prerelease }}" = "true" ] && flags="--prerelease"
+          [ "${{ steps.version.outputs.official }}" = "true" ] && [ "${{ steps.version.outputs.prerelease }}" != "true" ] && flags="--latest"
+          gh release create "${{ steps.version.outputs.tag }}" "${{ steps.version.outputs.asset }}" \
+            --target "$GITHUB_SHA" --title "${{ steps.version.outputs.title }}" --notes-file notes.md $flags

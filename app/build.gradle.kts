@@ -1,22 +1,31 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
 
-// The committed version (version.properties) is what F-Droid builds; CI release builds override it with
-// -PversionCode=… -PversionName=… so every merge to master gets a unique, increasing build number.
-val versionFile = Properties().apply { rootProject.file("version.properties").inputStream().use { load(it) } }
-val ciVersionCode = (findProperty("versionCode") as String?)?.toIntOrNull() ?: versionFile.getProperty("versionCode").toInt()
-val ciVersionName = (findProperty("versionName") as String?) ?: versionFile.getProperty("versionName")
+/**
+ * The version lives in one place, `appVersion` in gradle.properties (SemVer, optionally `-rc.N`). The version code is
+ * derived, never set by hand: (MAJOR*10000 + MINOR*100 + PATCH) * 100 + N, with N = 99 for a final release, so a final
+ * version always sorts after its release candidates and nothing depends on the date or the machine (reproducible builds).
+ */
+val appVersion = providers.gradleProperty("appVersion").get()
+
+fun versionCodeOf(version: String): Int {
+    val match = Regex("""^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$""").matchEntire(version)
+        ?: error("appVersion must be MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-rc.N: $version")
+    val (major, minor, patch, rc) = match.destructured
+    val release = if (rc.isEmpty()) 99 else rc.toInt().also { require(it in 1..98) { "rc number must be 1..98" } }
+    return (major.toInt() * 10000 + minor.toInt() * 100 + patch.toInt()) * 100 + release
+}
 
 // Master builds are published as "nightly": a different application id, so they install next to the official release
-// (whose versionCode is the committed one) instead of racing it. Official releases are built without this flag.
+// instead of racing its version code: a nightly's code is just the workflow run number. Official releases are built
+// without this flag.
 val nightly = (findProperty("nightly") as String?) == "true"
+val nightlyRun = (findProperty("nightlyRun") as String?)?.toIntOrNull() ?: 0
 
 // Signing material comes from the environment so no secret ever lives in the repo.
-val signingKeystore: String? = System.getenv("SIGNING_KEYSTORE_PATH")
+val signingKeystore: String? = System.getenv("UF_KEYSTORE_FILE")
 
 android {
     namespace = "com.qtekfun.ultimatefiles"
@@ -26,8 +35,8 @@ android {
         applicationId = "com.qtekfun.ultimatefiles"
         minSdk = 26
         targetSdk = 35
-        versionCode = ciVersionCode
-        versionName = ciVersionName
+        versionCode = if (nightly) nightlyRun else versionCodeOf(appVersion)
+        versionName = if (nightly) "$appVersion-nightly.$nightlyRun" else appVersion
         if (nightly) applicationIdSuffix = ".nightly"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,9 +45,9 @@ android {
         if (signingKeystore != null) {
             create("release") {
                 storeFile = file(signingKeystore)
-                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
-                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+                storePassword = System.getenv("UF_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("UF_KEY_ALIAS")
+                keyPassword = System.getenv("UF_KEY_PASSWORD")
             }
         }
     }

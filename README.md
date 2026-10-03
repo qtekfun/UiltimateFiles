@@ -59,17 +59,14 @@ generado: no sustituyen una prueba real en un dispositivo.
 ## CI/CD
 - `ci.yml`: tests, lint y APK debug en cada PR y push a `master` y a ramas `claude/**`.
 - GitGuardian: escaneo de secretos mediante su app de GitHub, sin workflow ni API key.
-- `release.yml`: una etiqueta `vX.Y.Z` publica la **release oficial** (`UltimateFiles-X.Y.Z.apk`, versión exacta de
-  `version.properties`, firmada con tu clave; falla sin los secretos). Cada push a `master` publica una **nightly**
-  (pre-release, identificador `com.qtekfun.ultimatefiles.nightly`) que se instala al lado de la oficial. Secretos:
-  `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`; cómo crearlos en
-  [docs/SIGNING.md](docs/SIGNING.md).
-- `reproducible.yml`: compila la release dos veces desde sitios distintos y compara los APK (requisito para que F-Droid
-  publique el APK con tu firma).
+- `release.yml`: una etiqueta `vX.Y.Z` publica la **release oficial** (`UltimateFiles-X.Y.Z.apk`, firmada con tu clave, con las
+  notas de `CHANGELOG.md`; falla sin los secretos `UF_*`). Cada push a `master` publica una **nightly** (pre-release con
+  identificador `com.qtekfun.ultimatefiles.nightly`, que se instala al lado de la oficial). Cómo firmar y publicar:
+  [RELEASING.md](RELEASING.md).
+- `reproducible.yml`: compila la release dos veces desde sitios distintos y compara los APK como F-Droid.
 - Dependabot: Gradle y GitHub Actions, semanal.
-- Versión: `version.properties` (`versionName` y `versionCode`). Para publicar una versión "oficial": subir ambos valores,
-  añadir `changelogs/<versionCode>.txt` en fastlane, mergear y etiquetar `vX.Y.Z`. Detalles y receta de F-Droid en
-  [docs/FDROID.md](docs/FDROID.md).
+- Versión: `appVersion` en `gradle.properties`; el `versionCode` se deriva. Pasos para publicar y receta de F-Droid en
+  [RELEASING.md](RELEASING.md) y [docs/FDROID.md](docs/FDROID.md).
 
 ## Nombre y paquete
 La app se llama **UltimateFiles**, el identificador de la aplicación es `com.qtekfun.ultimatefiles` y el repositorio es
