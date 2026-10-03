@@ -1,52 +1,57 @@
-# Plan de Tareas de Implementación
+# Implementation Task Plan
 
-- [x] **Fase 1: Base del Proyecto y Dominio Core**
-  - [x] 1.1 Configurar `build.gradle.kts` con Compose, Material3, Koin, DataStore y Coroutines.
-  - [x] 1.2 Modelos de datos: `FileItem`, `StorageVolume`, `ClipboardState`, `TransferProgress`.
-  - [x] 1.3 Contrato de interfaz `FileSystemRepository` y `ClipboardManager` compartido.
+- [x] **Phase 1: Project Base and Core Domain**
+  - [x] 1.1 Configure `build.gradle.kts` with Compose, Material 3, Koin, DataStore and Coroutines.
+  - [x] 1.2 Data models: `FileItem`, `StorageVolume`, `ClipboardState`, `TransferProgress`.
+  - [x] 1.3 `FileSystemRepository` interface contract and a shared `ClipboardManager`.
 
-- [x] **Fase 2: Motor de I/O y Foreground Service**
-  - [x] 2.1 Implementar `FileStreamCopier` con buffer de 64KB y canal de reporte de velocidad/bytes.
-  - [x] 2.2 Crear `FileTransferForegroundService` con notificación persistente actualizable.
-  - [x] 2.3 Implementar `SafFileSystemRepository` para gestionar Almacenamiento Interno y USB OTG vía Storage Access Framework.
-  - [x] 2.4 Lógica de resolución de colisiones de nombres (sobrescribir, omitir, autorenombramiento).
+- [x] **Phase 2: I/O Engine and Foreground Service**
+  - [x] 2.1 Implement `FileStreamCopier` with a 64 KB buffer and a speed/bytes reporting channel.
+  - [x] 2.2 Create `FileTransferForegroundService` with an updatable persistent notification.
+  - [x] 2.3 Implement `SafFileSystemRepository` to handle internal storage and USB OTG through the Storage Access Framework.
+  - [x] 2.4 Name collision resolution logic (overwrite, skip, auto-rename).
 
-- [x] **Fase 3: Componentes de UI y Sistema de Menús**
-  - [x] 3.1 Implementar `BreadcrumbBar` interactivo con saltos de ruta en la Top Bar.
-  - [x] 3.2 Implementar barra superior en reposo con overflow (*Nueva carpeta*, *Ordenar*, *Seleccionar todo*).
-  - [x] 3.3 Implementar Contextual Action Bar (CAB) cuando hay selección activa (*Copiar*, *Cortar*, *Eliminar*).
-  - [x] 3.4 Implementar `DockedPasteBar` inferior que se activa según el estado del `ClipboardManager`.
-  - [x] 3.5 Crear `PropertiesBottomSheet` con cálculo de hash MD5/SHA-256 en corrutina background.
+- [x] **Phase 3: UI Components and Menu System**
+  - [x] 3.1 Interactive `BreadcrumbBar` with path jumps in the top bar.
+  - [x] 3.2 Resting top bar with overflow (*New folder*, *Sort*, *Select all*).
+  - [x] 3.3 Contextual Action Bar (CAB) while there is an active selection (*Copy*, *Cut*, *Delete*).
+  - [x] 3.4 Bottom `DockedPasteBar` driven by the `ClipboardManager` state.
+  - [x] 3.5 `PropertiesBottomSheet` with MD5/SHA-256 hashing in a background coroutine.
 
-- [x] **Fase 4: Navegador de Archivos (Single Panel)**
-  - [x] 4.1 Crear `BrowserViewModel` para gestionar listado, ordenación, carga asíncrona y selección.
-  - [x] 4.2 Crear `FileList` y filas con iconos representativos según MIME type y tamaño legible.
-  - [x] 4.3 Menú contextual por ítem (pulsación larga / botón 3 puntos en fila).
+- [x] **Phase 4: File Browser (Single Panel)**
+  - [x] 4.1 `BrowserViewModel` handling listing, sorting, async loading and selection.
+  - [x] 4.2 `FileList` and rows with icons by MIME type and human-readable sizes.
+  - [x] 4.3 Per-item context menu (long press / 3-dot button on the row).
 
-- [x] **Fase 5: Integración Dual Panel y Drag & Drop**
-  - [x] 5.1 Implementar `DualPanelScaffold` con detección de tamaño de pantalla (Compact vs Expanded).
-  - [x] 5.2 Configurar `HorizontalPager` para modo retrato y layout split 50/50 para apaisado.
-  - [x] 5.3 Integrar APIs de Drag & Drop entre paneles en modo split con diálogo modal "¿Copiar o Mover?".
-  - [x] 5.4 Navigation Drawer lateral con volúmenes detectados (Interno, USB).
+- [x] **Phase 5: Dual Panel Integration and Drag & Drop**
+  - [x] 5.1 `DualPanelScaffold` with screen size detection (Compact vs Expanded).
+  - [x] 5.2 `HorizontalPager` for portrait and a 50/50 split layout for landscape.
+  - [x] 5.3 Drag & drop between panels in split mode with a modal "Copy or Move?" dialog.
+  - [x] 5.4 Side navigation drawer with detected volumes (internal, USB).
 
-- [x] **Fase 6: Feedback de la primera prueba (v0.1.5)**
-  - [x] 6.1 Historial de tareas completadas (copiar, mover, eliminar) persistente y accesible desde el cajón.
-  - [x] 6.2 Detección de discos expulsados o desconectados: el panel que estaba en ese volumen vuelve a una carpeta disponible y avisa.
-  - [x] 6.3 Pantalla de ajustes con tema (sistema, claro, oscuro, AMOLED) y colores dinámicos.
+- [x] **Phase 6: Feedback from the first test (v0.1.5)**
+  - [x] 6.1 Persistent history of completed tasks (copy, move, delete), reachable from the drawer.
+  - [x] 6.2 Detection of ejected or disconnected disks: a panel on that volume returns to an available folder and notifies.
+  - [x] 6.3 Settings screen with theme (system, light, dark, AMOLED) and dynamic colors.
 
-- [x] **Fase 7: Ficheros enormes y Nextcloud**
-  - [x] 7.1 Copias robustas de ficheros grandes: escritura a `*.ultimatefiles-part` + renombrado, verificación SHA-256 opcional antes de borrar el origen en movimientos, buffer de 1 MiB, wake lock, ETA.
-  - [x] 7.2 Test de transferencia de 8 GiB simulada (flujo generado, CRC32) sin necesidad de disco.
-  - [x] 7.3 Cuentas WebDAV/Nextcloud (HTTPS, contraseña de aplicación cifrada con Android Keystore), subida por trozos de Nextcloud (chunked v2) y descarga reanudable (Range).
-  - [x] 7.4 Pausar/reanudar copias, tareas en curso en el historial y notificación visible en la pantalla de bloqueo.
-  - [x] 7.5 Exportar/importar ajustes y cuentas (cifrado con frase de contraseña) y renombrado de la app a UltimateFiles.
-  - [x] 7.6 Vista en cuadrícula compartida por los dos paneles.
-  - [x] 7.7 Subidas a Nextcloud reanudables tras morir la app (hash por trozo).
-  - [x] 7.9 Certificados autofirmados (huella SHA-256 por cuenta) y HTTP opcional con confirmación.
-  - [x] 7.10 Copias fiables con la pantalla apagada: exención de batería, Wi-Fi lock, diario y reanudación, comprobaciones en Ajustes.
-  - [x] 7.11 Comprimir en ZIP y extraer ZIP/TAR/TAR.GZ (`ArchiveEngine`, protección zip-slip).
-  - [x] 7.12 Visores integrados (imagen, texto, PDF, audio/vídeo) en `ViewerActivity`.
-  - [x] 7.13 Archivos comprimidos como carpetas (`archive://`), extracción de 7z y apertura desde otras apps.
-  - [x] 7.14 Cuentas SFTP con contraseña y huella del host fijada (sshj); R8 y compilación release en CI.
-  - [x] 7.15 Cuentas SMB (smbj): listar, crear, renombrar, borrar y copiar; solo verificado por compilación y tests de rutas.
-  - [x] 7.8 Versión en `gradle.properties` (`appVersion`, `versionCode` derivado); releases oficiales por etiqueta firmadas con clave propia, nightlies aparte, receta de F-Droid y comprobación de compilación reproducible.
+- [x] **Phase 7: Huge Files, Remote Locations and Releases**
+  - [x] 7.1 Robust copies of large files: writing to `*.ultimatefiles-part` + rename, optional SHA-256 verification before
+    deleting the source in moves, 1 MiB buffer, wake lock, ETA.
+  - [x] 7.2 Simulated 8 GiB transfer test (generated stream, CRC32) with no disk needed.
+  - [x] 7.3 WebDAV/Nextcloud accounts (HTTPS, app password encrypted with Android Keystore), Nextcloud chunked uploads
+    (chunked v2) and resumable downloads (Range).
+  - [x] 7.4 Pause/resume copies, running tasks in the history and a notification visible on the lock screen.
+  - [x] 7.5 Export/import settings and accounts (encrypted with a passphrase) and rename of the app to UltimateFiles.
+  - [x] 7.6 Grid view shared by both panels.
+  - [x] 7.7 Nextcloud uploads that resume after the app dies (per-chunk hash).
+  - [x] 7.8 Version in `gradle.properties` (`appVersion`, derived `versionCode`); official releases by tag signed with the
+    project key, separate nightlies, F-Droid recipe and reproducible-build check.
+  - [x] 7.9 Self-signed certificates (SHA-256 fingerprint per account) and optional HTTP with confirmation.
+  - [x] 7.10 Reliable copies with the screen off: battery exemption, Wi-Fi lock, journal and resume, checks in Settings.
+  - [x] 7.11 Compress to ZIP and extract ZIP/TAR/TAR.GZ (`ArchiveEngine`, zip-slip protection).
+  - [x] 7.12 Built-in viewers (image, text, PDF, audio/video) in `ViewerActivity`.
+  - [x] 7.13 Archives as folders (`archive://`), 7z extraction and opening from other apps.
+  - [x] 7.14 SFTP accounts with password and pinned host key (sshj); R8 and release build in CI.
+  - [x] 7.15 SMB accounts (smbj): list, create, rename, delete and copy; verified only by compilation and path tests.
+  - [x] 7.16 SFTP authentication with a private key (PEM, optional passphrase).
+  - [x] 7.17 Instrumented Compose UI tests.
