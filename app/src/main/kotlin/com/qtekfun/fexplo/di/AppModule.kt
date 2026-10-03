@@ -98,7 +98,7 @@ val appModule = module {
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
     factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { SettingsViewModel(get()) }
-    factory { HistoryViewModel(get()) }
+    factory { HistoryViewModel(get(), get()) }
     factory { params ->
         BrowserViewModel(
             panel = params.get<PanelId>(),

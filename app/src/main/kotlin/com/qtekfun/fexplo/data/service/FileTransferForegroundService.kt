@@ -39,8 +39,9 @@ class FileTransferForegroundService : Service(), KoinComponent {
             notifications.running(coordinator.state.value),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
         )
-        if (intent?.action == ACTION_CANCEL) {
-            coordinator.cancelAll()
+        when (intent?.action) {
+            ACTION_CANCEL -> coordinator.cancelAll()
+            ACTION_TOGGLE_PAUSE -> coordinator.togglePause()
         }
         if (coordinator.claimWorker()) {
             scope.launch { drainQueue() }
@@ -100,5 +101,6 @@ class FileTransferForegroundService : Service(), KoinComponent {
     companion object {
         private const val WAKE_LOCK_TIMEOUT_MILLIS = 12L * 60 * 60 * 1000
         const val ACTION_CANCEL = "com.qtekfun.fexplo.action.CANCEL_TRANSFER"
+        const val ACTION_TOGGLE_PAUSE = "com.qtekfun.fexplo.action.TOGGLE_PAUSE_TRANSFER"
     }
 }

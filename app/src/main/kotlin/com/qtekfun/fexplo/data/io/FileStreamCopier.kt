@@ -1,5 +1,6 @@
 package com.qtekfun.fexplo.data.io
 
+import com.qtekfun.fexplo.domain.transfer.PauseGate
 import com.qtekfun.fexplo.domain.usecase.StreamCopier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
@@ -19,12 +20,14 @@ class FileStreamCopier(private val bufferSize: Int = DEFAULT_BUFFER_SIZE) : Stre
         output: OutputStream,
         sizeHint: Long,
         digest: MessageDigest?,
+        gate: PauseGate?,
         onBytes: (Long) -> Unit,
     ): Long = withContext(Dispatchers.IO) {
         val buffer = ByteArray(if (sizeHint >= BIG_FILE_HINT) BIG_BUFFER_SIZE else bufferSize)
         var total = 0L
         while (true) {
             ensureActive()
+            gate?.awaitResumed()
             val read = input.read(buffer)
             if (read < 0) break
             output.write(buffer, 0, read)

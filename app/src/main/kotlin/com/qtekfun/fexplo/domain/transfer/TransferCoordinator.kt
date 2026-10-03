@@ -5,6 +5,7 @@ import com.qtekfun.fexplo.core.model.ConflictPrompt
 import com.qtekfun.fexplo.core.model.FileItem
 import com.qtekfun.fexplo.core.model.TransferProgress
 import com.qtekfun.fexplo.core.model.TransferRequest
+import com.qtekfun.fexplo.core.model.TransferSummary
 import com.qtekfun.fexplo.core.model.TransferStatus
 import com.qtekfun.fexplo.domain.history.TransferHistoryRecorder
 import com.qtekfun.fexplo.domain.usecase.ConflictResolver
@@ -29,8 +30,14 @@ fun interface TransferServiceLauncher {
 data class TransferState(
     val progress: TransferProgress? = null,
     val conflict: ConflictPrompt? = null,
-    val queued: Int = 0,
-)
+    /** The batch being processed, if any. */
+    val active: TransferSummary? = null,
+    /** Batches waiting behind [active]. */
+    val queuedTasks: List<TransferSummary> = emptyList(),
+    val paused: Boolean = false,
+) {
+    val queued: Int get() = queuedTasks.size
+}
 
 /**
  * Queue and shared state for batch transfers. UI code calls [enqueue]; the foreground service
@@ -40,6 +47,7 @@ class TransferCoordinator(
     private val engine: TransferEngine,
     private val recorder: TransferHistoryRecorder,
     private val launcher: TransferServiceLauncher,
+    private val gate: PauseGate = engine.pauseGate,
 ) : ConflictResolver {
     private val lock = Any()
     private val queue = ArrayDeque<TransferRequest>()
@@ -54,9 +62,9 @@ class TransferCoordinator(
     fun enqueue(request: TransferRequest) {
         val queued = synchronized(lock) {
             queue.addLast(request)
-            queue.size
+            queue.map(::summaryOf)
         }
-        _state.update { it.copy(queued = queued) }
+        _state.update { it.copy(queuedTasks = queued) }
         launcher.launch()
     }
 
@@ -75,18 +83,22 @@ class TransferCoordinator(
 
     /** Next queued request, or null (which also releases the worker slot) when the queue is drained. */
     fun next(): TransferRequest? {
-        val request = synchronized(lock) {
+        val (request, remaining) = synchronized(lock) {
             val head = queue.removeFirstOrNull()
             if (head == null) workerRunning = false
-            head
+            head to queue.map(::summaryOf)
         }
-        _state.update { it.copy(queued = synchronized(lock) { queue.size }) }
+        if (request == null) gate.resume() // the next batch must not start paused
+        _state.update { it.copy(queuedTasks = remaining, paused = if (request == null) false else it.paused) }
         return request
     }
 
     /** Runs one request to a terminal state; returns that final progress snapshot. */
     suspend fun run(request: TransferRequest): TransferProgress? {
-        _state.update { it.copy(progress = null, conflict = null) }
+        _state.update { it.copy(progress = null, conflict = null, active = summaryOf(request)) }
+        recorder.targetNameOf(request)?.let { name ->
+            _state.update { s -> s.copy(active = s.active?.copy(targetName = name)) }
+        }
         coroutineScope {
             val job = launch {
                 engine.execute(request, this@TransferCoordinator).collect { progress ->
@@ -101,6 +113,7 @@ class TransferCoordinator(
             }
         }
         val finalProgress = _state.value.progress
+        _state.update { it.copy(active = null) }
         withContext(NonCancellable) { recorder.recordTransfer(request, finalProgress) }
         return finalProgress
     }
@@ -108,9 +121,29 @@ class TransferCoordinator(
     /** Cancels the running transfer and drops everything still queued. */
     fun cancelAll() {
         synchronized(lock) { queue.clear() }
-        _state.update { it.copy(queued = 0) }
+        gate.resume()
+        _state.update { it.copy(queuedTasks = emptyList(), paused = false) }
         activeJob?.cancel()
     }
+
+    /** Suspends the running copy between chunks; queued batches wait behind it. */
+    fun pause() {
+        gate.pause()
+        _state.update { it.copy(paused = true) }
+    }
+
+    fun resume() {
+        gate.resume()
+        _state.update { it.copy(paused = false) }
+    }
+
+    fun togglePause() = if (_state.value.paused) resume() else pause()
+
+    private fun summaryOf(request: TransferRequest) = TransferSummary(
+        operation = request.operation,
+        itemCount = request.items.size,
+        firstItemName = request.items.firstOrNull()?.name.orEmpty(),
+    )
 
     fun answerConflict(decision: ConflictDecision) {
         pendingConflict?.complete(decision)

@@ -40,3 +40,11 @@ data class TransferRequest(
 
 /** Asks the user how to resolve a name collision between [source] and the entry already at the destination. */
 data class ConflictPrompt(val source: FileItem, val existing: FileItem)
+
+/** What a queued or running batch is about, for the history screen. [targetName] is unknown until it runs. */
+data class TransferSummary(
+    val operation: OperationType,
+    val itemCount: Int,
+    val firstItemName: String,
+    val targetName: String? = null,
+)

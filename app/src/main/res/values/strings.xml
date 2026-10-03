@@ -8,6 +8,16 @@
     <string name="transfer_preparing">Preparing…</string>
     <string name="transfer_progress_text">%1$d%% · %2$s/s</string>
     <string name="transfer_conflict_waiting">Name conflict: open the app to choose</string>
+    <string name="transfer_pause">Pause</string>
+    <string name="transfer_resume">Resume</string>
+    <string name="transfer_paused">Transfer paused</string>
+    <string name="history_running">In progress</string>
+    <string name="history_copying_one">Copying \"%1$s\"</string>
+    <string name="history_copying_many">Copying %1$d items</string>
+    <string name="history_moving_one">Moving \"%1$s\"</string>
+    <string name="history_moving_many">Moving %1$d items</string>
+    <string name="history_queued">Waiting in the queue</string>
+    <string name="history_paused">Paused</string>
     <string name="transfer_cancel">Cancel</string>
     <string name="transfer_done">Transfer complete</string>
     <string name="transfer_cancelled">Transfer cancelled</string>

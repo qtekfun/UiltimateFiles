@@ -38,8 +38,11 @@ class TransferHistoryRecorder(
     private val files: FileSystemRepository,
     private val clockMillis: () -> Long = System::currentTimeMillis,
 ) {
+    /** Display name of the destination folder, or null when it cannot be read. */
+    suspend fun targetNameOf(request: TransferRequest): String? = files.stat(request.targetDirectory).getOrNull()?.name
+
     suspend fun recordTransfer(request: TransferRequest, finalProgress: TransferProgress?) {
-        val targetName = files.stat(request.targetDirectory).getOrNull()?.name
+        val targetName = targetNameOf(request)
         val status = finalProgress?.status ?: TransferStatus.CANCELLED
         record(
             HistoryEntry(

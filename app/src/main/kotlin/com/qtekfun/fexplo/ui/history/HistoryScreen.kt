@@ -1,6 +1,9 @@
 package com.qtekfun.fexplo.ui.history
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,13 +11,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -25,11 +34,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.qtekfun.fexplo.R
+import com.qtekfun.fexplo.core.model.OperationType
+import com.qtekfun.fexplo.core.model.TransferProgress
 import com.qtekfun.fexplo.core.model.TransferStatus
+import com.qtekfun.fexplo.core.model.TransferSummary
 import com.qtekfun.fexplo.core.util.formatBytes
+import com.qtekfun.fexplo.core.util.formatDuration
 import com.qtekfun.fexplo.domain.history.HistoryEntry
 import com.qtekfun.fexplo.domain.history.HistoryOperation
+import com.qtekfun.fexplo.domain.transfer.TransferState
 import java.text.DateFormat
 import java.util.Date
 
@@ -37,6 +53,9 @@ import java.util.Date
 @Composable
 fun HistoryScreen(
     entries: List<HistoryEntry>,
+    running: TransferState,
+    onTogglePause: () -> Unit,
+    onCancelRunning: () -> Unit,
     onClear: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -61,12 +80,18 @@ fun HistoryScreen(
             )
         },
     ) { padding ->
-        if (entries.isEmpty()) {
+        if (entries.isEmpty() && running.active == null && running.queuedTasks.isEmpty()) {
             Box(Modifier.padding(padding).fillMaxSize(), Alignment.Center) {
                 Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(Modifier.padding(padding)) {
+                running.active?.let { active ->
+                    item(key = "running") {
+                        RunningRow(active, running.progress, running.paused, onTogglePause, onCancelRunning)
+                    }
+                }
+                items(running.queuedTasks) { queued -> QueuedRow(queued) }
                 items(entries) { entry ->
                     HistoryRow(entry)
                 }
@@ -117,4 +142,71 @@ private fun HistoryEntry.icon(): ImageVector = when (status) {
     TransferStatus.FAILED -> Icons.Filled.Error
     TransferStatus.CANCELLED -> Icons.Filled.RemoveCircle
     else -> if (operation == HistoryOperation.DELETE) Icons.Filled.Delete else Icons.Filled.CheckCircle
+}
+
+@Composable
+private fun RunningRow(
+    task: TransferSummary,
+    progress: TransferProgress?,
+    paused: Boolean,
+    onTogglePause: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val fraction = progress?.fraction
+    val speed = progress?.bytesPerSecond?.takeIf { it > 0 && !paused }?.let { formatBytes(it) + "/s" }
+    val remaining = progress?.remainingSeconds?.takeIf { !paused }
+    val details = listOfNotNull(
+        task.targetName?.let { stringResource(R.string.history_to, it) },
+        if (paused) stringResource(R.string.history_paused) else speed,
+        remaining?.let { stringResource(R.string.transfer_remaining, formatDuration(it)) },
+    ).joinToString(" · ")
+    ListItem(
+        headlineContent = { Text(task.runningTitle()) },
+        supportingContent = {
+            Column {
+                if (progress != null && progress.currentName.isNotEmpty()) {
+                    Text(progress.currentName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                if (details.isNotEmpty()) Text(details)
+                if (fraction == null) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 4.dp))
+                } else {
+                    LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+                }
+            }
+        },
+        leadingContent = { Icon(Icons.Filled.Sync, contentDescription = stringResource(R.string.history_running)) },
+        trailingContent = {
+            Row {
+                IconButton(onClick = onTogglePause) {
+                    Icon(
+                        imageVector = if (paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                        contentDescription = stringResource(if (paused) R.string.transfer_resume else R.string.transfer_pause),
+                    )
+                }
+                IconButton(onClick = onCancel) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.transfer_cancel))
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun QueuedRow(task: TransferSummary) {
+    ListItem(
+        headlineContent = { Text(task.runningTitle()) },
+        supportingContent = { Text(stringResource(R.string.history_queued)) },
+        leadingContent = { Icon(Icons.Filled.Schedule, contentDescription = null) },
+    )
+}
+
+@Composable
+private fun TransferSummary.runningTitle(): String {
+    val one = itemCount == 1
+    val title = when (operation) {
+        OperationType.CUT -> if (one) R.string.history_moving_one else R.string.history_moving_many
+        else -> if (one) R.string.history_copying_one else R.string.history_copying_many
+    }
+    return stringResource(title, if (one) firstItemName else itemCount)
 }

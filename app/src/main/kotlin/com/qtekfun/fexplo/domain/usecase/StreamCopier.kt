@@ -1,5 +1,6 @@
 package com.qtekfun.fexplo.domain.usecase
 
+import com.qtekfun.fexplo.domain.transfer.PauseGate
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.MessageDigest
@@ -9,13 +10,14 @@ interface StreamCopier {
     /**
      * Returns the number of bytes copied. [onBytes] receives the size of each chunk, [digest] (when given)
      * is fed with everything copied, and [sizeHint] (size of the source, 0 if unknown) lets the
-     * implementation use a bigger buffer for big files.
+     * implementation use a bigger buffer for big files. While [gate] is paused the copy waits between chunks.
      */
     suspend fun copy(
         input: InputStream,
         output: OutputStream,
         sizeHint: Long = 0L,
         digest: MessageDigest? = null,
+        gate: PauseGate? = null,
         onBytes: (Long) -> Unit,
     ): Long
 }
