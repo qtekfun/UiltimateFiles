@@ -205,7 +205,6 @@ fun MainScreen() {
         )
     }
 
-    val context = LocalContext.current
     val batteryExempt by rememberIgnoringBatteryOptimizations()
     val hints = remember { context.getSharedPreferences("hints", android.content.Context.MODE_PRIVATE) }
     var batteryHintAnswered by remember { mutableStateOf(hints.getBoolean(KEY_BATTERY_HINT, false)) }
