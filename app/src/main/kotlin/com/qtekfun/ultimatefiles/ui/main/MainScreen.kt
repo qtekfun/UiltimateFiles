@@ -225,6 +225,7 @@ fun MainScreen() {
     if (showAddAccount) {
         AddAccountDialog(
             onConnect = viewModel::connectAccount,
+            onConnectSftp = viewModel::connectSftp,
             onCancel = viewModel::cancelConnect,
             onDismiss = { showAddAccount = false },
         )

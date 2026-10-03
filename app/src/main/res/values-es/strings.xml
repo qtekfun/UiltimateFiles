@@ -147,6 +147,17 @@
     <string name="account_waiting">Esperando a que apruebes UltimateFiles en el navegador…</string>
     <string name="account_error_expired">No se aprobó el inicio de sesión a tiempo. Inténtalo de nuevo.</string>
     <string name="account_error_browser">No se encontró ningún navegador para abrir la página de inicio de sesión.</string>
+    <string name="account_type_nextcloud">Nextcloud / WebDAV</string>
+    <string name="account_type_sftp">SFTP</string>
+    <string name="account_sftp_hint">Se conecta a un servidor SSH con tu usuario y contraseña. La primera vez ves la huella del servidor y decides si confías en él.</string>
+    <string name="account_host">Dirección del servidor</string>
+    <string name="account_port">Puerto</string>
+    <string name="account_username">Usuario</string>
+    <string name="account_password">Contraseña</string>
+    <string name="account_error_hostkey">La identidad del servidor ha cambiado desde que confiaste en él. Elimina la cuenta y vuelve a añadirla solo si lo esperabas.</string>
+    <string name="trust_hostkey_title">¿Confiar en este servidor?</string>
+    <string name="trust_hostkey_message">%1$s no es de confianza todavía. Compara esta huella con la que informa el servidor (por ejemplo con ssh-keygen -lf sobre su clave de host) antes de continuar.</string>
+    <string name="trust_hostkey_type">Tipo de clave: %1$s</string>
     <string name="account_label">Nombre (opcional)</string>
     <string name="account_connect">Iniciar sesión en el navegador</string>
     <string name="account_error_url">Esa dirección no es válida. Usa una dirección https://.</string>

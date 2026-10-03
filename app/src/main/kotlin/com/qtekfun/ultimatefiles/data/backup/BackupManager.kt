@@ -4,6 +4,7 @@ import com.qtekfun.ultimatefiles.core.model.SortField
 import com.qtekfun.ultimatefiles.core.model.SortOrder
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
 import com.qtekfun.ultimatefiles.core.model.ViewMode
+import com.qtekfun.ultimatefiles.core.model.AccountProtocol
 import com.qtekfun.ultimatefiles.core.model.WebDavAccount
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
 import com.qtekfun.ultimatefiles.domain.repository.UserPreferencesRepository
@@ -72,6 +73,7 @@ class BackupManager(
                         .put("username", account.username)
                         .put("pinnedCertSha256", account.pinnedCertSha256 ?: JSONObject.NULL)
                         .put("allowInsecureHttp", account.allowInsecureHttp)
+                        .put("protocol", account.protocol.name)
                         .put("password", accounts.passwordOf(account.id).orEmpty()),
                 )
             }
@@ -118,6 +120,7 @@ class BackupManager(
                     username = row.getString("username"),
                     pinnedCertSha256 = row.optString("pinnedCertSha256", "").takeIf { it.isNotEmpty() && it != "null" },
                     allowInsecureHttp = row.optBoolean("allowInsecureHttp", false),
+                    protocol = AccountProtocol.entries.firstOrNull { it.name == row.optString("protocol", "") } ?: AccountProtocol.WEBDAV,
                 )
                 accounts.add(account, row.getString("password")) // same id: replaces, so importing twice is harmless
                 added++

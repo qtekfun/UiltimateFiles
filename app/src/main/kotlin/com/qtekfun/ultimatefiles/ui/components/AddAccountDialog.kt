@@ -3,6 +3,9 @@ package com.qtekfun.ultimatefiles.ui.components
 import android.content.ActivityNotFoundException
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.FilterChip
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -22,7 +25,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.data.network.HostKeyChangedException
 import com.qtekfun.ultimatefiles.data.network.InsecureServerException
+import com.qtekfun.ultimatefiles.data.network.UntrustedHostKeyException
 import com.qtekfun.ultimatefiles.data.network.InvalidServerUrlException
 import com.qtekfun.ultimatefiles.data.network.TrustChoice
 import com.qtekfun.ultimatefiles.data.network.UntrustedCertificateException
@@ -42,9 +47,24 @@ fun AddAccountDialog(
         openBrowser: (String) -> Unit,
         onDone: (Result<Unit>) -> Unit,
     ) -> Unit,
+    onConnectSftp: (
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        label: String,
+        pinnedFingerprint: String?,
+        onDone: (Result<Unit>) -> Unit,
+    ) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var sftp by remember { mutableStateOf(false) }
+    var host by remember { mutableStateOf("") }
+    var port by remember { mutableStateOf("22") }
+    var user by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var hostKey by remember { mutableStateOf<UntrustedHostKeyException?>(null) }
     var server by remember { mutableStateOf("") }
     var label by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -71,6 +91,33 @@ fun AddAccountDialog(
         }
     }
 
+    fun connectSftp(pinned: String?) {
+        busy = true
+        error = null
+        onConnectSftp(host, port.toIntOrNull() ?: 0, user, password, label, pinned) { result ->
+            busy = false
+            result.fold(
+                onSuccess = { onDismiss() },
+                onFailure = { failure ->
+                    if (failure is UntrustedHostKeyException) hostKey = failure else error = failure
+                },
+            )
+        }
+    }
+
+    hostKey?.let { asked ->
+        HostKeyPromptDialog(
+            host = host,
+            fingerprint = asked.fingerprint,
+            keyType = asked.keyType,
+            onAccept = {
+                hostKey = null
+                connectSftp(asked.fingerprint)
+            },
+            onDismiss = { hostKey = null },
+        )
+    }
+
     prompt?.let { asked ->
         TrustPromptDialog(
             prompt = asked,
@@ -92,17 +139,61 @@ fun AddAccountDialog(
         title = { Text(stringResource(R.string.account_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.account_hint), style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = server,
-                    onValueChange = { server = it },
-                    enabled = !busy,
-                    label = { Text(stringResource(R.string.account_server)) },
-                    placeholder = { Text("https://cloud.example.com") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !sftp, enabled = !busy, onClick = { sftp = false }, label = { Text(stringResource(R.string.account_type_nextcloud)) })
+                    FilterChip(selected = sftp, enabled = !busy, onClick = { sftp = true }, label = { Text(stringResource(R.string.account_type_sftp)) })
+                }
+                if (sftp) {
+                    Text(stringResource(R.string.account_sftp_hint), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = host,
+                        onValueChange = { host = it },
+                        enabled = !busy,
+                        label = { Text(stringResource(R.string.account_host)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = port,
+                        onValueChange = { port = it.filter(Char::isDigit).take(5) },
+                        enabled = !busy,
+                        label = { Text(stringResource(R.string.account_port)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = user,
+                        onValueChange = { user = it },
+                        enabled = !busy,
+                        label = { Text(stringResource(R.string.account_username)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        enabled = !busy,
+                        label = { Text(stringResource(R.string.account_password)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    Text(stringResource(R.string.account_hint), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = server,
+                        onValueChange = { server = it },
+                        enabled = !busy,
+                        label = { Text(stringResource(R.string.account_server)) },
+                        placeholder = { Text("https://cloud.example.com") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
@@ -119,15 +210,15 @@ fun AddAccountDialog(
                     )
                 }
                 if (busy) {
-                    Text(stringResource(R.string.account_waiting), style = MaterialTheme.typography.bodyMedium)
+                    if (!sftp) Text(stringResource(R.string.account_waiting), style = MaterialTheme.typography.bodyMedium)
                     CircularProgressIndicator()
                 }
             }
         },
         confirmButton = {
             TextButton(
-                enabled = !busy && server.isNotBlank(),
-                onClick = { connect(TrustChoice()) },
+                enabled = !busy && if (sftp) host.isNotBlank() && user.isNotBlank() && password.isNotEmpty() else server.isNotBlank(),
+                onClick = { if (sftp) connectSftp(null) else connect(TrustChoice()) },
             ) { Text(stringResource(R.string.account_connect)) }
         },
         dismissButton = {
@@ -140,6 +231,8 @@ private fun Throwable.messageRes(): Int = when {
     this is InvalidServerUrlException -> R.string.account_error_url
     this is LoginFlowExpiredException -> R.string.account_error_expired
     this is javax.net.ssl.SSLException -> R.string.account_error_certificate
+    this is HostKeyChangedException -> R.string.account_error_hostkey
+    this is net.schmizz.sshj.userauth.UserAuthException -> R.string.account_error_auth
     this is ActivityNotFoundException -> R.string.account_error_browser
     this is WebDavException && code == 401 -> R.string.account_error_auth
     this is WebDavException && code == 404 -> R.string.account_error_path

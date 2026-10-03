@@ -266,7 +266,7 @@ class BrowserViewModel(
     }
 
     /** Network files have no local URI to hand to other apps; they must be copied to the device first. */
-    private fun FileItem.isRemote() = path.startsWith("dav://")
+    private fun FileItem.isRemote() = path.startsWith("dav://") || path.startsWith("sftp://")
 
     private fun share(items: List<FileItem>) {
         if (items.any { it.isRemote() }) {

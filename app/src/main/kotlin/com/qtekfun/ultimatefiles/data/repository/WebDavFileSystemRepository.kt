@@ -1,5 +1,6 @@
 package com.qtekfun.ultimatefiles.data.repository
 
+import com.qtekfun.ultimatefiles.core.model.AccountProtocol
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
@@ -31,7 +32,7 @@ class WebDavFileSystemRepository(
     private val mimeOf: (String) -> String? = MimeTypes::fromName,
 ) : FileSystemRepository {
 
-    override suspend fun volumes(): List<StorageVolume> = accounts.accounts.first().map { account ->
+    override suspend fun volumes(): List<StorageVolume> = accounts.accounts.first().filter { it.protocol == AccountProtocol.WEBDAV }.map { account ->
         StorageVolume(
             id = "dav:${account.id}",
             label = account.label,
@@ -123,7 +124,7 @@ class WebDavFileSystemRepository(
 
     private suspend fun resolve(uriOrPath: String): Target {
         val (accountId, path) = split(uriOrPath)
-        val account = accounts.accounts.first().firstOrNull { it.id == accountId }
+        val account = accounts.accounts.first().firstOrNull { it.id == accountId && it.protocol == AccountProtocol.WEBDAV }
             ?: throw IOException("Unknown account for $uriOrPath")
         val password = accounts.passwordOf(accountId) ?: throw IOException("No stored password for ${account.label}")
         val baseUrl = account.baseUrl.toHttpUrl()
