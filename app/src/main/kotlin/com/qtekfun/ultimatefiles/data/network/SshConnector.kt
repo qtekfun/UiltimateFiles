@@ -4,6 +4,7 @@ import net.schmizz.sshj.AndroidConfig
 import net.schmizz.sshj.DefaultConfig
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.common.Buffer
+import net.schmizz.sshj.userauth.password.PasswordUtils
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import java.io.IOException
 import java.security.MessageDigest
@@ -43,7 +44,13 @@ class SshConnector(private val newClient: () -> SSHClient = { SSHClient(AndroidC
         )
         try {
             ssh.connect(host, port)
-            ssh.authPassword(username, password)
+            val key = privateKeyOf(password)
+            if (key == null) {
+                ssh.authPassword(username, password)
+            } else {
+                val finder = key.second?.let { PasswordUtils.createOneOff(it.toCharArray()) }
+                ssh.authPublickey(username, ssh.loadKeys(key.first, null, finder))
+            }
             return ssh
         } catch (e: IOException) {
             runCatching { ssh.close() }
@@ -65,7 +72,21 @@ class SshConnector(private val newClient: () -> SSHClient = { SSHClient(AndroidC
             return "SHA256:" + Base64.getEncoder().withoutPadding().encodeToString(digest)
         }
 
+        /**
+         * The stored secret of an SFTP account is a password, or a private key in PEM/OpenSSH text with its passphrase
+         * after a NUL character. Returns the key and the passphrase, or null when [secret] is a plain password.
+         */
+        fun privateKeyOf(secret: String): Pair<String, String?>? {
+            if (!secret.trimStart().startsWith("-----BEGIN")) return null
+            val key = secret.substringBefore('\u0000')
+            val passphrase = if ('\u0000' in secret) secret.substringAfter('\u0000').takeIf { it.isNotEmpty() } else null
+            return key to passphrase
+        }
+
         /** A connector for the JVM tests, where Android's restricted configuration is not needed. */
         fun forJvm() = SshConnector { SSHClient(DefaultConfig()) }
     }
 }
+
+/** The chosen file is not a private key this app can read. */
+class InvalidKeyFileException : IllegalArgumentException("Not a private key file")

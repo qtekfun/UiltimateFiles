@@ -160,6 +160,15 @@
     <string name="trust_hostkey_title">Trust this server?</string>
     <string name="trust_hostkey_message">%1$s has not been trusted before. Compare this fingerprint with the one the server reports (for example with ssh-keygen -lf on its host key) before continuing.</string>
     <string name="trust_hostkey_type">Key type: %1$s</string>
+    <string name="account_type_smb">SMB / Windows share</string>
+    <string name="account_smb_hint">Connects to a Windows, Samba or NAS share with your user name and password. Traffic is not encrypted unless the server requires it.</string>
+    <string name="account_share">Share name</string>
+    <string name="account_domain">Domain (optional)</string>
+    <string name="account_error_share">That share does not exist on the server.</string>
+    <string name="account_key_pick">Use a private key file instead of a password</string>
+    <string name="account_key_loaded">Key: %1$s (tap to change)</string>
+    <string name="account_key_passphrase">Key passphrase (leave empty if it has none)</string>
+    <string name="account_error_key">That file is not a private key.</string>
     <string name="account_label">Name (optional)</string>
     <string name="account_connect">Sign in with browser</string>
     <string name="account_error_url">That address is not valid. Use an https:// address.</string>

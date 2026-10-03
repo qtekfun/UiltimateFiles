@@ -20,6 +20,8 @@ Play Services, sin analíticas, sin dependencias cerradas.
   por cuenta, nunca se acepta "todo") o permitir HTTP tras una confirmación explícita.
 - **SFTP**: cuentas con usuario y contraseña; la primera vez ves la huella SHA256 del servidor y la fijas por cuenta (si
   cambia, se rechaza). Sin reanudación de copias y sin clave privada por ahora.
+- **SMB** (Windows, Samba, NAS): cuentas con dominio opcional, usuario y contraseña. **Sin probar contra ningún servidor real**
+  (solo compila y se comprueban sus rutas); sin cifrado propio ni reanudación.
 - **Archivos comprimidos**: un toque en un ZIP, 7z, TAR o TAR.GZ lo abre como una carpeta de solo lectura (también si está
   en un servidor, o dentro de otro comprimido); copiar desde ahí funciona como cualquier copia. "Extraer aquí" y
   "Comprimir en ZIP" están en el menú de cada archivo y en el de la selección, por la misma cola que las copias
@@ -57,13 +59,14 @@ generado: no sustituyen una prueba real en un dispositivo.
 ## CI/CD
 - `ci.yml`: tests, lint y APK debug en cada PR y push a `master` y a ramas `claude/**`.
 - GitGuardian: escaneo de secretos mediante su app de GitHub, sin workflow ni API key.
-- `release.yml`: en cada push a `master` publica una release con el APK `UltimateFiles-<versión>.apk`
-  (`versionName = <version.properties>.<run_number>`, p. ej. `0.2.0.57`). Para firmar con tu clave: secrets `SIGNING_KEYSTORE_BASE64`,
-  `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. Sin ellos se usa la clave debug.
+- `release.yml`: una etiqueta `vX.Y.Z` publica la **release oficial** (`UltimateFiles-X.Y.Z.apk`, firmada con tu clave, con las
+  notas de `CHANGELOG.md`; falla sin los secretos `UF_*`). Cada push a `master` publica una **nightly** (pre-release con
+  identificador `com.qtekfun.ultimatefiles.nightly`, que se instala al lado de la oficial). Cómo firmar y publicar:
+  [RELEASING.md](RELEASING.md).
+- `reproducible.yml`: compila la release dos veces desde sitios distintos y compara los APK como F-Droid.
 - Dependabot: Gradle y GitHub Actions, semanal.
-- Versión: `version.properties` (`versionName` y `versionCode`). Para publicar una versión "oficial": subir ambos valores,
-  añadir `changelogs/<versionCode>.txt` en fastlane, mergear y etiquetar `vX.Y.Z`. Detalles y receta de F-Droid en
-  [docs/FDROID.md](docs/FDROID.md).
+- Versión: `appVersion` en `gradle.properties`; el `versionCode` se deriva. Pasos para publicar y receta de F-Droid en
+  [RELEASING.md](RELEASING.md) y [docs/FDROID.md](docs/FDROID.md).
 
 ## Nombre y paquete
 La app se llama **UltimateFiles**, el identificador de la aplicación es `com.qtekfun.ultimatefiles` y el repositorio es

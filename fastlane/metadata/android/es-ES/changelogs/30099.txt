@@ -1,0 +1,5 @@
+- Las copias siguen con la pantalla apagada; comprobaciones de fiabilidad en Ajustes
+- Servidores con certificado autofirmado (huella fijada) y HTTP opcional
+- Comprimir en ZIP; explorar y extraer ZIP, 7z, TAR y TAR.GZ como carpetas; abrir comprimidos desde otras apps
+- Visores integrados de imagen, texto, PDF, audio y vídeo
+- Cuentas SFTP (contraseña o clave privada) y SMB

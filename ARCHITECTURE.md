@@ -66,5 +66,5 @@ El contrato base se amplía con lo necesario para el motor de copia (`volumes`, 
   SHA-256 de cada trozo enviado. Al repetir la copia al mismo destino (el nombre temporal `.ultimatefiles-part` es estable) se relee el
   origen y se salta cada trozo cuyo hash coincide y que el servidor sigue teniendo; el resto se sube y los trozos sobrantes se
   borran. No se confía en fechas ni tamaños del origen. Las subidas guardadas caducan a las 20 h.
-- Versión: `version.properties` es la fuente de verdad (`scripts/check-version.sh` la valida en CI); las releases de GitHub usan
+- Versión: `appVersion` en `gradle.properties` es la fuente de verdad y el `versionCode` se deriva (ver RELEASING.md); las releases oficiales salen de etiquetas `vX.Y.Z` y las nightlies de `master` con otro identificador.
   `versionCode = código * 100000 + run`.

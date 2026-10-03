@@ -14,6 +14,8 @@ import com.qtekfun.ultimatefiles.data.io.FileStreamCopier
 import com.qtekfun.ultimatefiles.data.network.FileUploadResumeStore
 import com.qtekfun.ultimatefiles.data.network.UploadResumeStore
 import com.qtekfun.ultimatefiles.data.network.SftpAccountService
+import com.qtekfun.ultimatefiles.data.network.SmbAccountService
+import com.qtekfun.ultimatefiles.data.network.SmbConnector
 import com.qtekfun.ultimatefiles.data.system.IncomingFiles
 import com.qtekfun.ultimatefiles.data.network.SshConnector
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
@@ -25,6 +27,7 @@ import com.qtekfun.ultimatefiles.data.repository.LocalFileSystemRepository
 import com.qtekfun.ultimatefiles.data.repository.RoutingFileSystemRepository
 import com.qtekfun.ultimatefiles.data.repository.SafFileSystemRepository
 import com.qtekfun.ultimatefiles.data.repository.SftpFileSystemRepository
+import com.qtekfun.ultimatefiles.data.repository.SmbFileSystemRepository
 import com.qtekfun.ultimatefiles.data.repository.WebDavFileSystemRepository
 import com.qtekfun.ultimatefiles.data.service.ServiceTransferLauncher
 import com.qtekfun.ultimatefiles.data.service.TransferNotifications
@@ -82,6 +85,9 @@ val appModule = module {
     single { IncomingFiles(androidContext()) }
     single { SftpFileSystemRepository(accounts = get(), connector = get()) }
     single { SftpAccountService(accounts = get(), connector = get()) }
+    single { SmbConnector() }
+    single { SmbFileSystemRepository(accounts = get(), connector = get()) }
+    single { SmbAccountService(accounts = get(), connector = get()) }
     single {
         val scope = this
         ArchiveFileSystemRepository(source = { scope.get<FileSystemRepository>() }, cacheDir = File(androidContext().cacheDir, "archives"))
@@ -93,6 +99,7 @@ val appModule = module {
             webDav = get<WebDavFileSystemRepository>(),
             sftp = get<SftpFileSystemRepository>(),
             archive = get<ArchiveFileSystemRepository>(),
+            smb = get<SmbFileSystemRepository>(),
         )
     }
 
@@ -119,7 +126,7 @@ val appModule = module {
     single { DragDropState() }
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
-    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { BackupManager(preferences = get(), accounts = get()) }
     single { BackupFiles(androidContext()) }
     factory { SettingsViewModel(get(), get(), get()) }

@@ -1,0 +1,32 @@
+Categories:
+  - System
+License: GPL-3.0-or-later
+AuthorName: qtekfun
+SourceCode: https://github.com/qtekfun/UltimateFiles
+IssueTracker: https://github.com/qtekfun/UltimateFiles/issues
+Changelog: https://github.com/qtekfun/UltimateFiles/blob/HEAD/CHANGELOG.md
+
+AutoName: UltimateFiles
+
+RepoType: git
+Repo: https://github.com/qtekfun/UltimateFiles.git
+Binaries: https://github.com/qtekfun/UltimateFiles/releases/download/v%v/UltimateFiles-%v.apk
+
+Builds:
+  - versionName: 0.3.0
+    versionCode: 30099
+    commit: REPLACE_WITH_THE_SHA_OF_TAG_v0.3.0
+    subdir: app
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-21-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - yes
+
+AllowedAPKSigningKeys: 3d7400fcfd32758d117bb79f86fdda8b007f058966c16c1bde8d97143317b2b8
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+CurrentVersion: 0.3.0
+CurrentVersionCode: 30099

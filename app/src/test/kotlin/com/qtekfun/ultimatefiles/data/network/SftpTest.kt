@@ -176,4 +176,29 @@ class SftpTest {
         assertEquals(down.last().error, TransferStatus.COMPLETED, down.last().status)
         assertArrayEquals(bytes, File(back, "footage/a.bin").readBytes())
     }
+
+    @Test
+    fun `tells a private key from a password`() {
+        assertEquals(null, SshConnector.privateKeyOf("secret"))
+        assertEquals("-----BEGIN OPENSSH PRIVATE KEY-----\nabc" to null, SshConnector.privateKeyOf("-----BEGIN OPENSSH PRIVATE KEY-----\nabc"))
+        assertEquals("-----BEGIN RSA PRIVATE KEY-----\nabc" to "pass", SshConnector.privateKeyOf("-----BEGIN RSA PRIVATE KEY-----\nabc\u0000pass"))
+    }
+
+    @Test
+    fun `logs in with a private key instead of a password`() = runTest {
+        val pair = java.security.KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+        server.publickeyAuthenticator = org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator { user, key, _ ->
+            user == "alice" && key.encoded.contentEquals(pair.public.encoded)
+        }
+        val pem = "-----BEGIN PRIVATE KEY-----\n" +
+            java.util.Base64.getMimeEncoder(64, "\n".toByteArray()).encodeToString(pair.private.encoded) +
+            "\n-----END PRIVATE KEY-----\n"
+        val first = service.connect("127.0.0.1", server.port, "alice", pem, "Key", null)
+        val fingerprint = (first.exceptionOrNull() as UntrustedHostKeyException).fingerprint
+
+        val account = service.connect("127.0.0.1", server.port, "alice", pem, "Key", fingerprint).getOrThrow()
+
+        assertEquals(AccountProtocol.SFTP, account.protocol)
+        assertEquals(pem, accounts.passwordOf(account.id))
+    }
 }

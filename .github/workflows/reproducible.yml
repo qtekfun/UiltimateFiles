@@ -1,0 +1,63 @@
+name: Reproducible build
+
+# F-Droid can publish the APK signed with the project's own key only if building the same source gives the same
+# bytes (signature aside). This builds the release APK twice, from two different directories and with nothing
+# cached, and compares everything but META-INF.
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/reproducible.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Build A
+        run: |
+          ./gradlew --no-build-cache --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release-unsigned.apk /tmp/a.apk
+      - name: Build B from a clean clone elsewhere
+        run: |
+          git clone --quiet . /tmp/elsewhere/UltimateFiles
+          cd /tmp/elsewhere/UltimateFiles
+          GRADLE_USER_HOME=/tmp/gradle-b ./gradlew --no-build-cache --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release-unsigned.apk /tmp/b.apk
+      - name: Compare entry by entry
+        run: |
+          python3 - <<'PY'
+          import zipfile, sys
+          def entries(path):
+              with zipfile.ZipFile(path) as z:
+                  return {i.filename: i.CRC for i in z.infolist() if not i.filename.startswith("META-INF/")}
+          a, b = entries("/tmp/a.apk"), entries("/tmp/b.apk")
+          only_a, only_b = sorted(set(a) - set(b)), sorted(set(b) - set(a))
+          diff = sorted(n for n in a.keys() & b.keys() if a[n] != b[n])
+          print(f"{len(a)} entries in A, {len(b)} in B")
+          for label, names in (("only in A", only_a), ("only in B", only_b), ("different content", diff)):
+              for n in names:
+                  print(f"{label}: {n}")
+          sys.exit(1 if (only_a or only_b or diff) else 0)
+          PY
+      - name: Compare the way F-Droid does (apksigcopier)
+        run: |
+          pip install --quiet apksigcopier
+          sudo apt-get update -qq && sudo apt-get install -y -qq apksigner
+          keytool -genkeypair -keystore /tmp/test.jks -storepass testtest -keypass testtest -alias t \
+            -keyalg RSA -keysize 2048 -validity 2 -dname "CN=test"
+          apksigner sign --ks /tmp/test.jks --ks-pass pass:testtest --key-pass pass:testtest --out /tmp/a-signed.apk /tmp/a.apk
+          # Build A signed with a throw-away key stands in for the published APK; build B is what F-Droid would produce.
+          apksigcopier compare /tmp/a-signed.apk --unsigned /tmp/b.apk

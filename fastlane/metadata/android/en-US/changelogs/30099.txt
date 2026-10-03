@@ -1,0 +1,5 @@
+- Copies keep running with the screen off; reliability checks in Settings
+- Self-signed servers (pinned fingerprint) and optional HTTP
+- Compress to ZIP; browse and extract ZIP, 7z, TAR and TAR.GZ as folders; open archives from other apps
+- Built-in viewers for images, text, PDF, audio and video
+- SFTP (password or private key) and SMB accounts

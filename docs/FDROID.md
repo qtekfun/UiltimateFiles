@@ -1,63 +1,17 @@
-# Publishing on F-Droid
+# Publicar en F-Droid
 
-Status: the app already complies with the F-Droid inclusion policy (GPL-3.0-or-later, no proprietary
-dependencies, no analytics, no Google Play Services, no dependency-info blob in the APK). What is missing
-is listed below. The recipe is a **draft that has not been run on the F-Droid build server**.
+El proceso de firma y de publicación (igual que en UltimateDeck) está en [RELEASING.md](../RELEASING.md); la metadata para
+fdroiddata, en [`fdroid/com.qtekfun.ultimatefiles.yml`](../fdroid/com.qtekfun.ultimatefiles.yml). Aquí, el estado:
 
-## Store listing
+- **Política de F-Droid:** GPL-3.0-or-later, sin dependencias propietarias, sin analíticas ni Google Play Services y sin el
+  bloque de metadatos de dependencias en el APK. sshj, smbj, BouncyCastle, commons-compress, xz y OkHttp son
+  Apache-2.0/MIT/BSD o dominio público.
+- **Compilación reproducible:** el workflow `reproducible.yml` compila dos veces, sin caché y desde directorios distintos, y
+  compara los APK sin firmar con `apksigcopier`, que es lo que hace F-Droid. Sin clave, `assembleRelease` deja el APK sin
+  firmar. No sustituye a la revisión de F-Droid: su servidor usa su propio entorno (la receta instala JDK 21).
+- **Ficha:** `fastlane/metadata/android/<locale>/` (en-US y es-ES) con textos, icono y `changelogs/<versionCode>.txt`.
+  **Faltan las capturas de pantalla** (`images/phoneScreenshots/`).
+- **Pendiente tuyo:** crear la clave y los secretos, etiquetar `v0.3.0`, rellenar `commit:` (SHA de la etiqueta) y
+  `AllowedAPKSigningKeys` en la receta y enviarla como merge request a fdroiddata.
 
-`fastlane/metadata/android/<locale>/` holds the title, short and full description and the icon for `en-US`
-and `es-ES`. `docs/icon.svg` is the source of the icon (`images/icon.png` is its 512×512 render).
-Per-version changelogs live in `changelogs/<versionCode>.txt`; phone screenshots are still missing.
-
-## Versioning
-
-`version.properties` is the single source of truth (`versionName=X.Y.Z`, `versionCode=X*10000+Y*100+Z`;
-`scripts/check-version.sh` enforces the relation in CI). A checkout of any commit therefore builds with the right
-version, which is what F-Droid needs.
-
-- **Release for F-Droid:** bump both lines in `version.properties`, add `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`,
-  merge, then tag the merge commit `vX.Y.Z` (three numbers only).
-- **GitHub builds:** every merge to `master` publishes `UltimateFiles-X.Y.Z.<run>.apk` with
-  `versionCode = <committed code> * 100000 + <run>`, so each build upgrades the previous one. Those four-number tags
-  are ignored by F-Droid (its tag filter below only matches `vX.Y.Z`).
-
-## Open points before submitting
-
-1. **Signing.** F-Droid signs with its own key. Users moving from the GitHub APK (debug key, or your own key
-   once the `SIGNING_*` secrets exist) must uninstall first, unless reproducible builds are set up.
-2. **Toolchain.** AGP 9.4 needs Gradle 9.8 (wrapper) and JDK 17+, and the build uses `compileSdk 37`;
-   check that the build server image provides that platform.
-3. **Screenshots** in `fastlane/metadata/android/<locale>/images/phoneScreenshots/`.
-
-## Draft recipe for fdroiddata (`metadata/com.qtekfun.ultimatefiles.yml`)
-
-```yaml
-Categories:
-  - System
-License: GPL-3.0-or-later
-SourceCode: https://github.com/qtekfun/UltimateFiles
-IssueTracker: https://github.com/qtekfun/UltimateFiles/issues
-
-AutoName: UltimateFiles
-
-RepoType: git
-Repo: https://github.com/qtekfun/UltimateFiles.git
-
-Builds:
-  - versionName: 0.2.0
-    versionCode: 200
-    commit: v0.2.0
-    subdir: app
-    gradle:
-      - yes
-
-AutoUpdateMode: Version
-UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-UpdateCheckData: version.properties|versionCode=(\d+)|.|versionName=(.*)
-CurrentVersion: 0.2.0
-CurrentVersionCode: 200
-```
-
-Submit it as a merge request to https://gitlab.com/fdroid/fdroiddata after resolving the points above.
-The recipe is a **draft that has not been run on the F-Droid build server**.
+La receta es un **borrador que no se ha ejecutado en el servidor de compilación de F-Droid**.
