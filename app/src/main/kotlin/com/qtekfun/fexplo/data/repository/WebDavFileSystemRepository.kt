@@ -27,8 +27,8 @@ class WebDavFileSystemRepository(
     private val accounts: AccountRepository,
     private val client: WebDavClient = WebDavClient(),
     private val uploadChunkSize: Int = WebDavUploadStream.DEFAULT_CHUNK_SIZE,
-    private val mimeOf: (String) -> String? = MimeTypes::fromName,
     private val resumeStore: UploadResumeStore? = null,
+    private val mimeOf: (String) -> String? = MimeTypes::fromName,
 ) : FileSystemRepository {
 
     override suspend fun volumes(): List<StorageVolume> = accounts.accounts.first().map { account ->
