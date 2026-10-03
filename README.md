@@ -18,9 +18,11 @@ Play Services, sin analíticas, sin dependencias cerradas.
   solo una contraseña de aplicación revocable, cifrada con el Keystore), subida por trozos y descarga reanudable.
   HTTPS por defecto; para servidores propios puedes confiar en un certificado autofirmado (se fija su huella SHA-256
   por cuenta, nunca se acepta "todo") o permitir HTTP tras una confirmación explícita.
-- **Comprimir y extraer**: "Comprimir en ZIP" y "Extraer aquí" (ZIP, TAR, TAR.GZ) desde el menú de la selección, por la
-  misma cola que las copias (progreso, pausa, historial). Extraer crea una carpeta nueva, se deshace entera si falla y
-  rechaza entradas con `../`. 7z no está soportado.
+- **Archivos comprimidos**: un toque en un ZIP, 7z, TAR o TAR.GZ lo abre como una carpeta de solo lectura (también si está
+  en un servidor, o dentro de otro comprimido); copiar desde ahí funciona como cualquier copia. "Extraer aquí" y
+  "Comprimir en ZIP" están en el menú de cada archivo y en el de la selección, por la misma cola que las copias
+  (progreso, pausa, historial). Extraer crea una carpeta nueva, se deshace entera si falla y rechaza entradas con `../`.
+  Otras apps pueden abrir comprimidos con UltimateFiles ("Abrir con"). 7z cifrado no está soportado; no se crean 7z.
 - **Visores integrados**: imagen (con zoom), texto, PDF, audio y vídeo; "Abrir con…" delega en otras apps.
 - **Historial** de tareas, incluidas las que están en curso o en cola.
 - **Propiedades** con permisos y hashes MD5/SHA-256.

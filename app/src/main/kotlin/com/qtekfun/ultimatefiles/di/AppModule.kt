@@ -14,6 +14,7 @@ import com.qtekfun.ultimatefiles.data.io.FileStreamCopier
 import com.qtekfun.ultimatefiles.data.network.FileUploadResumeStore
 import com.qtekfun.ultimatefiles.data.network.UploadResumeStore
 import com.qtekfun.ultimatefiles.data.network.SftpAccountService
+import com.qtekfun.ultimatefiles.data.system.IncomingFiles
 import com.qtekfun.ultimatefiles.data.network.SshConnector
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.network.WebDavClient
@@ -78,6 +79,7 @@ val appModule = module {
     single { WebDavFileSystemRepository(accounts = get(), client = get(), resumeStore = get()) }
     single { WebDavAccountService(accounts = get(), client = get()) }
     single { SshConnector() }
+    single { IncomingFiles(androidContext()) }
     single { SftpFileSystemRepository(accounts = get(), connector = get()) }
     single { SftpAccountService(accounts = get(), connector = get()) }
     single {

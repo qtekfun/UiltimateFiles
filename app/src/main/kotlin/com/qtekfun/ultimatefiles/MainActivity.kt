@@ -1,6 +1,11 @@
 package com.qtekfun.ultimatefiles
 
+import android.content.Intent
 import android.graphics.Color
+import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.qtekfun.ultimatefiles.data.system.IncomingFiles
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -27,9 +32,27 @@ import com.qtekfun.ultimatefiles.ui.theme.resolveDarkTheme
 import org.koin.mp.KoinPlatform
 
 class MainActivity : ComponentActivity() {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncoming(intent)
+    }
+
+    /** "Open with UltimateFiles" on an archive from another app: it is copied here and shown as a folder. */
+    private fun handleIncoming(intent: Intent?) {
+        val uri = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data ?: return
+        lifecycleScope.launch {
+            KoinPlatform.getKoin().get<IncomingFiles>().accept(uri).onFailure {
+                Toast.makeText(this@MainActivity, getString(R.string.incoming_failed, it.message.orEmpty()), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // A restored activity already handled the intent that started it.
+        if (savedInstanceState == null) handleIncoming(intent)
         setContent {
             val koin = remember { KoinPlatform.getKoin() }
             val settings = viewModel<SettingsViewModel>(

@@ -86,6 +86,8 @@
     <string name="drop_move">Mover</string>
     <string name="transfer_speed">%1$s/s</string>
     <string name="install_permission_needed">Permite a UltimateFiles instalar apps en esta pantalla y abre el APK de nuevo.</string>
+    <string name="incoming_failed">No se pudo abrir el archivo comprimido: %1$s</string>
+    <string name="error_archive_open">Copia el archivo fuera del comprimido para abrirlo.</string>
     <string name="error_open_failed">No se pudo abrir el archivo: %1$s</string>
     <string name="error_no_app">Ninguna app puede abrir este archivo</string>
     <string name="error_share_folders">No se pueden compartir carpetas</string>

@@ -7,6 +7,8 @@ import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.HashState
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.TransferRequest
+import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
+import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import com.qtekfun.ultimatefiles.domain.usecase.ViewerKind
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortOrder
@@ -117,12 +119,15 @@ class BrowserViewModel(
             is BrowserEvent.SetSearchQuery -> _state.update { it.copy(searchQuery = event.query) }
             is BrowserEvent.OpenItem -> when {
                 event.item.isDirectory -> load(event.item.path)
+                // An archive opens as a folder; "Open with" still hands it to another app.
+                ArchiveFormat.of(event.item.name) != null -> load(ArchivePaths.rootOf(event.item.path))
+                ArchivePaths.isArchivePath(event.item.path) -> emit(BrowserEffect.Message(R.string.error_archive_open))
                 event.item.isRemote() -> emit(BrowserEffect.Message(R.string.error_remote_open))
                 ViewerKind.of(event.item.name, event.item.mimeType) != null -> emit(BrowserEffect.OpenViewer(event.item))
                 else -> emit(BrowserEffect.OpenFile(event.item, false))
             }
             is BrowserEvent.OpenWith ->
-                if (event.item.isRemote()) emit(BrowserEffect.Message(R.string.error_remote_open)) else emit(BrowserEffect.OpenFile(event.item, true))
+                if (ArchivePaths.isArchivePath(event.item.path)) emit(BrowserEffect.Message(R.string.error_archive_open)) else if (event.item.isRemote()) emit(BrowserEffect.Message(R.string.error_remote_open)) else emit(BrowserEffect.OpenFile(event.item, true))
             is BrowserEvent.ToggleSelection -> toggleSelection(event.item)
             BrowserEvent.SelectAll -> _state.update { s -> s.copy(selectedPaths = s.visibleItems.map { it.path }.toSet()) }
             BrowserEvent.ClearSelection -> _state.update { it.copy(selectedPaths = emptySet()) }
@@ -266,7 +271,7 @@ class BrowserViewModel(
     }
 
     /** Network files have no local URI to hand to other apps; they must be copied to the device first. */
-    private fun FileItem.isRemote() = path.startsWith("dav://") || path.startsWith("sftp://")
+    private fun FileItem.isRemote() = path.startsWith("dav://") || path.startsWith("sftp://") || ArchivePaths.isArchivePath(path)
 
     private fun share(items: List<FileItem>) {
         if (items.any { it.isRemote() }) {

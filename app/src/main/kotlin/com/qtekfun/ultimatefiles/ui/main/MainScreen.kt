@@ -73,6 +73,8 @@ import com.qtekfun.ultimatefiles.ui.settings.SettingsScreen
 import com.qtekfun.ultimatefiles.ui.settings.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
+import com.qtekfun.ultimatefiles.data.system.IncomingFiles
+import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import org.koin.mp.KoinPlatform
 
 private enum class AppScreen { BROWSER, HISTORY, SETTINGS }
@@ -110,6 +112,17 @@ fun MainScreen() {
     fun openInActivePanel(path: String) {
         (if (state.activePanel == PanelId.LEFT) left else right).onEvent(BrowserEvent.Navigate(path))
         scope.launch { drawerState.close() }
+    }
+
+    // An archive another app sent here opens as a folder in the active panel.
+    val incomingFiles = remember { koin.get<IncomingFiles>() }
+    val incoming by incomingFiles.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(incoming) {
+        incoming?.let { path ->
+            screen = AppScreen.BROWSER
+            openInActivePanel(ArchivePaths.rootOf(path))
+            incomingFiles.consume()
+        }
     }
 
     ModalNavigationDrawer(
