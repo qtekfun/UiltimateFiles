@@ -47,7 +47,7 @@
             </intent-filter>
 
             <!-- Any app can hand an archive over ("Open with"): it opens as a folder to browse and copy out of. -->
-            <intent-filter>
+            <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="content" />
@@ -62,7 +62,7 @@
                 <data android:mimeType="application/x-compressed-tar" />
             </intent-filter>
             <!-- Many apps send archives as a generic type; the file name then decides. -->
-            <intent-filter>
+            <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="content" />
