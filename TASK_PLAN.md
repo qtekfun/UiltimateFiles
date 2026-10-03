@@ -42,4 +42,7 @@
   - [x] 7.5 Exportar/importar ajustes y cuentas (cifrado con frase de contraseña) y renombrado de la app a UltimateFiles.
   - [x] 7.6 Vista en cuadrícula compartida por los dos paneles.
   - [x] 7.7 Subidas a Nextcloud reanudables tras morir la app (hash por trozo).
+  - [x] 7.9 Certificados autofirmados (huella SHA-256 por cuenta) y HTTP opcional con confirmación.
+  - [x] 7.10 Copias fiables con la pantalla apagada: exención de batería, Wi-Fi lock, diario y reanudación, comprobaciones en Ajustes.
+  - [x] 7.11 Comprimir en ZIP y extraer ZIP/TAR/TAR.GZ (`ArchiveEngine`, protección zip-slip).
   - [x] 7.8 Versión en el código (`version.properties`) compatible con F-Droid; releases de CI con `versionCode` creciente.

@@ -34,7 +34,7 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 
 ## 3. Fuera de Alcance para el MVP (Out of Scope)
 - Conectores de red SMB/SFTP - *Fase 2*. (WebDAV/Nextcloud ya incluido, ver Fase 7 del plan.)
-- Compresión y descompresión ZIP/TAR/7z como carpetas virtuales - *Fase 2*.
+- Archivos 7z y explorar archivos comprimidos como carpetas virtuales (ZIP/TAR/TAR.GZ se comprimen y extraen, ver sección 4).
 - Visores internos multimedia (se delega mediante Intents del sistema a apps externas).
 - Acceso Root.
 
@@ -42,10 +42,12 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 - Historial de tareas (también en curso y en cola), detección de volúmenes expulsados, ajustes de tema con modo AMOLED.
 - Copias robustas de ficheros enormes (nombre temporal, verificación SHA-256 opcional), pausar/reanudar, notificación en pantalla de bloqueo.
 - Nextcloud/WebDAV con *Login Flow v2*, subida por trozos y descarga reanudable (solo HTTPS).
+- Certificados autofirmados con huella fijada por cuenta y HTTP opcional, con confirmación explícita.
+- Copias fiables con la pantalla apagada (exención de batería, Wi-Fi lock, diario de copias interrumpidas, ajustes de fiabilidad).
+- Comprimir en ZIP y extraer ZIP/TAR/TAR.GZ por la cola de transferencias.
 - Vista en cuadrícula, abrir APK, exportar/importar ajustes y cuentas.
 - Las subidas a Nextcloud interrumpidas (p. ej. la app muere) se reanudan al repetir la copia: solo se vuelven a enviar los trozos que cambian.
 
 ## 5. Pendiente / ideas
-- Quizá en el futuro: certificados autofirmados (fijando la huella por cuenta) y HTTP para servidores propios; hoy solo HTTPS con certificado válido.
-- SMB/SFTP, compresión/descompresión, visores integrados (ver sección 3).
+- SMB/SFTP, visores integrados y 7z (ver sección 3).
 - Pruebas instrumentadas de UI y prueba real en dispositivo con ficheros de varios GB.
