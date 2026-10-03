@@ -33,7 +33,7 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 - **Bottom Sheet de Propiedades:** Nombre, ruta completa, tamaño exacto (bytes y formato legible), fecha modificación, atributos/permisos y cálculo asíncrono de hash (MD5 y SHA-256).
 
 ## 3. Fuera de Alcance para el MVP (Out of Scope)
-- Conectores de red (WebDAV, Nextcloud, SMB) - *Planificados para Fase 2*.
+- Conectores de red SMB/SFTP - *Fase 2*. (WebDAV/Nextcloud ya incluido, ver Fase 7 del plan.)
 - Compresión y descompresión ZIP/TAR/7z como carpetas virtuales - *Fase 2*.
 - Visores internos multimedia (se delega mediante Intents del sistema a apps externas).
 - Acceso Root.

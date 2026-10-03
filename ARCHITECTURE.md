@@ -48,3 +48,7 @@ interface FileSystemRepository {
 }
 ```
 El contrato base se amplía con lo necesario para el motor de copia (`volumes`, `stat`, `parentOf`, `openInput`, `openOutput`), de modo que `FileStreamCopier` funcione con cualquier backend.
+
+## 4. Ficheros enormes y red (Fase 7)
+- `TransferEngine` escribe los ficheros ≥ 64 MiB como `<nombre>.fexplo-part` y los renombra al terminar; en movimientos el origen solo se borra tras copiar (y verificar SHA-256 si está activado en Ajustes). Buffer de 1 MiB para ficheros grandes.
+- `data/network/`: cliente WebDAV sobre OkHttp (`dav://<cuenta>/<ruta>`), enrutado por `RoutingFileSystemRepository`. Nextcloud: subida por trozos de 10 MB (chunked v2); descarga reanudable con `Range`. Solo HTTPS. Permiso `INTERNET` añadido.
