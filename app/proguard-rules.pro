@@ -14,3 +14,10 @@
 -dontwarn org.bouncycastle.**
 -dontwarn sun.security.**
 -dontwarn java.lang.management.**
+# sshj's Kerberos/GSSAPI login and JDK-internal helpers do not exist on Android and are never used (password login only).
+-dontwarn javax.security.**
+-dontwarn javax.management.**
+-dontwarn com.sun.**
+-dontwarn jdk.**
+-dontwarn java.awt.**
+-dontwarn org.slf4j.**
