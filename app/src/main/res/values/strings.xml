@@ -116,4 +116,20 @@
     <string name="settings_transfers">Transfers</string>
     <string name="settings_verify_copies">Verify copies</string>
     <string name="settings_verify_copies_summary">Read each copied file back and compare its SHA-256 before a move deletes the original. Slower, recommended for large files.</string>
+    <string name="drawer_add_account">Add Nextcloud / WebDAV</string>
+    <string name="account_title">Connect a server</string>
+    <string name="account_hint">Use your server address and an app password (Nextcloud: Settings → Security → Devices &amp; sessions). Only HTTPS is supported.</string>
+    <string name="account_server">Server address</string>
+    <string name="account_username">Username</string>
+    <string name="account_password">App password</string>
+    <string name="account_label">Name (optional)</string>
+    <string name="account_connect">Connect</string>
+    <string name="account_error_url">That address is not valid. Use an https:// address.</string>
+    <string name="account_error_auth">The server rejected the username or password.</string>
+    <string name="account_error_path">The server did not find your files at that address.</string>
+    <string name="account_error_generic">Could not connect: %1$s</string>
+    <string name="account_remove">Remove account</string>
+    <string name="account_remove_title">Remove account</string>
+    <string name="account_remove_message">Disconnect \"%1$s\" from Fexplo? Nothing is deleted on the server.</string>
+    <string name="error_remote_open">Copy network files to this device first to open or share them.</string>
 </resources>

@@ -9,7 +9,9 @@ import com.qtekfun.fexplo.core.model.ConflictDecision
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.core.model.StorageKind
 import com.qtekfun.fexplo.core.model.StorageVolume
+import com.qtekfun.fexplo.data.network.WebDavAccountService
 import com.qtekfun.fexplo.data.repository.SafFileSystemRepository
+import com.qtekfun.fexplo.domain.repository.AccountRepository
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
 import com.qtekfun.fexplo.domain.repository.VolumeChangeSource
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
@@ -44,6 +46,8 @@ class MainViewModel(
     private val copyFiles: BatchCopyUseCase,
     private val moveFiles: BatchMoveUseCase,
     private val volumeChanges: VolumeChangeSource,
+    private val accountService: WebDavAccountService,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -75,6 +79,23 @@ class MainViewModel(
     fun addStorage(treeUri: Uri) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { runCatching { safRepository.addTree(treeUri) } }
+            refreshVolumes()
+        }
+    }
+
+    /** Connects a Nextcloud/WebDAV server; [onDone] runs on the main thread with the outcome. */
+    fun connectAccount(serverUrl: String, username: String, password: String, label: String, onDone: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            val result = accountService.connect(serverUrl, username, password, label).map { }
+            if (result.isSuccess) refreshVolumes()
+            onDone(result)
+        }
+    }
+
+    /** Forgets the account behind a network [volume]; nothing is deleted on the server. */
+    fun removeAccount(volume: StorageVolume) {
+        viewModelScope.launch {
+            accountRepository.remove(volume.id.removePrefix("dav:"))
             refreshVolumes()
         }
     }

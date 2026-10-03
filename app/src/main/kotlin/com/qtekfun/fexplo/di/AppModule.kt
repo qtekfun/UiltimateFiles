@@ -9,16 +9,24 @@ import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.datastore.DataStoreUserPreferencesRepository
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.data.io.FileStreamCopier
+import com.qtekfun.fexplo.data.network.WebDavAccountService
+import com.qtekfun.fexplo.data.network.WebDavClient
+import com.qtekfun.fexplo.data.repository.DataStoreAccountRepository
 import com.qtekfun.fexplo.data.repository.FileTransferHistoryRepository
 import com.qtekfun.fexplo.data.repository.LocalFileSystemRepository
 import com.qtekfun.fexplo.data.repository.RoutingFileSystemRepository
 import com.qtekfun.fexplo.data.repository.SafFileSystemRepository
+import com.qtekfun.fexplo.data.repository.WebDavFileSystemRepository
 import com.qtekfun.fexplo.data.service.ServiceTransferLauncher
 import com.qtekfun.fexplo.data.service.TransferNotifications
+import com.qtekfun.fexplo.data.system.AndroidKeystoreCipher
+import com.qtekfun.fexplo.data.system.CompositeVolumeChangeSource
 import com.qtekfun.fexplo.data.system.IntentFactory
 import com.qtekfun.fexplo.data.system.SystemVolumeMonitor
 import com.qtekfun.fexplo.domain.clipboard.ClipboardManager
+import com.qtekfun.fexplo.domain.repository.AccountRepository
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
+import com.qtekfun.fexplo.domain.repository.SecretCipher
 import com.qtekfun.fexplo.domain.history.TransferHistoryRecorder
 import com.qtekfun.fexplo.domain.history.TransferHistoryRepository
 import com.qtekfun.fexplo.domain.repository.UserPreferencesRepository
@@ -53,15 +61,24 @@ val appModule = module {
         )
     }
     single { SafFileSystemRepository(androidContext()) }
+    single<SecretCipher> { AndroidKeystoreCipher() }
+    single<AccountRepository> { DataStoreAccountRepository(get(), get()) }
+    single { WebDavClient() }
+    single { WebDavFileSystemRepository(accounts = get(), client = get()) }
+    single { WebDavAccountService(accounts = get(), client = get()) }
     single<FileSystemRepository> {
-        RoutingFileSystemRepository(local = get<LocalFileSystemRepository>(), saf = get<SafFileSystemRepository>())
+        RoutingFileSystemRepository(
+            local = get<LocalFileSystemRepository>(),
+            saf = get<SafFileSystemRepository>(),
+            webDav = get<WebDavFileSystemRepository>(),
+        )
     }
 
     single { TransferEngine(repository = get(), copier = get()) }
     single<TransferServiceLauncher> { ServiceTransferLauncher(androidContext()) }
     single<TransferHistoryRepository> { FileTransferHistoryRepository(File(androidContext().filesDir, "history.tsv")) }
     single { TransferHistoryRecorder(history = get(), files = get()) }
-    single<VolumeChangeSource> { SystemVolumeMonitor(androidContext()) }
+    single<VolumeChangeSource> { CompositeVolumeChangeSource(SystemVolumeMonitor(androidContext()), get()) }
     single { TransferCoordinator(engine = get(), recorder = get(), launcher = get()) }
     single { TransferNotifications(androidContext()) }
 
@@ -79,7 +96,7 @@ val appModule = module {
     single { DragDropState() }
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
-    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { SettingsViewModel(get()) }
     factory { HistoryViewModel(get()) }
     factory { params ->

@@ -64,17 +64,15 @@ class FileTransferHistoryRepository(
     }
 
     internal companion object {
-        private const val NULL_TOKEN = "\\N"
-
         fun encode(entry: HistoryEntry): String = listOf(
             entry.finishedAtMillis.toString(),
             entry.operation.name,
             entry.status.name,
             entry.itemCount.toString(),
             entry.totalBytes.toString(),
-            escape(entry.firstItemName),
-            entry.targetName?.let(::escape) ?: NULL_TOKEN,
-            entry.error?.let(::escape) ?: NULL_TOKEN,
+            Tsv.escape(entry.firstItemName),
+            entry.targetName?.let(Tsv::escape) ?: Tsv.NULL,
+            entry.error?.let(Tsv::escape) ?: Tsv.NULL,
         ).joinToString("\t")
 
         fun decode(line: String): HistoryEntry? = try {
@@ -85,43 +83,12 @@ class FileTransferHistoryRepository(
                 status = TransferStatus.valueOf(f[2]),
                 itemCount = f[3].toInt(),
                 totalBytes = f[4].toLong(),
-                firstItemName = unescape(f[5]),
-                targetName = f[6].takeIf { it != NULL_TOKEN }?.let(::unescape),
-                error = f[7].takeIf { it != NULL_TOKEN }?.let(::unescape),
+                firstItemName = Tsv.unescape(f[5]),
+                targetName = f[6].takeIf { it != Tsv.NULL }?.let(Tsv::unescape),
+                error = f[7].takeIf { it != Tsv.NULL }?.let(Tsv::unescape),
             )
         } catch (e: Exception) {
             null // A damaged line must not take the whole history down.
-        }
-
-        private fun escape(text: String): String = buildString {
-            for (c in text) {
-                when (c) {
-                    '\\' -> append("\\\\")
-                    '\t' -> append("\\t")
-                    '\n' -> append("\\n")
-                    '\r' -> append("\\r")
-                    else -> append(c)
-                }
-            }
-        }
-
-        private fun unescape(text: String): String = buildString {
-            var i = 0
-            while (i < text.length) {
-                val c = text[i]
-                if (c == '\\' && i + 1 < text.length) {
-                    when (text[i + 1]) {
-                        't' -> append('\t')
-                        'n' -> append('\n')
-                        'r' -> append('\r')
-                        else -> append(text[i + 1])
-                    }
-                    i += 2
-                } else {
-                    append(c)
-                    i++
-                }
-            }
         }
     }
 }

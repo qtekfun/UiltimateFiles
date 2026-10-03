@@ -6,15 +6,20 @@ import com.qtekfun.fexplo.domain.repository.FileSystemRepository
 import java.io.InputStream
 import java.io.OutputStream
 
-/** Single entry point for the app: `content://` locations go to SAF, everything else to the local backend. */
+/** Single entry point for the app: `content://` goes to SAF, `dav://` to WebDAV, everything else to the local backend. */
 class RoutingFileSystemRepository(
     private val local: FileSystemRepository,
     private val saf: FileSystemRepository,
+    private val webDav: FileSystemRepository,
 ) : FileSystemRepository {
 
-    private fun backendFor(path: String) = if (path.startsWith(SAF_SCHEME)) saf else local
+    private fun backendFor(path: String) = when {
+        path.startsWith(SAF_SCHEME) -> saf
+        path.startsWith(WebDavFileSystemRepository.SCHEME) -> webDav
+        else -> local
+    }
 
-    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes()
+    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes() + webDav.volumes()
 
     override suspend fun listFiles(uriOrPath: String) = backendFor(uriOrPath).listFiles(uriOrPath)
 
@@ -29,8 +34,8 @@ class RoutingFileSystemRepository(
         backendFor(parentUriOrPath).createFile(parentUriOrPath, name, mimeType)
 
     override suspend fun delete(items: List<FileItem>): Result<Unit> {
-        for ((isSaf, group) in items.groupBy { it.path.startsWith(SAF_SCHEME) }) {
-            val result = (if (isSaf) saf else local).delete(group)
+        for ((backend, group) in items.groupBy { backendFor(it.path) }) {
+            val result = backend.delete(group)
             if (result.isFailure) return result
         }
         return Result.success(Unit)
