@@ -46,8 +46,8 @@ data class TransferState(
 class TransferCoordinator(
     private val engine: TransferEngine,
     private val recorder: TransferHistoryRecorder,
-    private val launcher: TransferServiceLauncher,
     private val gate: PauseGate = engine.pauseGate,
+    private val launcher: TransferServiceLauncher,
 ) : ConflictResolver {
     private val lock = Any()
     private val queue = ArrayDeque<TransferRequest>()
