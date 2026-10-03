@@ -12,6 +12,7 @@ import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.model.TransferProgress
 import com.qtekfun.fexplo.core.model.TransferStatus
 import com.qtekfun.fexplo.core.util.formatBytes
+import com.qtekfun.fexplo.core.util.formatDuration
 import com.qtekfun.fexplo.domain.transfer.TransferState
 
 /** Builds and posts the notifications of [FileTransferForegroundService]. */
@@ -54,15 +55,14 @@ class TransferNotifications(private val context: Context) {
                 .setProgress(0, 0, true)
             else -> {
                 val percent = (progress.fraction!! * 100).toInt()
+                val details = listOfNotNull(
+                    context.getString(R.string.transfer_progress_text, percent, formatBytes(progress.bytesPerSecond)),
+                    progress.remainingSeconds?.let { context.getString(R.string.transfer_remaining, formatDuration(it)) },
+                    context.getString(R.string.transfer_verifying).takeIf { progress.status == TransferStatus.VERIFYING },
+                )
                 builder
                     .setContentText(progress.currentName)
-                    .setSubText(
-                        context.getString(
-                            R.string.transfer_progress_text,
-                            percent,
-                            formatBytes(progress.bytesPerSecond),
-                        ),
-                    )
+                    .setSubText(details.joinToString(" · "))
                     .setProgress(100, percent, false)
             }
         }

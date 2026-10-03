@@ -57,6 +57,7 @@ class BrowserViewModelTest {
 
         override suspend fun setThemeMode(mode: ThemeMode) = flow.update { it.copy(themeMode = mode) }
         override suspend fun setDynamicColor(enabled: Boolean) = flow.update { it.copy(dynamicColor = enabled) }
+        override suspend fun setVerifyCopies(enabled: Boolean) = flow.update { it.copy(verifyCopies = enabled) }
 
         private fun MutableStateFlow<UserPreferences>.update(block: (UserPreferences) -> UserPreferences) {
             value = block(value)
@@ -72,6 +73,7 @@ class BrowserViewModelTest {
         override suspend fun clear() = added.clear()
     }
 
+    private val prefs = FakePreferences()
     private val clipboard = ClipboardManager()
     private val history = FakeHistory()
     private val volumeEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -89,14 +91,14 @@ class BrowserViewModelTest {
         viewModel = BrowserViewModel(
             panel = PanelId.LEFT,
             repository = repo,
-            preferences = FakePreferences(),
+            preferences = prefs,
             clipboardManager = clipboard,
             coordinator = coordinator,
             buildBreadcrumb = BuildBreadcrumbUseCase(repo),
             deleteFiles = DeleteUseCase(repo, recorder),
             calculateHash = HashCalcUseCase(repo),
-            copyFiles = BatchCopyUseCase(coordinator),
-            moveFiles = BatchMoveUseCase(coordinator),
+            copyFiles = BatchCopyUseCase(coordinator, prefs),
+            moveFiles = BatchMoveUseCase(coordinator, prefs),
             dragDrop = DragDropState(),
             volumeChanges = object : VolumeChangeSource {
                 override val changes: Flow<Unit> = volumeEvents

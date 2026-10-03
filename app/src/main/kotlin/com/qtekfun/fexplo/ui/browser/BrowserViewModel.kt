@@ -235,10 +235,12 @@ class BrowserViewModel(
     private fun paste() {
         val clip = clipboardManager.state.value ?: return
         val target = _state.value.currentPath ?: return
-        when (clip.operation) {
-            OperationType.COPY -> copyFiles(clip.items, target)
-            // Moving into the folder the items already live in changes nothing.
-            OperationType.CUT -> if (clip.sourcePath != target) moveFiles(clip.items, target)
+        viewModelScope.launch {
+            when (clip.operation) {
+                OperationType.COPY -> copyFiles(clip.items, target)
+                // Moving into the folder the items already live in changes nothing.
+                OperationType.CUT -> if (clip.sourcePath != target) moveFiles(clip.items, target)
+            }
         }
         clipboardManager.clear()
     }

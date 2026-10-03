@@ -85,7 +85,9 @@ class MainViewModel(
 
     fun confirmDrop(copy: Boolean) {
         val drop = dragDrop.pendingDrop.value ?: return
-        if (copy) copyFiles(drop.items, drop.targetPath) else moveFiles(drop.items, drop.targetPath)
+        viewModelScope.launch {
+            if (copy) copyFiles(drop.items, drop.targetPath) else moveFiles(drop.items, drop.targetPath)
+        }
         dragDrop.clearPendingDrop()
     }
 

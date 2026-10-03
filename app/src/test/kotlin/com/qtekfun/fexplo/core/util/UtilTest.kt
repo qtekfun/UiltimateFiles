@@ -33,4 +33,12 @@ class UtilTest {
         now = 2_000
         assertEquals(1_500L, meter.record(3_000))
     }
+
+    @Test
+    fun `formatDuration uses m ss and h mm ss`() {
+        assertEquals("0:05", formatDuration(5))
+        assertEquals("4:30", formatDuration(270))
+        assertEquals("1:05:30", formatDuration(3_930))
+        assertEquals("0:00", formatDuration(-3))
+    }
 }

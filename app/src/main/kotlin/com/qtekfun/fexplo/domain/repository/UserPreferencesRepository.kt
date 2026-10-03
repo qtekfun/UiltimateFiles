@@ -19,4 +19,6 @@ interface UserPreferencesRepository {
     suspend fun setThemeMode(mode: ThemeMode)
 
     suspend fun setDynamicColor(enabled: Boolean)
+
+    suspend fun setVerifyCopies(enabled: Boolean)
 }

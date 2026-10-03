@@ -15,3 +15,12 @@ fun formatBytes(bytes: Long, locale: Locale = Locale.getDefault()): String {
     } while (value >= 1024 && unit < UNITS.lastIndex)
     return String.format(locale, "%.1f %s", value, UNITS[unit])
 }
+
+/** `m:ss` below one hour, `h:mm:ss` above; locale independent. */
+fun formatDuration(totalSeconds: Long): String {
+    val seconds = totalSeconds.coerceAtLeast(0)
+    val h = seconds / 3600
+    val m = seconds % 3600 / 60
+    val s = seconds % 60
+    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, m, s) else String.format(Locale.ROOT, "%d:%02d", m, s)
+}

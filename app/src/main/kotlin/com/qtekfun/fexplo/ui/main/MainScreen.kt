@@ -153,6 +153,7 @@ fun MainScreen() {
                                 preferences = current,
                                 onThemeMode = settingsViewModel::setThemeMode,
                                 onDynamicColor = settingsViewModel::setDynamicColor,
+                                onVerifyCopies = settingsViewModel::setVerifyCopies,
                                 onBack = { screen = AppScreen.BROWSER },
                             )
                         }

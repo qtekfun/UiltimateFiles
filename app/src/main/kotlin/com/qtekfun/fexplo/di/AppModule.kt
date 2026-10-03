@@ -65,8 +65,8 @@ val appModule = module {
     single { TransferCoordinator(engine = get(), recorder = get(), launcher = get()) }
     single { TransferNotifications(androidContext()) }
 
-    factory { BatchCopyUseCase(get()) }
-    factory { BatchMoveUseCase(get()) }
+    factory { BatchCopyUseCase(get(), get()) }
+    factory { BatchMoveUseCase(get(), get()) }
     factory { DeleteUseCase(get(), get()) }
     factory { BuildBreadcrumbUseCase(get()) }
     factory { HashCalcUseCase(get()) }

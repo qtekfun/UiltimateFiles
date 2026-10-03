@@ -111,4 +111,9 @@
     <string name="settings_dynamic_color">Colores dinámicos</string>
     <string name="settings_dynamic_color_summary">Usa los colores de tu fondo de pantalla</string>
     <string name="property_permissions">Permisos</string>
+    <string name="transfer_remaining">Quedan %1$s</string>
+    <string name="transfer_verifying">Verificando</string>
+    <string name="settings_transfers">Transferencias</string>
+    <string name="settings_verify_copies">Verificar copias</string>
+    <string name="settings_verify_copies_summary">Lee cada archivo copiado y compara su SHA-256 antes de que un movimiento borre el original. Más lento, recomendado para archivos grandes.</string>
 </resources>

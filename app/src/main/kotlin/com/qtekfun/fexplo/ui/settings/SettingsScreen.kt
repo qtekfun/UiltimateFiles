@@ -34,6 +34,7 @@ fun SettingsScreen(
     preferences: UserPreferences,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
+    onVerifyCopies: (Boolean) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -76,6 +77,22 @@ fun SettingsScreen(
                     )
                 }
             }
+            Text(
+                text = stringResource(R.string.settings_transfers),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_verify_copies)) },
+                supportingContent = { Text(stringResource(R.string.settings_verify_copies_summary)) },
+                trailingContent = { Switch(checked = preferences.verifyCopies, onCheckedChange = null) },
+                modifier = Modifier.selectable(
+                    selected = preferences.verifyCopies,
+                    role = Role.Switch,
+                    onClick = { onVerifyCopies(!preferences.verifyCopies) },
+                ),
+            )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },

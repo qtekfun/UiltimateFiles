@@ -20,6 +20,7 @@ import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.model.TransferProgress
 import com.qtekfun.fexplo.core.model.TransferStatus
 import com.qtekfun.fexplo.core.util.formatBytes
+import com.qtekfun.fexplo.core.util.formatDuration
 
 /** Slim in-app mirror of the foreground-service notification, docked at the bottom of the screen. */
 @Composable
@@ -35,8 +36,14 @@ fun TransferProgressBar(progress: TransferProgress?, onCancel: () -> Unit, modif
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
+                val remaining = progress.remainingSeconds?.let { stringResource(R.string.transfer_remaining, formatDuration(it)) }
+                val verifying = if (progress.status == TransferStatus.VERIFYING) stringResource(R.string.transfer_verifying) else null
                 Text(
-                    text = stringResource(R.string.transfer_speed, formatBytes(progress.bytesPerSecond)),
+                    text = listOfNotNull(
+                        verifying,
+                        stringResource(R.string.transfer_speed, formatBytes(progress.bytesPerSecond)),
+                        remaining,
+                    ).joinToString(" · "),
                     style = MaterialTheme.typography.labelMedium,
                 )
                 TextButton(onClick = onCancel) { Text(stringResource(R.string.transfer_cancel)) }
@@ -51,4 +58,9 @@ fun TransferProgressBar(progress: TransferProgress?, onCancel: () -> Unit, modif
     }
 }
 
-private val ACTIVE = setOf(TransferStatus.RUNNING, TransferStatus.PENDING, TransferStatus.WAITING_CONFLICT)
+private val ACTIVE = setOf(
+    TransferStatus.RUNNING,
+    TransferStatus.VERIFYING,
+    TransferStatus.PENDING,
+    TransferStatus.WAITING_CONFLICT,
+)

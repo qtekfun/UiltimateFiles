@@ -1,6 +1,7 @@
 package com.qtekfun.fexplo.core.model
 
-enum class TransferStatus { PENDING, RUNNING, WAITING_CONFLICT, COMPLETED, FAILED, CANCELLED }
+/** [VERIFYING] is the optional read-back check that follows each copied file. */
+enum class TransferStatus { PENDING, RUNNING, VERIFYING, WAITING_CONFLICT, COMPLETED, FAILED, CANCELLED }
 
 /** Progress snapshot of a batch copy/move, rendered by the progress UI and the service notification. */
 data class TransferProgress(
@@ -16,6 +17,10 @@ data class TransferProgress(
     /** 0f..1f, or null when the total size is not known. */
     val fraction: Float?
         get() = if (totalBytes > 0) (processedBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else null
+
+    /** Estimated seconds left at the current speed, or null while the speed is unknown. */
+    val remainingSeconds: Long?
+        get() = if (bytesPerSecond > 0 && totalBytes > processedBytes) (totalBytes - processedBytes) / bytesPerSecond else null
 }
 
 /** What to do when the destination already contains an entry with the same name. */
@@ -29,6 +34,8 @@ data class TransferRequest(
     val operation: OperationType,
     val items: List<FileItem>,
     val targetDirectory: String,
+    /** Read every copied file back and compare its SHA-256 before the source of a move is deleted. */
+    val verify: Boolean = false,
 )
 
 /** Asks the user how to resolve a name collision between [source] and the entry already at the destination. */

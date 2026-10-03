@@ -19,4 +19,6 @@ data class UserPreferences(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** Material You colours from the wallpaper (Android 12+). */
     val dynamicColor: Boolean = true,
+    /** Read back and checksum every copied file (slower, safer for big or irreplaceable files). */
+    val verifyCopies: Boolean = false,
 )

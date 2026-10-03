@@ -111,4 +111,9 @@
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_summary">Use colors from your wallpaper</string>
     <string name="property_permissions">Permissions</string>
+    <string name="transfer_remaining">%1$s left</string>
+    <string name="transfer_verifying">Verifying</string>
+    <string name="settings_transfers">Transfers</string>
+    <string name="settings_verify_copies">Verify copies</string>
+    <string name="settings_verify_copies_summary">Read each copied file back and compare its SHA-256 before a move deletes the original. Slower, recommended for large files.</string>
 </resources>
