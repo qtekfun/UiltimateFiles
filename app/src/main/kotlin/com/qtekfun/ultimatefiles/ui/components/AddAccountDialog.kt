@@ -80,6 +80,18 @@ fun AddAccountDialog(
     var kind by remember { mutableStateOf(AccountKind.NEXTCLOUD) }
     val sftp = kind == AccountKind.SFTP
     val smb = kind == AccountKind.SMB
+    var share by remember { mutableStateOf("") }
+    var domain by remember { mutableStateOf("") }
+    var host by remember { mutableStateOf("") }
+    var port by remember { mutableStateOf("22") }
+    var user by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var hostKey by remember { mutableStateOf<UntrustedHostKeyException?>(null) }
+    var server by remember { mutableStateOf("") }
+    var label by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<Throwable?>(null) }
+    var prompt by remember { mutableStateOf<TrustPrompt?>(null) }
     var keyPem by remember { mutableStateOf<String?>(null) }
     var keyName by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -102,18 +114,6 @@ fun AddAccountDialog(
             }
         }
     }
-    var share by remember { mutableStateOf("") }
-    var domain by remember { mutableStateOf("") }
-    var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("22") }
-    var user by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var hostKey by remember { mutableStateOf<UntrustedHostKeyException?>(null) }
-    var server by remember { mutableStateOf("") }
-    var label by remember { mutableStateOf("") }
-    var busy by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<Throwable?>(null) }
-    var prompt by remember { mutableStateOf<TrustPrompt?>(null) }
     val uriHandler = LocalUriHandler.current
 
     fun connect(choice: TrustChoice) {
