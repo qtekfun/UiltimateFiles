@@ -80,7 +80,7 @@ jobs:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease ${{ steps.version.outputs.gradle_args }}
+        run: ./gradlew assembleRelease ${{ steps.signing.outputs.signed != 'true' && '-PdebugSigning=true' || '' }} ${{ steps.version.outputs.gradle_args }}
 
       - name: Show the signing certificate
         run: |

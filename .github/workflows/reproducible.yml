@@ -30,14 +30,14 @@ jobs:
       - name: Build A
         run: |
           ./gradlew --no-build-cache --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk /tmp/a.apk
+          cp app/build/outputs/apk/release/app-release-unsigned.apk /tmp/a.apk
       - name: Build B from a clean clone elsewhere
         run: |
           git clone --quiet . /tmp/elsewhere/UltimateFiles
           cd /tmp/elsewhere/UltimateFiles
           GRADLE_USER_HOME=/tmp/gradle-b ./gradlew --no-build-cache --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk /tmp/b.apk
-      - name: Compare
+          cp app/build/outputs/apk/release/app-release-unsigned.apk /tmp/b.apk
+      - name: Compare entry by entry
         run: |
           python3 - <<'PY'
           import zipfile, sys
@@ -53,3 +53,12 @@ jobs:
                   print(f"{label}: {n}")
           sys.exit(1 if (only_a or only_b or diff) else 0)
           PY
+      - name: Compare the way F-Droid does (apksigcopier)
+        run: |
+          pip install --quiet apksigcopier
+          keytool -genkeypair -keystore /tmp/test.jks -storepass testtest -keypass testtest -alias t \
+            -keyalg RSA -keysize 2048 -validity 2 -dname "CN=test"
+          apksigner="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+          "$apksigner" sign --ks /tmp/test.jks --ks-pass pass:testtest --key-pass pass:testtest --out /tmp/a-signed.apk /tmp/a.apk
+          # Build A signed with a throw-away key stands in for the published APK; build B is what F-Droid would produce.
+          apksigcopier compare /tmp/a-signed.apk --unsigned /tmp/b.apk

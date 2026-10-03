@@ -41,6 +41,8 @@ No hay que cambiar nada más: `release.yml` y `app/build.gradle.kts` ya leen eso
 - **Nightly:** cada push a `master` publica una pre-release `nightly-<n>` con otro identificador
   (`com.qtekfun.ultimatefiles.nightly`), así que se instala **al lado** de la oficial y no compite con su `versionCode`.
   Usa la clave del repositorio si está configurada, y la de debug si no.
+  Un `assembleRelease` normal sin clave (CI, F-Droid) deja el APK **sin firmar**; solo `-PdebugSigning=true` (lo pasa
+  el workflow de nightlies cuando no hay secretos) firma con la clave debug para que sea instalable.
 
 ## 4. Primera instalación con la clave nueva
 

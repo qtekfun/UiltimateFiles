@@ -48,11 +48,12 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Fall back to the debug key when no release keystore is configured.
-            signingConfig = if (signingKeystore != null) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            // Without a release keystore the APK stays unsigned (what F-Droid builds and then re-signs or verifies),
+            // unless -PdebugSigning=true asks for an installable build signed with the debug key (nightlies).
+            signingConfig = when {
+                signingKeystore != null -> signingConfigs.getByName("release")
+                (findProperty("debugSigning") as String?) == "true" -> signingConfigs.getByName("debug")
+                else -> null
             }
         }
     }
