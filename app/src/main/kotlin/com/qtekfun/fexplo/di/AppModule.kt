@@ -8,6 +8,8 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.datastore.DataStoreUserPreferencesRepository
 import com.qtekfun.fexplo.core.model.PanelId
+import com.qtekfun.fexplo.data.backup.BackupFiles
+import com.qtekfun.fexplo.data.backup.BackupManager
 import com.qtekfun.fexplo.data.io.FileStreamCopier
 import com.qtekfun.fexplo.data.network.WebDavAccountService
 import com.qtekfun.fexplo.data.network.WebDavClient
@@ -97,7 +99,9 @@ val appModule = module {
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
     factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { SettingsViewModel(get()) }
+    single { BackupManager(preferences = get(), accounts = get()) }
+    single { BackupFiles(androidContext()) }
+    factory { SettingsViewModel(get(), get(), get()) }
     factory { HistoryViewModel(get(), get()) }
     factory { params ->
         BrowserViewModel(

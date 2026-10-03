@@ -96,6 +96,6 @@ class NextcloudLoginFlow(
     }
 
     private companion object {
-        const val USER_AGENT = "Fexplo"
+        const val USER_AGENT = "UltimateFiles"
     }
 }

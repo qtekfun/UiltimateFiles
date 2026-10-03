@@ -165,8 +165,15 @@ fun MainScreen() {
                     AppScreen.SETTINGS -> {
                         val preferences by settingsViewModel.preferences.collectAsStateWithLifecycle()
                         preferences?.let { current ->
+                            val outcome by settingsViewModel.outcome.collectAsStateWithLifecycle()
+                            val accountCount by settingsViewModel.accountCount.collectAsStateWithLifecycle()
                             SettingsScreen(
                                 preferences = current,
+                                accountCount = accountCount,
+                                outcome = outcome,
+                                onExport = settingsViewModel::exportBackup,
+                                onImport = settingsViewModel::importBackup,
+                                onDismissOutcome = settingsViewModel::dismissOutcome,
                                 onThemeMode = settingsViewModel::setThemeMode,
                                 onDynamicColor = settingsViewModel::setDynamicColor,
                                 onVerifyCopies = settingsViewModel::setVerifyCopies,

@@ -1,4 +1,4 @@
-Fexplo is a free and open source file manager for Android built around two panels.
+UltimateFiles is a free and open source file manager for Android built around two panels.
 
 • Two panels: swipe between them on a phone, or see both side by side in landscape and on tablets.
 • Drag and drop items from one panel to the other and choose to copy or move.

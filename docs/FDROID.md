@@ -31,7 +31,7 @@ License: GPL-3.0-or-later
 SourceCode: https://github.com/qtekfun/fexplo
 IssueTracker: https://github.com/qtekfun/fexplo/issues
 
-AutoName: Fexplo
+AutoName: UltimateFiles
 
 RepoType: git
 Repo: https://github.com/qtekfun/fexplo.git

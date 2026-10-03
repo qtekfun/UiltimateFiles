@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Fexplo</string>
+    <string name="app_name">UltimateFiles</string>
     <string name="panel_tab_format">Panel %1$d</string>
     <string name="storage_internal">Internal storage</string>
     <string name="transfer_channel_name">File transfers</string>
@@ -83,7 +83,7 @@
     <string name="drop_copy">Copy</string>
     <string name="drop_move">Move</string>
     <string name="transfer_speed">%1$s/s</string>
-    <string name="install_permission_needed">Allow Fexplo to install apps in this screen, then open the APK again.</string>
+    <string name="install_permission_needed">Allow UltimateFiles to install apps in this screen, then open the APK again.</string>
     <string name="error_open_failed">Could not open the file: %1$s</string>
     <string name="error_no_app">No app can open this file</string>
     <string name="error_share_folders">Folders cannot be shared</string>
@@ -96,7 +96,7 @@
     <string name="drawer_add_storage">Add USB / SD folder</string>
     <string name="drawer_eject">Safely remove</string>
     <string name="permission_title">Storage access needed</string>
-    <string name="permission_message">Fexplo needs access to all files to browse and manage your storage.</string>
+    <string name="permission_message">UltimateFiles needs access to all files to browse and manage your storage.</string>
     <string name="permission_grant">Grant access</string>
     <string name="action_back">Back</string>
     <string name="error_volume_gone">Storage disconnected. Went back to an available folder.</string>
@@ -130,9 +130,9 @@
     <string name="settings_verify_copies_summary">Read each copied file back and compare its SHA-256 before a move deletes the original. Slower, recommended for large files.</string>
     <string name="drawer_add_account">Add Nextcloud / WebDAV</string>
     <string name="account_title">Connect a server</string>
-    <string name="account_hint">Enter your Nextcloud address. You will sign in and approve Fexplo in your browser, so your password is never shared with the app. Only HTTPS is supported.</string>
+    <string name="account_hint">Enter your Nextcloud address. You will sign in and approve UltimateFiles in your browser, so your password is never shared with the app. Only HTTPS is supported.</string>
     <string name="account_server">Server address</string>
-    <string name="account_waiting">Waiting for you to approve Fexplo in the browser…</string>
+    <string name="account_waiting">Waiting for you to approve UltimateFiles in the browser…</string>
     <string name="account_error_expired">The sign-in was not approved in time. Try again.</string>
     <string name="account_error_browser">No browser was found to open the sign-in page.</string>
     <string name="account_label">Name (optional)</string>
@@ -143,6 +143,36 @@
     <string name="account_error_generic">Could not connect: %1$s</string>
     <string name="account_remove">Remove account</string>
     <string name="account_remove_title">Remove account</string>
-    <string name="account_remove_message">Disconnect \"%1$s\" from Fexplo? Nothing is deleted on the server.</string>
+    <string name="account_remove_message">Disconnect \"%1$s\" from UltimateFiles? Nothing is deleted on the server.</string>
     <string name="error_remote_open">Copy network files to this device first to open or share them.</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_export">Export settings and accounts</string>
+    <string name="settings_export_summary">Save your settings and Nextcloud accounts to a file</string>
+    <string name="settings_import">Import settings and accounts</string>
+    <string name="settings_import_summary">Restore them from a backup file</string>
+    <string name="backup_export_title">Export backup</string>
+    <string name="backup_export_hint">The backup holds your theme and view settings and, if you choose, your connected accounts. Last opened folders are not saved.</string>
+    <plurals name="backup_include_accounts">
+        <item quantity="one">Include %1$d account</item>
+        <item quantity="other">Include %1$d accounts</item>
+    </plurals>
+    <string name="backup_passphrase_hint">Account passwords are encrypted in the file with a passphrase you choose. Keep it safe: without it they cannot be restored.</string>
+    <string name="backup_passphrase">Passphrase</string>
+    <string name="backup_passphrase_confirm">Repeat passphrase</string>
+    <string name="backup_passphrase_short">Use at least %1$d characters</string>
+    <string name="backup_passphrase_mismatch">The passphrases do not match</string>
+    <string name="backup_choose_location">Choose where to save</string>
+    <string name="backup_import_passphrase_title">Backup passphrase</string>
+    <string name="backup_import_passphrase_message">This backup contains accounts. Enter the passphrase it was exported with.</string>
+    <string name="backup_wrong_passphrase">Wrong passphrase</string>
+    <string name="backup_import_action">Import</string>
+    <string name="backup_done_export">Backup saved.</string>
+    <string name="backup_done_import">Settings restored. %1$s.</string>
+    <plurals name="backup_accounts_restored">
+        <item quantity="one">%1$d account restored</item>
+        <item quantity="other">%1$d accounts restored</item>
+    </plurals>
+    <string name="backup_invalid">This file is not an UltimateFiles backup.</string>
+    <string name="backup_unsupported">This backup was made by a newer version of the app.</string>
+    <string name="backup_failed">Could not complete the backup: %1$s</string>
 </resources>
