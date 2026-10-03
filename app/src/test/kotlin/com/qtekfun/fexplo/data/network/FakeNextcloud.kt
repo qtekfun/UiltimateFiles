@@ -132,10 +132,29 @@ internal class FakeNextcloud(private val user: String = "alice", private val pas
                 uploads.remove(uploadId)
                 respond(ex, 201)
             }
-            "DELETE" -> { uploads.remove(uploadId); respond(ex, 204) }
+            "DELETE" -> {
+                if (parts.size > 1) uploads[uploadId]?.chunks?.remove(parts[1]) else uploads.remove(uploadId)
+                respond(ex, 204)
+            }
+            "PROPFIND" -> {
+                val upload = uploads[uploadId] ?: return respond(ex, 404)
+                val xml = StringBuilder("""<?xml version="1.0"?><d:multistatus xmlns:d="DAV:">""")
+                xml.append("<d:response><d:href>$uploadsPrefix/$uploadId/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>")
+                upload.chunks.forEach { (name, bytes) ->
+                    xml.append("<d:response><d:href>$uploadsPrefix/$uploadId/$name</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>${bytes.size}</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>")
+                }
+                xml.append("</d:multistatus>")
+                val body = xml.toString().toByteArray()
+                ex.responseHeaders.add("Content-Type", "application/xml")
+                ex.sendResponseHeaders(207, body.size.toLong())
+                ex.responseBody.write(body)
+            }
             else -> respond(ex, 405)
         }
     }
+
+    /** Forgets every unfinished chunked upload, as a server cleaning up stale uploads would. */
+    fun dropPendingUploads() = uploads.clear()
 
     private fun get(ex: HttpExchange, rel: String) {
         val data = files[rel] ?: return respond(ex, 404)

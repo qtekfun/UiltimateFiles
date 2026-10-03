@@ -41,3 +41,5 @@
   - [x] 7.4 Pausar/reanudar copias, tareas en curso en el historial y notificación visible en la pantalla de bloqueo.
   - [x] 7.5 Exportar/importar ajustes y cuentas (cifrado con frase de contraseña) y renombrado de la app a UltimateFiles.
   - [x] 7.6 Vista en cuadrícula compartida por los dos paneles.
+  - [x] 7.7 Subidas a Nextcloud reanudables tras morir la app (hash por trozo).
+  - [x] 7.8 Versión en el código (`version.properties`) compatible con F-Droid; releases de CI con `versionCode` creciente.

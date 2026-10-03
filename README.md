@@ -42,10 +42,12 @@ generado: no sustituyen una prueba real en un dispositivo.
 - `ci.yml`: tests, lint y APK debug en cada PR y push a `master` y a ramas `claude/**`.
 - GitGuardian: escaneo de secretos mediante su app de GitHub, sin workflow ni API key.
 - `release.yml`: en cada push a `master` publica una release con el APK `UltimateFiles-<versión>.apk`
-  (`versionName = VERSION.<run_number>`). Para firmar con tu clave: secrets `SIGNING_KEYSTORE_BASE64`,
+  (`versionName = <version.properties>.<run_number>`, p. ej. `0.2.0.57`). Para firmar con tu clave: secrets `SIGNING_KEYSTORE_BASE64`,
   `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. Sin ellos se usa la clave debug.
 - Dependabot: Gradle y GitHub Actions, semanal.
-- Publicación en F-Droid: ver [docs/FDROID.md](docs/FDROID.md).
+- Versión: `version.properties` (`versionName` y `versionCode`). Para publicar una versión "oficial": subir ambos valores,
+  añadir `changelogs/<versionCode>.txt` en fastlane, mergear y etiquetar `vX.Y.Z`. Detalles y receta de F-Droid en
+  [docs/FDROID.md](docs/FDROID.md).
 
 ## Nombre y paquete
 La app se llama **UltimateFiles**. El identificador técnico (`com.qtekfun.fexplo`) se mantiene para que las

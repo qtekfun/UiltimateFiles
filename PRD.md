@@ -43,9 +43,9 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 - Copias robustas de ficheros enormes (nombre temporal, verificación SHA-256 opcional), pausar/reanudar, notificación en pantalla de bloqueo.
 - Nextcloud/WebDAV con *Login Flow v2*, subida por trozos y descarga reanudable (solo HTTPS).
 - Vista en cuadrícula, abrir APK, exportar/importar ajustes y cuentas.
+- Las subidas a Nextcloud interrumpidas (p. ej. la app muere) se reanudan al repetir la copia: solo se vuelven a enviar los trozos que cambian.
 
 ## 5. Pendiente / ideas
-- Certificados autofirmados y HTTP para servidores propios (hoy solo HTTPS con certificado válido).
-- Reanudar una subida interrumpida tras morir el proceso.
+- Quizá en el futuro: certificados autofirmados (fijando la huella por cuenta) y HTTP para servidores propios; hoy solo HTTPS con certificado válido.
 - SMB/SFTP, compresión/descompresión, visores integrados (ver sección 3).
 - Pruebas instrumentadas de UI y prueba real en dispositivo con ficheros de varios GB.

@@ -62,3 +62,9 @@ El contrato base se amplía con lo necesario para el motor de copia (`volumes`, 
 - `data/backup/BackupManager`: JSON con ajustes y, cifrado con PBKDF2-SHA256 + AES-256-GCM, las cuentas; `BackupFiles`
   lee/escribe vía el selector de documentos (sin permisos de almacenamiento).
 - Vista lista/cuadrícula: `ViewMode` compartido por ambos paneles mediante las preferencias.
+- Subidas reanudables: `WebDavUploadStream` guarda en `UploadResumeStore` (fichero en `filesDir`) el id de subida del servidor y el
+  SHA-256 de cada trozo enviado. Al repetir la copia al mismo destino (el nombre temporal `.fexplo-part` es estable) se relee el
+  origen y se salta cada trozo cuyo hash coincide y que el servidor sigue teniendo; el resto se sube y los trozos sobrantes se
+  borran. No se confía en fechas ni tamaños del origen. Las subidas guardadas caducan a las 20 h.
+- Versión: `version.properties` es la fuente de verdad (`scripts/check-version.sh` la valida en CI); las releases de GitHub usan
+  `versionCode = código * 100000 + run`.

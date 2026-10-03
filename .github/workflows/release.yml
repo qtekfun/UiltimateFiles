@@ -29,8 +29,12 @@ jobs:
       - name: Compute version
         id: version
         run: |
-          name="$(tr -d '[:space:]' < VERSION).${{ github.run_number }}"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
+          ./scripts/check-version.sh
+          base_name="$(sed -n 's/^versionName=//p' version.properties | tr -d '[:space:]')"
+          base_code="$(sed -n 's/^versionCode=//p' version.properties | tr -d '[:space:]')"
+          # Every merge is its own build: 0.2.0.57, versionCode 20000057. Always above the committed code.
+          echo "name=$base_name.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "code=$(( base_code * 100000 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
 
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
@@ -56,7 +60,7 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: >
           ./gradlew assembleRelease
-          -PversionCode=${{ github.run_number }}
+          -PversionCode=${{ steps.version.outputs.code }}
           -PversionName=${{ steps.version.outputs.name }}
 
       - name: Rename APK

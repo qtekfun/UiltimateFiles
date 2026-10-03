@@ -21,14 +21,17 @@ class WebDavClient(
     private val http: OkHttpClient = defaultHttpClient(),
     private val retryDelayMillis: Long = 1_000,
 ) {
-    fun propfind(session: WebDavSession, path: String, depth: Int): List<DavEntry> = retrying {
+    fun propfind(session: WebDavSession, path: String, depth: Int): List<DavEntry> =
+        propfindAt(session.urlFor(path), session, path, depth)
+
+    private fun propfindAt(url: okhttp3.HttpUrl, session: WebDavSession, label: String, depth: Int): List<DavEntry> = retrying {
         val body = PROPFIND_BODY.toRequestBody(XML)
-        val request = Request.Builder().url(session.urlFor(path))
+        val request = Request.Builder().url(url)
             .method("PROPFIND", body)
             .header("Depth", depth.toString())
             .authorized(session).build()
         http.newCall(request).execute().use { response ->
-            ensureSuccess(response, path)
+            ensureSuccess(response, label)
             WebDavXml.parse(response.body!!.byteStream(), session)
         }
     }
@@ -107,6 +110,30 @@ class WebDavClient(
                 .authorized(session).build(),
             finalPath,
         )
+    }
+
+    /** Chunks the server holds for [uploadId] (index to size), or null when that upload no longer exists. */
+    fun listChunks(session: WebDavSession, uploadId: String): Map<Int, Long>? {
+        val uploads = session.uploadsUrl() ?: return null
+        val url = uploads.newBuilder().addPathSegment(uploadId).build()
+        return try {
+            propfindAt(url, session, uploadId, 1)
+                .filter { !it.isDirectory }
+                .mapNotNull { entry -> entry.name.toIntOrNull()?.let { it to entry.sizeBytes } }
+                .toMap()
+        } catch (e: WebDavException) {
+            if (e.code == 404) null else throw e
+        }
+    }
+
+    fun deleteChunk(session: WebDavSession, uploadId: String, index: Int) {
+        val uploads = requireNotNull(session.uploadsUrl())
+        val url = uploads.newBuilder().addPathSegment(uploadId).addPathSegment(String.format(java.util.Locale.ROOT, "%05d", index)).build()
+        try {
+            send(Request.Builder().url(url).delete().authorized(session).build(), uploadId)
+        } catch (e: WebDavException) {
+            if (e.code != 404) throw e
+        }
     }
 
     /** Best effort cleanup of an upload that will never be finished. */

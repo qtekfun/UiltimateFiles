@@ -6,6 +6,7 @@ import com.qtekfun.fexplo.core.model.StorageVolume
 import com.qtekfun.fexplo.core.model.WebDavAccount
 import com.qtekfun.fexplo.core.util.MimeTypes
 import com.qtekfun.fexplo.data.network.DavEntry
+import com.qtekfun.fexplo.data.network.UploadResumeStore
 import com.qtekfun.fexplo.data.network.WebDavClient
 import com.qtekfun.fexplo.data.network.WebDavSession
 import com.qtekfun.fexplo.data.network.WebDavUploadStream
@@ -16,6 +17,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.security.MessageDigest
 
 /**
  * [FileSystemRepository] over WebDAV for every connected account. Paths look like
@@ -26,6 +28,7 @@ class WebDavFileSystemRepository(
     private val client: WebDavClient = WebDavClient(),
     private val uploadChunkSize: Int = WebDavUploadStream.DEFAULT_CHUNK_SIZE,
     private val mimeOf: (String) -> String? = MimeTypes::fromName,
+    private val resumeStore: UploadResumeStore? = null,
 ) : FileSystemRepository {
 
     override suspend fun volumes(): List<StorageVolume> = accounts.accounts.first().map { account ->
@@ -100,10 +103,12 @@ class WebDavFileSystemRepository(
         overwrite: Boolean,
     ): Result<OutputStream> = ioResult {
         requireValidName(name)
-        val (_, session, parent) = resolve(parentUriOrPath)
+        val (account, session, parent) = resolve(parentUriOrPath)
         val path = join(parent, name)
         if (!overwrite && client.exists(session, path)) throw IOException("Already exists: $name")
-        WebDavUploadStream(client, session, path, mimeType, overwrite, uploadChunkSize)
+        // Same account and destination (the engine's temporary name is stable) means the same resumable upload.
+        val key = MessageDigest.getInstance("SHA-256").digest("${account.id}|$path".toByteArray()).joinToString("") { "%02x".format(it) }
+        WebDavUploadStream(client, session, path, mimeType, overwrite, uploadChunkSize, resumeStore, key)
     }
 
     // --- helpers --------------------------------------------------------------------------------

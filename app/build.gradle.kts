@@ -3,9 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// Release metadata injected by CI (-PversionCode=… -PversionName=…).
-val ciVersionCode = (findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
-val ciVersionName = (findProperty("versionName") as String?) ?: "0.1.0"
+// The committed version (version.properties) is what F-Droid builds; CI release builds override it with
+// -PversionCode=… -PversionName=… so every merge to master gets a unique, increasing build number.
+val versionFile = java.util.Properties().apply { rootProject.file("version.properties").inputStream().use { load(it) } }
+val ciVersionCode = (findProperty("versionCode") as String?)?.toIntOrNull() ?: versionFile.getProperty("versionCode").toInt()
+val ciVersionName = (findProperty("versionName") as String?) ?: versionFile.getProperty("versionName")
 
 // Signing material comes from the environment so no secret ever lives in the repo.
 val signingKeystore: String? = System.getenv("SIGNING_KEYSTORE_PATH")

@@ -25,6 +25,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
+      - name: Check version files
+        run: ./scripts/check-version.sh
       - name: Lint
         run: ./gradlew lintDebug
       - name: Assemble debug APK
