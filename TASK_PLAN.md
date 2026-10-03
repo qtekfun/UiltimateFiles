@@ -28,3 +28,8 @@
   - [x] 5.2 Configurar `HorizontalPager` para modo retrato y layout split 50/50 para apaisado.
   - [x] 5.3 Integrar APIs de Drag & Drop entre paneles en modo split con diálogo modal "¿Copiar o Mover?".
   - [x] 5.4 Navigation Drawer lateral con volúmenes detectados (Interno, USB).
+
+- [x] **Fase 6: Feedback de la primera prueba (v0.1.5)**
+  - [x] 6.1 Historial de tareas completadas (copiar, mover, eliminar) persistente y accesible desde el cajón.
+  - [x] 6.2 Detección de discos expulsados o desconectados: el panel que estaba en ese volumen vuelve a una carpeta disponible y avisa.
+  - [x] 6.3 Pantalla de ajustes con tema (sistema, claro, oscuro, AMOLED) y colores dinámicos.

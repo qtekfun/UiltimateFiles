@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.core.model.SortField
 import com.qtekfun.fexplo.core.model.SortOrder
+import com.qtekfun.fexplo.core.model.ThemeMode
 import com.qtekfun.fexplo.core.model.UserPreferences
 import com.qtekfun.fexplo.core.model.ViewMode
 import com.qtekfun.fexplo.domain.repository.UserPreferencesRepository
@@ -24,6 +25,8 @@ class DataStoreUserPreferencesRepository(private val store: DataStore<Preference
                 ascending = prefs[SORT_ASCENDING] ?: true,
             ),
             lastDirectoryPaths = PanelId.entries.associateWith { prefs[lastPathKey(it)] },
+            themeMode = prefs[THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
+            dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
         )
     }
 
@@ -42,9 +45,19 @@ class DataStoreUserPreferencesRepository(private val store: DataStore<Preference
         store.edit { it[lastPathKey(panel)] = directoryPath }
     }
 
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        store.edit { it[THEME_MODE] = mode.name }
+    }
+
+    override suspend fun setDynamicColor(enabled: Boolean) {
+        store.edit { it[DYNAMIC_COLOR] = enabled }
+    }
+
     private companion object {
         val VIEW_MODE = stringPreferencesKey("view_mode")
         val SORT_FIELD = stringPreferencesKey("sort_field")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         fun lastPathKey(panel: PanelId) = stringPreferencesKey("last_path_${panel.name.lowercase()}")
     }

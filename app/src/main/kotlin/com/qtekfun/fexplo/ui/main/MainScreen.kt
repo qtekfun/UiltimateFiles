@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Eject
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Usb
@@ -32,6 +34,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -52,9 +58,15 @@ import com.qtekfun.fexplo.ui.components.ConflictDialog
 import com.qtekfun.fexplo.ui.components.DropActionDialog
 import com.qtekfun.fexplo.ui.components.TransferProgressBar
 import com.qtekfun.fexplo.ui.dualpanel.DualPanelScaffold
+import com.qtekfun.fexplo.ui.history.HistoryScreen
+import com.qtekfun.fexplo.ui.history.HistoryViewModel
+import com.qtekfun.fexplo.ui.settings.SettingsScreen
+import com.qtekfun.fexplo.ui.settings.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatform
+
+private enum class AppScreen { BROWSER, HISTORY, SETTINGS }
 
 /** Root screen: navigation drawer + dual panel, plus the dialogs and bar shared by both panels. */
 @Composable
@@ -63,6 +75,11 @@ fun MainScreen() {
     val viewModel = viewModel<MainViewModel>(factory = viewModelFactory { initializer { koin.get<MainViewModel>() } })
     val left = rememberBrowserViewModel(PanelId.LEFT)
     val right = rememberBrowserViewModel(PanelId.RIGHT)
+
+    val settingsViewModel = viewModel<SettingsViewModel>(factory = viewModelFactory { initializer { koin.get<SettingsViewModel>() } })
+    val historyViewModel = viewModel<HistoryViewModel>(factory = viewModelFactory { initializer { koin.get<HistoryViewModel>() } })
+    var screen by rememberSaveable { mutableStateOf(AppScreen.BROWSER) }
+    BackHandler(enabled = screen != AppScreen.BROWSER) { screen = AppScreen.BROWSER }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val transfer by viewModel.transfer.collectAsStateWithLifecycle()
@@ -86,12 +103,21 @@ fun MainScreen() {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = screen == AppScreen.BROWSER,
         drawerContent = {
             DrawerContent(
                 volumes = state.volumes,
                 shortcuts = state.shortcuts,
                 onOpen = ::openInActivePanel,
                 onAddStorage = { pickFolder.launch(null) },
+                onShowHistory = {
+                    screen = AppScreen.HISTORY
+                    scope.launch { drawerState.close() }
+                },
+                onShowSettings = {
+                    screen = AppScreen.SETTINGS
+                    scope.launch { drawerState.close() }
+                },
                 onEject = {
                     try {
                         context.startActivity(KoinPlatform.getKoin().get<IntentFactory>().ejectSettings())
@@ -104,13 +130,34 @@ fun MainScreen() {
     ) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
-                DualPanelScaffold(
-                    left = left,
-                    right = right,
-                    activePanel = state.activePanel,
-                    onActivePanelChange = viewModel::setActivePanel,
-                    onOpenDrawer = { scope.launch { drawerState.open() } },
-                )
+                when (screen) {
+                    AppScreen.BROWSER -> DualPanelScaffold(
+                        left = left,
+                        right = right,
+                        activePanel = state.activePanel,
+                        onActivePanelChange = viewModel::setActivePanel,
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
+                    )
+                    AppScreen.HISTORY -> {
+                        val entries by historyViewModel.entries.collectAsStateWithLifecycle()
+                        HistoryScreen(
+                            entries = entries,
+                            onClear = historyViewModel::clear,
+                            onBack = { screen = AppScreen.BROWSER },
+                        )
+                    }
+                    AppScreen.SETTINGS -> {
+                        val preferences by settingsViewModel.preferences.collectAsStateWithLifecycle()
+                        preferences?.let { current ->
+                            SettingsScreen(
+                                preferences = current,
+                                onThemeMode = settingsViewModel::setThemeMode,
+                                onDynamicColor = settingsViewModel::setDynamicColor,
+                                onBack = { screen = AppScreen.BROWSER },
+                            )
+                        }
+                    }
+                }
             }
             TransferProgressBar(progress = transfer.progress, onCancel = viewModel::cancelTransfers)
         }
@@ -150,6 +197,8 @@ private fun DrawerContent(
     shortcuts: List<Shortcut>,
     onOpen: (String) -> Unit,
     onAddStorage: () -> Unit,
+    onShowHistory: () -> Unit,
+    onShowSettings: () -> Unit,
     onEject: () -> Unit,
 ) {
     ModalDrawerSheet {
@@ -191,6 +240,20 @@ private fun DrawerContent(
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 selected = false,
                 onClick = onAddStorage,
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+            NavigationDrawerItem(
+                label = { Text(stringResource(R.string.history_title)) },
+                icon = { Icon(Icons.Filled.History, contentDescription = null) },
+                selected = false,
+                onClick = onShowHistory,
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+            NavigationDrawerItem(
+                label = { Text(stringResource(R.string.settings_title)) },
+                icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                selected = false,
+                onClick = onShowSettings,
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
         }

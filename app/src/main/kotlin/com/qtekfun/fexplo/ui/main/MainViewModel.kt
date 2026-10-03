@@ -11,11 +11,13 @@ import com.qtekfun.fexplo.core.model.StorageKind
 import com.qtekfun.fexplo.core.model.StorageVolume
 import com.qtekfun.fexplo.data.repository.SafFileSystemRepository
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
+import com.qtekfun.fexplo.domain.repository.VolumeChangeSource
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import com.qtekfun.fexplo.domain.usecase.BatchCopyUseCase
 import com.qtekfun.fexplo.domain.usecase.BatchMoveUseCase
 import com.qtekfun.fexplo.ui.dualpanel.DragDropState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +43,7 @@ class MainViewModel(
     private val dragDrop: DragDropState,
     private val copyFiles: BatchCopyUseCase,
     private val moveFiles: BatchMoveUseCase,
+    private val volumeChanges: VolumeChangeSource,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -51,6 +54,12 @@ class MainViewModel(
 
     init {
         refreshVolumes()
+        viewModelScope.launch {
+            volumeChanges.changes.collect {
+                delay(VOLUME_SETTLE_MILLIS)
+                refreshVolumes()
+            }
+        }
     }
 
     fun setActivePanel(panel: PanelId) = _state.update { it.copy(activePanel = panel) }
@@ -92,6 +101,7 @@ class MainViewModel(
     }
 
     private companion object {
+        const val VOLUME_SETTLE_MILLIS = 500L
         val SHORTCUT_FOLDERS = listOf(
             Triple(ShortcutKind.DOWNLOADS, R.string.shortcut_downloads, "Download"),
             Triple(ShortcutKind.DOCUMENTS, R.string.shortcut_documents, "Documents"),

@@ -9,15 +9,20 @@ import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.datastore.DataStoreUserPreferencesRepository
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.data.io.FileStreamCopier
+import com.qtekfun.fexplo.data.repository.FileTransferHistoryRepository
 import com.qtekfun.fexplo.data.repository.LocalFileSystemRepository
 import com.qtekfun.fexplo.data.repository.RoutingFileSystemRepository
 import com.qtekfun.fexplo.data.repository.SafFileSystemRepository
 import com.qtekfun.fexplo.data.service.ServiceTransferLauncher
 import com.qtekfun.fexplo.data.service.TransferNotifications
 import com.qtekfun.fexplo.data.system.IntentFactory
+import com.qtekfun.fexplo.data.system.SystemVolumeMonitor
 import com.qtekfun.fexplo.domain.clipboard.ClipboardManager
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
+import com.qtekfun.fexplo.domain.history.TransferHistoryRecorder
+import com.qtekfun.fexplo.domain.history.TransferHistoryRepository
 import com.qtekfun.fexplo.domain.repository.UserPreferencesRepository
+import com.qtekfun.fexplo.domain.repository.VolumeChangeSource
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import com.qtekfun.fexplo.domain.transfer.TransferServiceLauncher
 import com.qtekfun.fexplo.domain.usecase.BatchCopyUseCase
@@ -29,7 +34,10 @@ import com.qtekfun.fexplo.domain.usecase.StreamCopier
 import com.qtekfun.fexplo.domain.usecase.TransferEngine
 import com.qtekfun.fexplo.ui.browser.BrowserViewModel
 import com.qtekfun.fexplo.ui.dualpanel.DragDropState
+import com.qtekfun.fexplo.ui.history.HistoryViewModel
 import com.qtekfun.fexplo.ui.main.MainViewModel
+import com.qtekfun.fexplo.ui.settings.SettingsViewModel
+import java.io.File
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -51,12 +59,15 @@ val appModule = module {
 
     single { TransferEngine(repository = get(), copier = get()) }
     single<TransferServiceLauncher> { ServiceTransferLauncher(androidContext()) }
-    single { TransferCoordinator(engine = get(), launcher = get()) }
+    single<TransferHistoryRepository> { FileTransferHistoryRepository(File(androidContext().filesDir, "history.tsv")) }
+    single { TransferHistoryRecorder(history = get(), files = get()) }
+    single<VolumeChangeSource> { SystemVolumeMonitor(androidContext()) }
+    single { TransferCoordinator(engine = get(), recorder = get(), launcher = get()) }
     single { TransferNotifications(androidContext()) }
 
     factory { BatchCopyUseCase(get()) }
     factory { BatchMoveUseCase(get()) }
-    factory { DeleteUseCase(get()) }
+    factory { DeleteUseCase(get(), get()) }
     factory { BuildBreadcrumbUseCase(get()) }
     factory { HashCalcUseCase(get()) }
 
@@ -68,7 +79,9 @@ val appModule = module {
     single { DragDropState() }
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
-    factory { MainViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { SettingsViewModel(get()) }
+    factory { HistoryViewModel(get()) }
     factory { params ->
         BrowserViewModel(
             panel = params.get<PanelId>(),
@@ -82,6 +95,7 @@ val appModule = module {
             copyFiles = get(),
             moveFiles = get(),
             dragDrop = get(),
+            volumeChanges = get(),
         )
     }
 }

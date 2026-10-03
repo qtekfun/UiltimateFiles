@@ -4,12 +4,17 @@ import com.qtekfun.fexplo.core.model.OperationType
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.core.model.SortField
 import com.qtekfun.fexplo.core.model.SortOrder
+import com.qtekfun.fexplo.core.model.ThemeMode
 import com.qtekfun.fexplo.core.model.UserPreferences
 import com.qtekfun.fexplo.core.model.ViewMode
 import com.qtekfun.fexplo.data.io.FileStreamCopier
 import com.qtekfun.fexplo.data.repository.LocalFileSystemRepository
 import com.qtekfun.fexplo.domain.clipboard.ClipboardManager
+import com.qtekfun.fexplo.domain.history.HistoryEntry
+import com.qtekfun.fexplo.domain.history.TransferHistoryRecorder
+import com.qtekfun.fexplo.domain.history.TransferHistoryRepository
 import com.qtekfun.fexplo.domain.repository.UserPreferencesRepository
+import com.qtekfun.fexplo.domain.repository.VolumeChangeSource
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import com.qtekfun.fexplo.domain.usecase.BatchCopyUseCase
 import com.qtekfun.fexplo.domain.usecase.BatchMoveUseCase
@@ -20,6 +25,8 @@ import com.qtekfun.fexplo.domain.usecase.TransferEngine
 import com.qtekfun.fexplo.ui.dualpanel.DragDropState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -48,12 +55,26 @@ class BrowserViewModelTest {
         override suspend fun setLastDirectory(panel: PanelId, directoryPath: String) =
             flow.update { it.copy(lastDirectoryPaths = it.lastDirectoryPaths + (panel to directoryPath)) }
 
+        override suspend fun setThemeMode(mode: ThemeMode) = flow.update { it.copy(themeMode = mode) }
+        override suspend fun setDynamicColor(enabled: Boolean) = flow.update { it.copy(dynamicColor = enabled) }
+
         private fun MutableStateFlow<UserPreferences>.update(block: (UserPreferences) -> UserPreferences) {
             value = block(value)
         }
     }
 
+    private class FakeHistory : TransferHistoryRepository {
+        val added = mutableListOf<HistoryEntry>()
+        override val entries: Flow<List<HistoryEntry>> = MutableStateFlow(emptyList())
+        override suspend fun add(entry: HistoryEntry) {
+            added += entry
+        }
+        override suspend fun clear() = added.clear()
+    }
+
     private val clipboard = ClipboardManager()
+    private val history = FakeHistory()
+    private val volumeEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private lateinit var viewModel: BrowserViewModel
 
     @Before
@@ -63,7 +84,8 @@ class BrowserViewModelTest {
         tmp.newFolder("alpha")
         tmp.newFile("b.txt").writeText("hello")
         val repo = LocalFileSystemRepository(tmp.root, "Internal") { null }
-        val coordinator = TransferCoordinator(TransferEngine(repo, FileStreamCopier())) { }
+        val recorder = TransferHistoryRecorder(history, repo)
+        val coordinator = TransferCoordinator(TransferEngine(repo, FileStreamCopier()), recorder) { }
         viewModel = BrowserViewModel(
             panel = PanelId.LEFT,
             repository = repo,
@@ -71,11 +93,14 @@ class BrowserViewModelTest {
             clipboardManager = clipboard,
             coordinator = coordinator,
             buildBreadcrumb = BuildBreadcrumbUseCase(repo),
-            deleteFiles = DeleteUseCase(repo),
+            deleteFiles = DeleteUseCase(repo, recorder),
             calculateHash = HashCalcUseCase(repo),
             copyFiles = BatchCopyUseCase(coordinator),
             moveFiles = BatchMoveUseCase(coordinator),
             dragDrop = DragDropState(),
+            volumeChanges = object : VolumeChangeSource {
+                override val changes: Flow<Unit> = volumeEvents
+            },
         )
     }
 
@@ -196,5 +221,31 @@ class BrowserViewModelTest {
             .dialog as BrowserDialog.Properties
         val done = dialog.hash as com.qtekfun.fexplo.core.model.HashState.Done
         assertEquals("5d41402abc4b2a76b9719d911017c592", done.hashes.md5)
+    }
+
+    @Test
+    fun `delete is recorded in the history`() = runTest {
+        val file = loaded().items.first { it.name == "b.txt" }
+
+        viewModel.onEvent(BrowserEvent.RequestDelete(listOf(file)))
+        viewModel.onEvent(BrowserEvent.ConfirmDelete)
+        viewModel.state.first { s -> s.items.none { it.name == "b.txt" } }
+
+        assertEquals(1, history.added.size)
+        assertEquals("b.txt", history.added.first().firstItemName)
+    }
+
+    @Test
+    fun `panel falls back to an existing folder when its folder disappears`() = runTest {
+        val alpha = loaded().items.first { it.name == "alpha" }
+        viewModel.onEvent(BrowserEvent.OpenItem(alpha))
+        viewModel.state.first { it.currentPath == alpha.path && !it.isLoading }
+
+        // Simulates an ejected drive / folder removed from outside the app.
+        tmp.root.resolve("alpha").deleteRecursively()
+        volumeEvents.tryEmit(Unit)
+
+        val state = viewModel.state.first { it.currentPath == tmp.root.path && !it.isLoading }
+        assertEquals(listOf("Internal"), state.breadcrumb.map { it.label })
     }
 }

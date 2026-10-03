@@ -51,12 +51,15 @@ class SafFileSystemRepository(private val context: Context) : FileSystemReposito
 
     override suspend fun listFiles(uriOrPath: String): Result<List<FileItem>> = ioResult {
         val dir = documentAt(uriOrPath)
+        if (!dir.exists()) throw IOException("Not found: $uriOrPath") // e.g. the drive was unplugged
         if (!dir.isDirectory) throw IOException("Not a directory: $uriOrPath")
         dir.listFiles().map(::toItem)
     }
 
     override suspend fun stat(uriOrPath: String): Result<FileItem> = ioResult {
-        toItem(documentAt(uriOrPath))
+        val document = documentAt(uriOrPath)
+        if (!document.exists()) throw IOException("Not found: $uriOrPath")
+        toItem(document)
     }
 
     /** Null for a tree root, and also when the provider cannot resolve the document path. */

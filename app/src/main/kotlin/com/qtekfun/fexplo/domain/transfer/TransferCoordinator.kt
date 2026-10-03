@@ -6,16 +6,19 @@ import com.qtekfun.fexplo.core.model.FileItem
 import com.qtekfun.fexplo.core.model.TransferProgress
 import com.qtekfun.fexplo.core.model.TransferRequest
 import com.qtekfun.fexplo.core.model.TransferStatus
+import com.qtekfun.fexplo.domain.history.TransferHistoryRecorder
 import com.qtekfun.fexplo.domain.usecase.ConflictResolver
 import com.qtekfun.fexplo.domain.usecase.TransferEngine
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Starts the foreground service that will drain the coordinator's queue. */
 fun interface TransferServiceLauncher {
@@ -35,6 +38,7 @@ data class TransferState(
  */
 class TransferCoordinator(
     private val engine: TransferEngine,
+    private val recorder: TransferHistoryRecorder,
     private val launcher: TransferServiceLauncher,
 ) : ConflictResolver {
     private val lock = Any()
@@ -96,7 +100,9 @@ class TransferCoordinator(
                 _state.update { it.copy(progress = it.progress?.copy(status = TransferStatus.CANCELLED)) }
             }
         }
-        return _state.value.progress
+        val finalProgress = _state.value.progress
+        withContext(NonCancellable) { recorder.recordTransfer(request, finalProgress) }
+        return finalProgress
     }
 
     /** Cancels the running transfer and drops everything still queued. */
