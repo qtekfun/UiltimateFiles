@@ -11,6 +11,10 @@ val versionFile = Properties().apply { rootProject.file("version.properties").in
 val ciVersionCode = (findProperty("versionCode") as String?)?.toIntOrNull() ?: versionFile.getProperty("versionCode").toInt()
 val ciVersionName = (findProperty("versionName") as String?) ?: versionFile.getProperty("versionName")
 
+// Master builds are published as "nightly": a different application id, so they install next to the official release
+// (whose versionCode is the committed one) instead of racing it. Official releases are built without this flag.
+val nightly = (findProperty("nightly") as String?) == "true"
+
 // Signing material comes from the environment so no secret ever lives in the repo.
 val signingKeystore: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
@@ -24,6 +28,7 @@ android {
         targetSdk = 35
         versionCode = ciVersionCode
         versionName = ciVersionName
+        if (nightly) applicationIdSuffix = ".nightly"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -59,9 +59,13 @@ generado: no sustituyen una prueba real en un dispositivo.
 ## CI/CD
 - `ci.yml`: tests, lint y APK debug en cada PR y push a `master` y a ramas `claude/**`.
 - GitGuardian: escaneo de secretos mediante su app de GitHub, sin workflow ni API key.
-- `release.yml`: en cada push a `master` publica una release con el APK `UltimateFiles-<versión>.apk`
-  (`versionName = <version.properties>.<run_number>`, p. ej. `0.2.0.57`). Para firmar con tu clave: secrets `SIGNING_KEYSTORE_BASE64`,
-  `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. Sin ellos se usa la clave debug.
+- `release.yml`: una etiqueta `vX.Y.Z` publica la **release oficial** (`UltimateFiles-X.Y.Z.apk`, versión exacta de
+  `version.properties`, firmada con tu clave; falla sin los secretos). Cada push a `master` publica una **nightly**
+  (pre-release, identificador `com.qtekfun.ultimatefiles.nightly`) que se instala al lado de la oficial. Secretos:
+  `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`; cómo crearlos en
+  [docs/SIGNING.md](docs/SIGNING.md).
+- `reproducible.yml`: compila la release dos veces desde sitios distintos y compara los APK (requisito para que F-Droid
+  publique el APK con tu firma).
 - Dependabot: Gradle y GitHub Actions, semanal.
 - Versión: `version.properties` (`versionName` y `versionCode`). Para publicar una versión "oficial": subir ambos valores,
   añadir `changelogs/<versionCode>.txt` en fastlane, mergear y etiquetar `vX.Y.Z`. Detalles y receta de F-Droid en
