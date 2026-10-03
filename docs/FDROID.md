@@ -1,17 +1,18 @@
-# Publicar en F-Droid
+# Publishing on F-Droid
 
-El proceso de firma y de publicación (igual que en UltimateDeck) está en [RELEASING.md](../RELEASING.md); la metadata para
-fdroiddata, en [`fdroid/com.qtekfun.ultimatefiles.yml`](../fdroid/com.qtekfun.ultimatefiles.yml). Aquí, el estado:
+The signing and release process (the same as in UltimateDeck) is described in [RELEASING.md](../RELEASING.md); the
+metadata for fdroiddata is in [`fdroid/com.qtekfun.ultimatefiles.yml`](../fdroid/com.qtekfun.ultimatefiles.yml). Status:
 
-- **Política de F-Droid:** GPL-3.0-or-later, sin dependencias propietarias, sin analíticas ni Google Play Services y sin el
-  bloque de metadatos de dependencias en el APK. sshj, smbj, BouncyCastle, commons-compress, xz y OkHttp son
-  Apache-2.0/MIT/BSD o dominio público.
-- **Compilación reproducible:** el workflow `reproducible.yml` compila dos veces, sin caché y desde directorios distintos, y
-  compara los APK sin firmar con `apksigcopier`, que es lo que hace F-Droid. Sin clave, `assembleRelease` deja el APK sin
-  firmar. No sustituye a la revisión de F-Droid: su servidor usa su propio entorno (la receta instala JDK 21).
-- **Ficha:** `fastlane/metadata/android/<locale>/` (en-US y es-ES) con textos, icono y `changelogs/<versionCode>.txt`.
-  **Faltan las capturas de pantalla** (`images/phoneScreenshots/`).
-- **Pendiente tuyo:** crear la clave y los secretos, etiquetar `v0.3.0`, rellenar `commit:` (SHA de la etiqueta) y
-  `AllowedAPKSigningKeys` en la receta y enviarla como merge request a fdroiddata.
+- **F-Droid policy:** GPL-3.0-or-later, no proprietary dependencies, no analytics or Google Play Services, and no
+  dependency metadata block in the APK. sshj, smbj, BouncyCastle, commons-compress, xz and OkHttp are Apache-2.0, MIT, BSD or
+  public domain.
+- **Reproducible build:** the `reproducible.yml` workflow builds twice, without cache and from different directories, and
+  compares the unsigned APKs with `apksigcopier`, which is what F-Droid does. Without a key, `assembleRelease` leaves the
+  APK unsigned. It does not replace F-Droid's review: their server uses its own environment (the recipe installs JDK 21).
+- **Listing:** `fastlane/metadata/android/<locale>/` (en-US and es-ES) with texts, icon and `changelogs/<versionCode>.txt`.
+  **Screenshots are still missing** (`images/phoneScreenshots/`).
+- **Done:** signing key and secrets created, `v0.3.0` tagged and released, `commit:` and `AllowedAPKSigningKeys` filled in
+  the recipe.
+- **Still to do:** add the screenshots and submit the recipe as a merge request to fdroiddata.
 
-La receta es un **borrador que no se ha ejecutado en el servidor de compilación de F-Droid**.
+The recipe is a **draft that has not been run on F-Droid's build server**.

@@ -1,40 +1,40 @@
-# Arquitectura del Sistema
+# System Architecture
 
-## 1. Stack Técnico
-- **Lenguaje:** Kotlin 2.x
+## 1. Tech Stack
+- **Language:** Kotlin 2.x
 - **UI:** Jetpack Compose + Material 3 + WindowSizeClass
 - **SDKs:** Min SDK 26 | Target SDK 35
-- **DI:** Koin (ligero, sin generación de código invasiva)
-- **Concurrencia:** Kotlin Coroutines + Flow / StateFlow
-- **Configuración:** Jetpack DataStore Preferences
-- **I/O Engine:** `InputStream` / `OutputStream` canalizados con buffer de 64KB y canal de progreso.
+- **DI:** Koin (lightweight, no invasive code generation)
+- **Concurrency:** Kotlin Coroutines + Flow / StateFlow
+- **Configuration:** Jetpack DataStore Preferences
+- **I/O engine:** `InputStream` / `OutputStream` piped through a 64 KB buffer with a progress channel.
 
-## 2. Módulos y Estructura de Paquetes
+## 2. Modules and Package Structure
 ```text
 com.qtekfun.ultimatefiles/
 ├── core/
 │   ├── model/             # FileItem, StorageVolume, TransferProgress, TransferStatus, ConflictResolution
-│   ├── datastore/         # Persistencia de preferencias (rutas, ordenación, vistas)
-│   └── util/              # Formatters de bytes, hashes (MD5/SHA), MimeTypes
+│   ├── datastore/         # Preference persistence (paths, sorting, views)
+│   └── util/              # Byte formatters, hashes (MD5/SHA), MimeTypes
 ├── data/
 │   ├── repository/        # FileSystemRepository (LocalFileRepo, SafUsbRepo)
-│   ├── io/                # FileStreamCopier con reporte de bytes emitidos
+│   ├── io/                # FileStreamCopier reporting bytes written
 │   └── service/           # FileTransferForegroundService + NotificationManager
 ├── domain/
 │   ├── usecase/           # BatchCopyUseCase, BatchMoveUseCase, DeleteUseCase, HashCalcUseCase
-│   └── clipboard/         # ClipboardManager (Estado global de corte/copia entre paneles)
+│   └── clipboard/         # ClipboardManager (global cut/copy state shared by both panels)
 └── ui/
-    ├── main/              # Scaffold principal con NavigationDrawer y WindowSizeClass
-    ├── dualpanel/         # Orquestador: HorizontalPager (Compact) vs Row 50/50 (Expanded)
-    ├── browser/           # Panel individual (ViewModel, FileList, FileItemRow, CAB)
+    ├── main/              # Main scaffold with NavigationDrawer and WindowSizeClass
+    ├── dualpanel/         # Orchestrator: HorizontalPager (Compact) vs 50/50 Row (Expanded)
+    ├── browser/           # Single panel (ViewModel, FileList, FileItemRow, CAB)
     ├── components/        # BreadcrumbBar, DockedPasteBar, ConflictDialog, PropertiesBottomSheet
-    └── theme/             # Material3 Theme
+    └── theme/             # Material 3 theme
 ```
 
-## 3. Contratos de dominio
+## 3. Domain Contracts
 ```kotlin
 data class ClipboardState(
-    val operation: OperationType, // COPY o CUT
+    val operation: OperationType, // COPY or CUT
     val sourcePath: String,
     val items: List<FileItem>
 )
@@ -47,24 +47,43 @@ interface FileSystemRepository {
     suspend fun rename(item: FileItem, newName: String): Result<FileItem>
 }
 ```
-El contrato base se amplía con lo necesario para el motor de copia (`volumes`, `stat`, `parentOf`, `openInput`, `openOutput`), de modo que `FileStreamCopier` funcione con cualquier backend.
+The base contract is extended with what the copy engine needs (`volumes`, `stat`, `parentOf`, `openInput`, `openOutput`), so
+that `FileStreamCopier` works with any backend. `RoutingFileSystemRepository` picks the backend by scheme: `dav://`,
+`sftp://`, `smb://`, `archive://`, `content://`, or a local path.
 
-## 4. Ficheros enormes y red (Fase 7)
-- `TransferEngine` escribe los ficheros ≥ 64 MiB como `<nombre>.ultimatefiles-part` y los renombra al terminar; en movimientos el origen solo se borra tras copiar (y verificar SHA-256 si está activado en Ajustes). Buffer de 1 MiB para ficheros grandes.
-- `data/network/`: cliente WebDAV sobre OkHttp (`dav://<cuenta>/<ruta>`), enrutado por `RoutingFileSystemRepository`. Nextcloud: subida por trozos de 10 MB (chunked v2); descarga reanudable con `Range`. Solo HTTPS. Permiso `INTERNET` añadido.
+## 4. Huge Files and Network
+- `TransferEngine` writes files of 64 MiB or more as `<name>.ultimatefiles-part` and renames them when done. In a move the
+  source is deleted only after copying (and after SHA-256 verification if enabled in Settings). 1 MiB buffer for large files.
+- `data/network/`: WebDAV client on OkHttp (`dav://<account>/<path>`). Nextcloud uses 10 MB chunked uploads (chunked v2) and
+  resumable downloads with `Range`. HTTPS by default; self-signed servers are supported through a pinned SHA-256
+  certificate fingerprint per account, and plain HTTP needs an explicit confirmation.
+- SFTP (`sshj`, `sftp://`) pins the server's host key fingerprint per account and supports password or PEM private key
+  authentication. SMB (`smbj`, `smb://host:port/share`) supports an optional domain. Both are only reachable through
+  `FileSystemRepository`.
 
-## 5. Pausa, historial en vivo y copias de seguridad
-- `PauseGate` (domain/transfer): el copiador y la verificación esperan en él entre bloques; `TransferCoordinator` expone
-  `TransferState` con la tarea activa, la cola y si está en pausa (`active`, `queuedTasks`, `paused`), que usan la
-  notificación, la barra de progreso y la pantalla de Historial.
-- Notificación en el canal `transfers_lockscreen` (visibilidad pública), con acciones Pausar/Reanudar y Cancelar.
-- `data/network/NextcloudLoginFlow`: Login Flow v2 (sondeo hasta que el usuario aprueba en el navegador).
-- `data/backup/BackupManager`: JSON con ajustes y, cifrado con PBKDF2-SHA256 + AES-256-GCM, las cuentas; `BackupFiles`
-  lee/escribe vía el selector de documentos (sin permisos de almacenamiento).
-- Vista lista/cuadrícula: `ViewMode` compartido por ambos paneles mediante las preferencias.
-- Subidas reanudables: `WebDavUploadStream` guarda en `UploadResumeStore` (fichero en `filesDir`) el id de subida del servidor y el
-  SHA-256 de cada trozo enviado. Al repetir la copia al mismo destino (el nombre temporal `.ultimatefiles-part` es estable) se relee el
-  origen y se salta cada trozo cuyo hash coincide y que el servidor sigue teniendo; el resto se sube y los trozos sobrantes se
-  borran. No se confía en fechas ni tamaños del origen. Las subidas guardadas caducan a las 20 h.
-- Versión: `appVersion` en `gradle.properties` es la fuente de verdad y el `versionCode` se deriva (ver RELEASING.md); las releases oficiales salen de etiquetas `vX.Y.Z` y las nightlies de `master` con otro identificador.
-  `versionCode = código * 100000 + run`.
+## 5. Archives
+- `ArchiveEngine` compresses (ZIP) and extracts (ZIP, 7z, TAR, TAR.GZ) through the same transfer queue as copies, rejecting
+  entries that escape the target folder (zip-slip) and rolling back a failed extraction.
+- `ArchiveFileSystemRepository` exposes an archive as a read-only folder: `archive://<url-encoded source>!/<inner path>`.
+  Archives that are not local are cached for 3 days. `IncomingFiles` copies archives sent by other apps into the cache.
+
+## 6. Pause, Live History and Backups
+- `PauseGate` (domain/transfer): the copier and the verification wait on it between blocks; `TransferCoordinator` exposes
+  `TransferState` with the active task, the queue and whether it is paused (`active`, `queuedTasks`, `paused`), used by the
+  notification, the progress bar and the History screen.
+- Notification on the `transfers_lockscreen` channel (public visibility), with Pause/Resume and Cancel actions.
+- `data/network/NextcloudLoginFlow`: Login Flow v2 (polls until the user approves in the browser).
+- `data/backup/BackupManager`: JSON with settings and, encrypted with PBKDF2-SHA256 + AES-256-GCM, the accounts;
+  `BackupFiles` reads and writes through the document picker (no storage permissions).
+- List/grid view: `ViewMode`, shared by both panels through preferences.
+- Resumable uploads: `WebDavUploadStream` saves the server's upload id and the SHA-256 of every chunk sent in
+  `UploadResumeStore` (a file in `filesDir`). When the copy is repeated to the same destination (the `.ultimatefiles-part`
+  temporary name is stable), the source is read again and every chunk whose hash matches and that the server still holds is
+  skipped; the rest is uploaded and leftover chunks are deleted. Source dates and sizes are never trusted. Saved uploads
+  expire after 20 h.
+
+## 7. Versioning and Releases
+`appVersion` in `gradle.properties` is the source of truth and `versionCode` is derived from it (see
+[RELEASING.md](RELEASING.md)): `(MAJOR*10000 + MINOR*100 + PATCH) * 100 + N`, where N is 99 for a final release. Official
+releases come from `vX.Y.Z` tags; nightlies come from `master` with a different application id and the workflow run number
+as `versionCode`.

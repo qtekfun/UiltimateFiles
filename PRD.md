@@ -1,55 +1,69 @@
-# Product Requirement Document (PRD) - UltimateFiles, gestor de archivos open source
+# Product Requirements Document (PRD) - UltimateFiles, an open source file manager
 
-## 1. Visión del Producto
-Clon funcional y visual de Solid Explorer para Android, optimizado para productividad con navegación dual panel, alta fidelidad en operaciones de archivo (interno y USB OTG), arquitectura en segundo plano no bloqueante y preparado para F-Droid.
+## 1. Product Vision
+A functional and visual take on Solid Explorer for Android, optimized for productivity with dual-panel navigation, high
+fidelity in file operations (internal storage and USB OTG), a non-blocking background architecture, and ready for F-Droid.
 
-## 2. Alcance del MVP (In Scope)
+## 2. MVP Scope (In Scope)
 
-### 2.1 Navegación y Dual Panel
-- **Layout Adaptativo:**
-  - *Portrait / Compact:* `HorizontalPager` de 2 paneles con pestañas superiores sincronizadas y swipe lateral.
-  - *Landscape / Expanded:* Split view fija 50/50 mostrando ambos paneles de forma simultánea.
-- **Drag & Drop:**
-  - En split view, arrastrar archivos/carpetas de un panel y soltarlos en el otro (o dentro de una subcarpeta visible).
-  - Al soltar, mostrar diálogo rápido de confirmación: "¿Copiar o Mover?".
-- **Breadcrumbs Interactivos:**
-  - Barra de ruta segmentada en la Top Bar. Clic en cualquier segmento salta a ese directorio.
-- **Navigation Drawer lateral:**
-  - Acceso a volúmenes (Memoria Interna, USB OTG detectados).
-  - Accesos directos predefinidos: Descargas, Documentos, Fotos (DCIM).
+### 2.1 Navigation and Dual Panel
+- **Adaptive layout:**
+  - *Portrait / Compact:* a 2-panel `HorizontalPager` with synchronized top tabs and lateral swipe.
+  - *Landscape / Expanded:* a fixed 50/50 split view showing both panels at once.
+- **Drag & drop:**
+  - In split view, drag files/folders from one panel and drop them in the other (or into a visible subfolder).
+  - On drop, show a quick confirmation dialog: "Copy or Move?".
+- **Interactive breadcrumbs:**
+  - A segmented path bar in the top bar. Clicking any segment jumps to that directory.
+- **Side navigation drawer:**
+  - Access to volumes (internal storage, detected USB OTG).
+  - Predefined shortcuts: Downloads, Documents, Photos (DCIM).
 
-### 2.2 Acciones y Menús Contextuales (Sin FAB)
-- **Top Bar en reposo:** Icono de menú lateral (Drawer), breadcrumb interactivo, búsqueda y menú overflow con: *Nueva carpeta*, *Nuevo archivo*, *Ordenar por*, *Seleccionar todo*.
-- **Top Bar contextual (CAB):** Se activa al seleccionar 1 o más elementos. Muestra contador, iconos de *Copiar*, *Cortar*, *Eliminar*, *Compartir* y overflow (*Renombrar*, *Propiedades / Hash*).
-- **Menú contextual de ítem:** Pulsación larga o menú de 3 puntos en cada fila para acciones rápidas sobre ese fichero individual, sin seleccionarlo antes (*Abrir con*, *Copiar*, *Cortar*, *Renombrar*, *Eliminar*, *Propiedades*).
-- **Docked Paste Bar (Barra de Pegado acoplada):** Barra inferior fija, que no flota sobre el contenido, y que aparece solo si hay elementos en el portapapeles. Incluye: resumen de elementos en buffer, botón *Pegar aquí* y botón *Cancelar*.
+### 2.2 Actions and Context Menus (No FAB)
+- **Resting top bar:** drawer menu icon, interactive breadcrumb, search, and an overflow menu with: *New folder*, *New file*,
+  *Sort by*, *Select all*.
+- **Contextual top bar (CAB):** activates when 1 or more items are selected. Shows a counter, *Copy*, *Cut*, *Delete*,
+  *Share* icons and an overflow (*Rename*, *Properties / Hash*).
+- **Item context menu:** long press or the 3-dot menu on each row for quick actions on that single file without selecting it
+  first (*Open with*, *Copy*, *Cut*, *Rename*, *Delete*, *Properties*).
+- **Docked paste bar:** a fixed bottom bar that does not float over the content and appears only when there are items on
+  the clipboard. It contains a summary of the buffered items, a *Paste here* button and a *Cancel* button.
 
-### 2.3 Motor de I/O y Segundo Plano
-- **Servicio en Foreground:** Copias y traslados pesados corren en un `ForegroundService` con notificación que muestra: fichero actual, porcentaje total y velocidad estimada (MB/s).
-- **Resolución de Conflictos:** Diálogo al encontrar duplicados: *Sobrescribir*, *Omitir*, *Renombrar*, con opción de *Aplicar a todos*.
-- **Almacenamiento USB OTG:** Integración mediante Storage Access Framework (`DocumentFile`), incluyendo intent de extracción segura.
+### 2.3 I/O Engine and Background
+- **Foreground service:** heavy copies and moves run in a `ForegroundService` with a notification showing the current file,
+  total percentage and estimated speed (MB/s).
+- **Conflict resolution:** a dialog when duplicates are found: *Overwrite*, *Skip*, *Rename*, with an *Apply to all* option.
+- **USB OTG storage:** integration through the Storage Access Framework (`DocumentFile`), including a safe-eject intent.
 
-### 2.4 Propiedades y Metadatos
-- **Bottom Sheet de Propiedades:** Nombre, ruta completa, tamaño exacto (bytes y formato legible), fecha modificación, atributos/permisos y cálculo asíncrono de hash (MD5 y SHA-256).
+### 2.4 Properties and Metadata
+- **Properties bottom sheet:** name, full path, exact size (bytes and human readable), modification date,
+  attributes/permissions and asynchronous hash calculation (MD5 and SHA-256).
 
-## 3. Fuera de Alcance para el MVP (Out of Scope)
-- Autenticación SFTP con clave privada y cifrado/firma SMB explícitos - *Fase 2*. (WebDAV/Nextcloud y SFTP con contraseña ya incluidos, ver Fase 7 del plan.)
-- Crear 7z y archivos comprimidos con contraseña (se pueden explorar y extraer ZIP, 7z, TAR y TAR.GZ, ver sección 4).
-- Visores para formatos que no sean imagen, texto, PDF, audio o vídeo (el resto se delega mediante Intents a apps externas).
-- Acceso Root.
+## 3. Out of Scope for the MVP
+- Explicit SMB encryption/signing settings.
+- Creating 7z archives and password-protected archives (ZIP, 7z, TAR and TAR.GZ can be browsed and extracted, see
+  section 4).
+- Viewers for formats other than image, text, PDF, audio or video (everything else is delegated to external apps through
+  Intents).
+- Root access.
 
-## 4. Ampliaciones posteriores al MVP (implementadas)
-- Historial de tareas (también en curso y en cola), detección de volúmenes expulsados, ajustes de tema con modo AMOLED.
-- Copias robustas de ficheros enormes (nombre temporal, verificación SHA-256 opcional), pausar/reanudar, notificación en pantalla de bloqueo.
-- Nextcloud/WebDAV con *Login Flow v2*, subida por trozos y descarga reanudable (solo HTTPS).
-- Certificados autofirmados con huella fijada por cuenta y HTTP opcional, con confirmación explícita.
-- Copias fiables con la pantalla apagada (exención de batería, Wi-Fi lock, diario de copias interrumpidas, ajustes de fiabilidad).
-- Comprimir en ZIP, extraer ZIP/7z/TAR/TAR.GZ por la cola de transferencias y explorarlos como carpetas de solo lectura; "Abrir con" desde otras apps.
-- Cuentas SMB (usuario/contraseña, sin verificar contra un servidor real) y SFTP (contraseña, huella del servidor fijada por cuenta).
-- Visores integrados: imagen (zoom), texto, PDF, audio y vídeo.
-- Vista en cuadrícula, abrir APK, exportar/importar ajustes y cuentas.
-- Las subidas a Nextcloud interrumpidas (p. ej. la app muere) se reanudan al repetir la copia: solo se vuelven a enviar los trozos que cambian.
+## 4. Post-MVP Additions (implemented)
+- Task history (including running and queued tasks), ejected-volume detection, theme settings with AMOLED mode.
+- Robust copies of huge files (temporary name, optional SHA-256 verification), pause/resume, lock-screen notification.
+- Nextcloud/WebDAV with *Login Flow v2*, chunked uploads and resumable downloads (HTTPS by default).
+- Self-signed certificates with a fingerprint pinned per account, and optional HTTP with explicit confirmation.
+- Reliable copies with the screen off (battery exemption, Wi-Fi lock, journal of interrupted copies, reliability checks).
+- Compress to ZIP, extract ZIP/7z/TAR/TAR.GZ through the transfer queue and browse them as read-only folders; "Open with"
+  from other apps.
+- SMB accounts (user/password, not verified against a real server) and SFTP accounts (password or private key, server host
+  key pinned per account).
+- Built-in viewers: image (zoom), text, PDF, audio and video.
+- Grid view, opening APKs, exporting/importing settings and accounts.
+- Interrupted Nextcloud uploads (for example when the app dies) resume when the copy is repeated: only the chunks that
+  changed are sent again.
+- Release pipeline: signed releases from tags, nightlies, reproducible-build check and an F-Droid recipe.
 
-## 5. Pendiente / ideas
-- Probar SMB con servidores reales (ver sección 3).
-- Pruebas instrumentadas de UI y prueba real en dispositivo con ficheros de varios GB.
+## 5. Pending / Ideas
+- Test SMB against real servers (see section 3).
+- Real-device testing with multi-GB files, SFTP/SMB on Android and the intent filters.
+- F-Droid screenshots and submission of the recipe to fdroiddata.
