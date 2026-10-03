@@ -1,0 +1,1 @@
+Dual-pane file manager with USB OTG support

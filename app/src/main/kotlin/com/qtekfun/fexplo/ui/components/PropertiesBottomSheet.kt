@@ -61,6 +61,7 @@ fun PropertiesBottomSheet(
             }
             PropertyRow(stringResource(R.string.property_modified), formatModified(item))
             PropertyRow(stringResource(R.string.property_attributes), attributes(item))
+            item.permissions?.let { PropertyRow(stringResource(R.string.property_permissions), it, monospace = true) }
             if (!item.isDirectory) HashSection(hashState, onComputeHash)
         }
     }

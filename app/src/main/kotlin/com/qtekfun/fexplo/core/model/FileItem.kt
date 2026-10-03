@@ -15,4 +15,6 @@ data class FileItem(
     val mimeType: String?,
     val isWritable: Boolean = true,
     val isHidden: Boolean = false,
+    /** POSIX permissions such as `rw-r--r--`, when the backend can tell; only filled by `stat`. */
+    val permissions: String? = null,
 )

@@ -125,7 +125,7 @@ class BrowserViewModel(
             is BrowserEvent.RequestRename -> showDialog(BrowserDialog.Rename(event.item))
             BrowserEvent.RequestNewFolder -> showDialog(BrowserDialog.NewFolder)
             BrowserEvent.RequestNewFile -> showDialog(BrowserDialog.NewFile)
-            is BrowserEvent.ShowProperties -> showDialog(BrowserDialog.Properties(event.item))
+            is BrowserEvent.ShowProperties -> showProperties(event.item)
             is BrowserEvent.ConfirmName -> confirmName(event.name)
             BrowserEvent.ConfirmDelete -> confirmDelete()
             BrowserEvent.ComputeHash -> computeHash()
@@ -249,6 +249,19 @@ class BrowserViewModel(
     }
 
     private fun showDialog(dialog: BrowserDialog) = _state.update { it.copy(dialog = dialog) }
+
+    /** Opens the sheet with the listed data at once, then enriches it with what only `stat` knows (permissions). */
+    private fun showProperties(item: FileItem) {
+        showDialog(BrowserDialog.Properties(item))
+        viewModelScope.launch {
+            repository.stat(item.path).onSuccess { detailed ->
+                _state.update { s ->
+                    val dialog = s.dialog as? BrowserDialog.Properties
+                    if (dialog != null && dialog.item.path == item.path) s.copy(dialog = dialog.copy(item = detailed)) else s
+                }
+            }
+        }
+    }
 
     private fun dismissDialog() {
         hashJob?.cancel()

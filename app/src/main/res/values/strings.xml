@@ -110,4 +110,5 @@
     <string name="theme_amoled_summary">Pure black background for OLED screens</string>
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_summary">Use colors from your wallpaper</string>
+    <string name="property_permissions">Permissions</string>
 </resources>

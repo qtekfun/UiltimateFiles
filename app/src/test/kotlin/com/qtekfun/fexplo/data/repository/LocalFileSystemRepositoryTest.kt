@@ -59,4 +59,16 @@ class LocalFileSystemRepositoryTest {
     fun `listing a missing directory fails`() = runTest {
         assertTrue(repo().listFiles(tmp.root.resolve("nope").path).isFailure)
     }
+
+    @Test
+    fun `stat reports posix permissions but listing does not`() = runTest {
+        val file = tmp.newFile("p.txt")
+        val repo = repo()
+
+        val detailed = repo.stat(file.path).getOrThrow()
+        val listed = repo.listFiles(tmp.root.path).getOrThrow().first { it.name == "p.txt" }
+
+        assertTrue(Regex("[r-][w-][x-][r-][w-][x-][r-][w-][x-]").matches(detailed.permissions.orEmpty()))
+        assertNull(listed.permissions)
+    }
 }

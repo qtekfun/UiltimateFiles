@@ -9,6 +9,8 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
 
 /** Path-based backend for the device's shared storage (needs all-files access on Android 11+). */
 class LocalFileSystemRepository(
@@ -35,7 +37,7 @@ class LocalFileSystemRepository(
     override suspend fun stat(uriOrPath: String): Result<FileItem> = ioResult {
         val file = File(uriOrPath)
         if (!file.exists()) throw IOException("Not found: $uriOrPath")
-        toItem(file)
+        toItem(file).copy(permissions = posixPermissions(file))
     }
 
     override suspend fun parentOf(uriOrPath: String): String? {
@@ -89,6 +91,13 @@ class LocalFileSystemRepository(
         if (file.isDirectory) throw IOException("$name is a directory")
         if (file.exists() && !overwrite) throw IOException("Already exists: $name")
         file.outputStream()
+    }
+
+    /** Null where the file system has no POSIX attributes (some shared-storage mounts). */
+    private fun posixPermissions(file: File): String? = try {
+        PosixFilePermissions.toString(Files.getPosixFilePermissions(file.toPath()))
+    } catch (e: Exception) {
+        null
     }
 
     private fun toItem(file: File): FileItem {

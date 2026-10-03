@@ -6,6 +6,7 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import com.qtekfun.fexplo.core.model.TransferProgress
+import com.qtekfun.fexplo.core.model.TransferStatus
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,15 @@ class FileTransferForegroundService : Service(), KoinComponent {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         if (result != null) notifications.showResult(result)
         stopSelf(lastStartId)
+    }
+
+    /**
+     * Android 15 stops `dataSync` foreground services after six hours. End the transfer cleanly
+     * (it shows up as cancelled in the history) instead of letting the system kill the process.
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        coordinator.cancelAll()
+        finish(coordinator.state.value.progress?.copy(status = TransferStatus.CANCELLED))
     }
 
     override fun onDestroy() {
