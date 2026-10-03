@@ -1,1 +1,27 @@
 # Koin and Compose ship consumer rules; add project-specific keeps here when needed.
+
+# SFTP (sshj) looks algorithms up by name and drags in optional libraries; keep it whole and ignore what Android lacks.
+-keep class net.schmizz.** { *; }
+-keep class com.hierynomus.** { *; }
+-keep class org.bouncycastle.** { *; }
+-keep class net.i2p.crypto.eddsa.** { *; }
+-dontwarn javax.naming.**
+-dontwarn javax.security.auth.kerberos.**
+-dontwarn org.ietf.jgss.**
+-dontwarn com.sun.jna.**
+-dontwarn com.jcraft.jzlib.**
+-dontwarn org.slf4j.impl.**
+-dontwarn org.bouncycastle.**
+-dontwarn sun.security.**
+-dontwarn java.lang.management.**
+# sshj's Kerberos/GSSAPI login and JDK-internal helpers do not exist on Android and are never used (password login only).
+-dontwarn javax.security.**
+-dontwarn javax.management.**
+-dontwarn com.sun.**
+-dontwarn jdk.**
+-dontwarn java.awt.**
+-dontwarn org.slf4j.**
+
+# commons-compress touches optional codecs (zstd, brotli, asm…) that are not shipped.
+-dontwarn org.apache.commons.compress.**
+-dontwarn org.tukaani.**

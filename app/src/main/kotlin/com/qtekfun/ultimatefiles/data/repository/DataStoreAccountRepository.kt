@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.qtekfun.ultimatefiles.core.model.AccountProtocol
 import com.qtekfun.ultimatefiles.core.model.WebDavAccount
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
 import com.qtekfun.ultimatefiles.domain.repository.SecretCipher
@@ -47,6 +48,7 @@ class DataStoreAccountRepository(
             row.secret,
             row.account.pinnedCertSha256.orEmpty(),
             row.account.allowInsecureHttp.toString(),
+            row.account.protocol.name,
         ).joinToString("\t") { Tsv.escape(it) }
     }
 
@@ -58,7 +60,12 @@ class DataStoreAccountRepository(
             // Older lines have five columns; the pin and the HTTP flag were added later.
             val pinned = f.getOrNull(5)?.let(Tsv::unescape)?.takeIf { it.isNotEmpty() }
             val insecure = f.getOrNull(6)?.let(Tsv::unescape) == "true"
-            Row(WebDavAccount(Tsv.unescape(f[0]), Tsv.unescape(f[1]), Tsv.unescape(f[2]), Tsv.unescape(f[3]), pinned, insecure), Tsv.unescape(f[4]))
+            val protocol = f.getOrNull(7)?.let(Tsv::unescape)?.let { name -> AccountProtocol.entries.firstOrNull { it.name == name } }
+                ?: AccountProtocol.WEBDAV
+            Row(
+                WebDavAccount(Tsv.unescape(f[0]), Tsv.unescape(f[1]), Tsv.unescape(f[2]), Tsv.unescape(f[3]), pinned, insecure, protocol),
+                Tsv.unescape(f[4]),
+            )
         }
     }
 

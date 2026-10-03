@@ -187,7 +187,7 @@ class WebDavTest {
     @Test
     fun `the transfer engine copies a local tree to the server and back`() = runTest {
         val local = LocalFileSystemRepository(tmp.root, "Internal") { null }
-        val router = RoutingFileSystemRepository(local, local, repo)
+        val router = RoutingFileSystemRepository(local, local, repo, local, local)
         val engine = TransferEngine(router, FileStreamCopier(), bigFileBytes = 2_000)
         val source = tmp.newFolder("footage")
         File(source, "a.bin").writeBytes(data4500)

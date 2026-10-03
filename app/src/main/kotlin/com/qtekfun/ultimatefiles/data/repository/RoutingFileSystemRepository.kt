@@ -3,23 +3,28 @@ package com.qtekfun.ultimatefiles.data.repository
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
 import com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository
+import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import java.io.InputStream
 import java.io.OutputStream
 
-/** Single entry point for the app: `content://` goes to SAF, `dav://` to WebDAV, everything else to the local backend. */
+/** Single entry point for the app: `content://` goes to SAF, `dav://` to WebDAV, `sftp://` to SFTP, `archive://` to the archive reader, everything else to the local backend. */
 class RoutingFileSystemRepository(
     private val local: FileSystemRepository,
     private val saf: FileSystemRepository,
     private val webDav: FileSystemRepository,
+    private val sftp: FileSystemRepository,
+    private val archive: FileSystemRepository,
 ) : FileSystemRepository {
 
     private fun backendFor(path: String) = when {
         path.startsWith(SAF_SCHEME) -> saf
         path.startsWith(WebDavFileSystemRepository.SCHEME) -> webDav
+        path.startsWith(SftpFileSystemRepository.SCHEME) -> sftp
+        ArchivePaths.isArchivePath(path) -> archive
         else -> local
     }
 
-    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes() + webDav.volumes()
+    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes() + webDav.volumes() + sftp.volumes() + archive.volumes()
 
     override suspend fun listFiles(uriOrPath: String) = backendFor(uriOrPath).listFiles(uriOrPath)
 

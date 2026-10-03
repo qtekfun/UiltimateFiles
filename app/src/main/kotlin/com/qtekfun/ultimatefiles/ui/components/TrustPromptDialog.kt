@@ -67,3 +67,22 @@ fun TrustPromptDialog(prompt: TrustPrompt, onAccept: (TrustChoice) -> Unit, onDi
         )
     }
 }
+
+/** The SSH server's host key is new: showing its fingerprint lets the user compare it with what the server reports. */
+@Composable
+fun HostKeyPromptDialog(host: String, fingerprint: String, keyType: String, onAccept: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.trust_hostkey_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.trust_hostkey_message, host))
+                Text(stringResource(R.string.trust_hostkey_type, keyType), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.trust_certificate_fingerprint), style = MaterialTheme.typography.labelMedium)
+                Text(fingerprint, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { TextButton(onClick = onAccept) { Text(stringResource(R.string.trust_certificate_accept)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}

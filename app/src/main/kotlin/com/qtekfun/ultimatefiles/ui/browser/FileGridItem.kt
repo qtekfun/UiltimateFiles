@@ -103,7 +103,7 @@ fun FileGridItem(
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             FileItemAction.entries
-                .filter { it != FileItemAction.OPEN_WITH || !item.isDirectory }
+                .filter { it.appliesTo(item) }
                 .forEach { action ->
                     DropdownMenuItem(
                         text = { Text(stringResource(action.labelRes())) },

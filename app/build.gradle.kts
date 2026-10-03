@@ -96,6 +96,9 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.okhttp)
     implementation(libs.commons.compress)
+    implementation(libs.xz) // LZMA for 7z
+    implementation(libs.sshj)
+    implementation(libs.slf4j.nop) // sshj logs through SLF4J; nothing is written anywhere
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
@@ -103,6 +106,9 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.org.json) // the Android stub of org.json does nothing on the JVM
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.sshd.core)
+    testImplementation(libs.sshd.sftp)
+    testImplementation(libs.slf4j.nop)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

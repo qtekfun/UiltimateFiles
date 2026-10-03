@@ -10,6 +10,7 @@ import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
 import com.qtekfun.ultimatefiles.data.network.TrustChoice
+import com.qtekfun.ultimatefiles.data.network.SftpAccountService
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.repository.SafFileSystemRepository
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
@@ -50,6 +51,7 @@ class MainViewModel(
     private val volumeChanges: VolumeChangeSource,
     private val accountService: WebDavAccountService,
     private val accountRepository: AccountRepository,
+    private val sftpAccountService: SftpAccountService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -116,6 +118,24 @@ class MainViewModel(
         }
     }
 
+    /** Adds an SFTP server. [pinnedFingerprint] is null on the first try; the UI asks the user about the key it reports. */
+    fun connectSftp(
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        label: String,
+        pinnedFingerprint: String?,
+        onDone: (Result<Unit>) -> Unit,
+    ) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = sftpAccountService.connect(host, port, username, password, label, pinnedFingerprint).map { }
+            if (result.isSuccess) refreshVolumes()
+            onDone(result)
+        }
+    }
+
     fun cancelConnect() {
         loginJob?.cancel()
         loginJob = null
@@ -124,7 +144,7 @@ class MainViewModel(
     /** Forgets the account behind a network [volume]; nothing is deleted on the server. */
     fun removeAccount(volume: StorageVolume) {
         viewModelScope.launch {
-            accountRepository.remove(volume.id.removePrefix("dav:"))
+            accountRepository.remove(volume.id.removePrefix("dav:").removePrefix("sftp:"))
             refreshVolumes()
         }
     }

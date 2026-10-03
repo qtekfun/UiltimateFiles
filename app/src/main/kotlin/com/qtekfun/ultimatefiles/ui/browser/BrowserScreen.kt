@@ -2,6 +2,7 @@ package com.qtekfun.ultimatefiles.ui.browser
 
 import android.content.ActivityNotFoundException
 import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
+import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -140,7 +141,7 @@ fun BrowserScreen(
                     onProperties = { selected.singleOrNull()?.let { onEvent(BrowserEvent.ShowProperties(it)) } },
                     onCompress = { onEvent(BrowserEvent.RequestCompress(selected)) },
                     onExtract = { onEvent(BrowserEvent.Extract(selected)) },
-                    canExtract = selected.all { !it.isDirectory && ArchiveFormat.of(it.name) != null },
+                    canExtract = selected.all { !it.isDirectory && !ArchivePaths.isArchivePath(it.path) && ArchiveFormat.of(it.name) != null },
                     windowInsets = topInsets,
                 )
             } else {
@@ -261,6 +262,8 @@ private fun FileItemAction.toEvent(item: FileItem): BrowserEvent = when (this) {
     FileItemAction.OPEN_WITH -> BrowserEvent.OpenWith(item)
     FileItemAction.COPY -> BrowserEvent.Copy(listOf(item))
     FileItemAction.CUT -> BrowserEvent.Cut(listOf(item))
+    FileItemAction.EXTRACT -> BrowserEvent.Extract(listOf(item))
+    FileItemAction.COMPRESS -> BrowserEvent.RequestCompress(listOf(item))
     FileItemAction.RENAME -> BrowserEvent.RequestRename(item)
     FileItemAction.DELETE -> BrowserEvent.RequestDelete(listOf(item))
     FileItemAction.PROPERTIES -> BrowserEvent.ShowProperties(item)

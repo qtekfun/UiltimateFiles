@@ -46,6 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.FileItem
+import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
+import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import com.qtekfun.ultimatefiles.core.util.FileKind
 import com.qtekfun.ultimatefiles.core.util.formatBytes
 import com.qtekfun.ultimatefiles.core.util.kind
@@ -54,7 +56,18 @@ import java.text.DateFormat
 import java.util.Date
 
 /** Quick actions offered by the per-row menu (long press or the three-dot button). */
-enum class FileItemAction { OPEN_WITH, COPY, CUT, RENAME, DELETE, PROPERTIES }
+enum class FileItemAction { OPEN_WITH, COPY, CUT, EXTRACT, COMPRESS, RENAME, DELETE, PROPERTIES }
+
+/** Whether [this] makes sense for [item]: archives are only extracted outside archives, and nothing is packed from inside one. */
+internal fun FileItemAction.appliesTo(item: FileItem): Boolean {
+    val insideArchive = ArchivePaths.isArchivePath(item.path)
+    return when (this) {
+        FileItemAction.OPEN_WITH -> !item.isDirectory
+        FileItemAction.EXTRACT -> !item.isDirectory && !insideArchive && ArchiveFormat.of(item.name) != null
+        FileItemAction.COMPRESS -> !insideArchive
+        else -> true
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -121,7 +134,7 @@ fun FileItemRow(
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     FileItemAction.entries
-                        .filter { it != FileItemAction.OPEN_WITH || !item.isDirectory }
+                        .filter { it.appliesTo(item) }
                         .forEach { action ->
                             DropdownMenuItem(
                                 text = { Text(stringResource(action.labelRes())) },
@@ -146,6 +159,8 @@ internal fun FileItemAction.labelRes(): Int = when (this) {
     FileItemAction.OPEN_WITH -> R.string.action_open_with
     FileItemAction.COPY -> R.string.action_copy
     FileItemAction.CUT -> R.string.action_cut
+    FileItemAction.EXTRACT -> R.string.action_extract
+    FileItemAction.COMPRESS -> R.string.action_compress
     FileItemAction.RENAME -> R.string.action_rename
     FileItemAction.DELETE -> R.string.action_delete
     FileItemAction.PROPERTIES -> R.string.action_properties

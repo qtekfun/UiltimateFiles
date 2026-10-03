@@ -86,6 +86,8 @@
     <string name="drop_move">Move</string>
     <string name="transfer_speed">%1$s/s</string>
     <string name="install_permission_needed">Allow UltimateFiles to install apps in this screen, then open the APK again.</string>
+    <string name="incoming_failed">Could not open the archive: %1$s</string>
+    <string name="error_archive_open">Copy the file out of the archive to open it.</string>
     <string name="error_open_failed">Could not open the file: %1$s</string>
     <string name="error_no_app">No app can open this file</string>
     <string name="error_share_folders">Folders cannot be shared</string>
@@ -147,6 +149,17 @@
     <string name="account_waiting">Waiting for you to approve UltimateFiles in the browser…</string>
     <string name="account_error_expired">The sign-in was not approved in time. Try again.</string>
     <string name="account_error_browser">No browser was found to open the sign-in page.</string>
+    <string name="account_type_nextcloud">Nextcloud / WebDAV</string>
+    <string name="account_type_sftp">SFTP</string>
+    <string name="account_sftp_hint">Connects to an SSH server with your user name and password. The first time you see the server\'s fingerprint and decide whether to trust it.</string>
+    <string name="account_host">Server address</string>
+    <string name="account_port">Port</string>
+    <string name="account_username">User name</string>
+    <string name="account_password">Password</string>
+    <string name="account_error_hostkey">The server\'s identity changed since you trusted it. Remove the account and add it again only if you expected that.</string>
+    <string name="trust_hostkey_title">Trust this server?</string>
+    <string name="trust_hostkey_message">%1$s has not been trusted before. Compare this fingerprint with the one the server reports (for example with ssh-keygen -lf on its host key) before continuing.</string>
+    <string name="trust_hostkey_type">Key type: %1$s</string>
     <string name="account_label">Name (optional)</string>
     <string name="account_connect">Sign in with browser</string>
     <string name="account_error_url">That address is not valid. Use an https:// address.</string>
