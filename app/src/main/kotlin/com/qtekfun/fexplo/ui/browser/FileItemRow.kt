@@ -142,7 +142,7 @@ fun FileItemRow(
 fun DragAndDropEvent.isOurDrag(): Boolean =
     toAndroidDragEvent().clipDescription?.label?.toString() == DragDropState.CLIP_LABEL
 
-private fun FileItemAction.labelRes(): Int = when (this) {
+internal fun FileItemAction.labelRes(): Int = when (this) {
     FileItemAction.OPEN_WITH -> R.string.action_open_with
     FileItemAction.COPY -> R.string.action_copy
     FileItemAction.CUT -> R.string.action_cut
@@ -151,7 +151,7 @@ private fun FileItemAction.labelRes(): Int = when (this) {
     FileItemAction.PROPERTIES -> R.string.action_properties
 }
 
-private fun FileKind.icon(): ImageVector = when (this) {
+internal fun FileKind.icon(): ImageVector = when (this) {
     FileKind.FOLDER -> Icons.Filled.Folder
     FileKind.IMAGE -> Icons.Filled.Image
     FileKind.VIDEO -> Icons.Filled.Movie

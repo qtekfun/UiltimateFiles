@@ -1,0 +1,5 @@
+- Pausar y reanudar copias; las tareas en curso aparecen en el historial
+- Progreso de la copia en la pantalla de bloqueo
+- Inicio de sesión en Nextcloud con Login Flow; las subidas interrumpidas se reanudan
+- Exportar e importar ajustes y cuentas
+- Vista en cuadrícula, abrir APK y nuevo nombre: UltimateFiles

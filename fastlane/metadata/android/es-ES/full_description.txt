@@ -1,4 +1,4 @@
-Fexplo es un gestor de archivos libre y de código abierto para Android construido en torno a dos paneles.
+UltimateFiles es un gestor de archivos libre y de código abierto para Android construido en torno a dos paneles.
 
 • Dos paneles: desliza entre ellos en el móvil, o verlos lado a lado en horizontal y en tabletas.
 • Arrastra y suelta elementos de un panel al otro y elige entre copiar o mover.

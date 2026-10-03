@@ -1,0 +1,5 @@
+- Pause and resume copies; running tasks show up in History
+- Copy progress on the lock screen
+- Nextcloud sign-in with Login Flow; interrupted uploads resume
+- Export and import settings and accounts
+- Grid view, opening APKs, renamed to UltimateFiles

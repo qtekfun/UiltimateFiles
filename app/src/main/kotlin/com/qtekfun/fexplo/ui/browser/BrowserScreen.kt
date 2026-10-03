@@ -66,9 +66,16 @@ fun BrowserScreen(
         viewModel.effects.collect { effect ->
             when (effect) {
                 is BrowserEffect.OpenFile -> try {
-                    context.startActivity(intents.view(effect.item, effect.chooser))
+                    if (intents.needsInstallPermission(effect.item)) {
+                        context.startActivity(intents.installPermissionSettings())
+                        snackbar.showSnackbar(resources.getString(R.string.install_permission_needed))
+                    } else {
+                        context.startActivity(intents.view(effect.item, effect.chooser))
+                    }
                 } catch (e: ActivityNotFoundException) {
                     snackbar.showSnackbar(resources.getString(R.string.error_no_app))
+                } catch (e: RuntimeException) {
+                    snackbar.showSnackbar(resources.getString(R.string.error_open_failed, e.message.orEmpty()))
                 }
                 is BrowserEffect.ShareFiles -> try {
                     context.startActivity(intents.share(effect.items))
@@ -128,6 +135,8 @@ fun BrowserScreen(
                 BrowserTopBar(
                     segments = state.breadcrumb,
                     sortOrder = state.sortOrder,
+                    viewMode = state.viewMode,
+                    onToggleViewMode = { onEvent(BrowserEvent.ToggleViewMode) },
                     onMenuClick = onOpenDrawer,
                     onSegmentClick = { onEvent(BrowserEvent.Navigate(it.path)) },
                     searchQuery = state.searchQuery,
@@ -162,6 +171,7 @@ fun BrowserScreen(
                 }
                 else -> FileList(
                     items = state.visibleItems,
+                    viewMode = state.viewMode,
                     selectedPaths = state.selectedPaths,
                     isSelecting = state.isSelecting,
                     dragAndDropEnabled = dragAndDropEnabled,

@@ -20,12 +20,14 @@ class TransferNotifications(private val context: Context) {
     private val manager = context.getSystemService(NotificationManager::class.java)
 
     init {
+        // Channel settings cannot be changed after creation, so lock-screen visibility needs a new channel.
+        manager.deleteNotificationChannel(OLD_CHANNEL_ID)
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.transfer_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
-            ),
+            ).apply { lockscreenVisibility = Notification.VISIBILITY_PUBLIC },
         )
     }
 
@@ -37,16 +39,19 @@ class TransferNotifications(private val context: Context) {
             .setOngoing(true)
             .addAction(
                 0,
+                context.getString(if (state.paused) R.string.transfer_resume else R.string.transfer_pause),
+                serviceAction(1, FileTransferForegroundService.ACTION_TOGGLE_PAUSE),
+            )
+            .addAction(
+                0,
                 context.getString(R.string.transfer_cancel),
-                PendingIntent.getService(
-                    context,
-                    0,
-                    Intent(context, FileTransferForegroundService::class.java)
-                        .setAction(FileTransferForegroundService.ACTION_CANCEL),
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-                ),
+                serviceAction(0, FileTransferForegroundService.ACTION_CANCEL),
             )
         when {
+            state.paused -> builder
+                .setContentTitle(context.getString(R.string.transfer_paused))
+                .setContentText(progress?.currentName ?: context.getString(R.string.transfer_preparing))
+                .setProgress(100, ((progress?.fraction ?: 0f) * 100).toInt(), false)
             state.conflict != null -> builder
                 .setContentText(context.getString(R.string.transfer_conflict_waiting))
                 .setProgress(0, 0, true)
@@ -90,9 +95,19 @@ class TransferNotifications(private val context: Context) {
         manager.notify(ONGOING_ID, running(state))
     }
 
+    private fun serviceAction(requestCode: Int, action: String): PendingIntent = PendingIntent.getService(
+        context,
+        requestCode,
+        Intent(context, FileTransferForegroundService::class.java).setAction(action),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
     private fun baseBuilder(): NotificationCompat.Builder = NotificationCompat.Builder(context, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification)
         .setOnlyAlertOnce(true)
+        .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // progress and the pause/cancel buttons on the lock screen
+        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .setContentIntent(
             PendingIntent.getActivity(
                 context,
@@ -105,6 +120,7 @@ class TransferNotifications(private val context: Context) {
     companion object {
         const val ONGOING_ID = 1
         const val RESULT_ID = 2
-        private const val CHANNEL_ID = "transfers"
+        private const val OLD_CHANNEL_ID = "transfers"
+        private const val CHANNEL_ID = "transfers_lockscreen"
     }
 }

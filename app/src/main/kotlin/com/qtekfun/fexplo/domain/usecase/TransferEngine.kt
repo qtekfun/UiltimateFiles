@@ -11,6 +11,7 @@ import com.qtekfun.fexplo.core.util.MimeTypes
 import com.qtekfun.fexplo.core.util.TransferSpeedMeter
 import com.qtekfun.fexplo.core.util.uniqueName
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
+import com.qtekfun.fexplo.domain.transfer.PauseGate
 import java.io.IOException
 import java.security.MessageDigest
 import kotlinx.coroutines.CancellationException
@@ -41,6 +42,9 @@ class TransferEngine(
     /** Files at least this big are written under a temporary name and renamed once complete. */
     private val bigFileBytes: Long = DEFAULT_BIG_FILE_BYTES,
 ) {
+    /** Pausing this gate suspends the running copy (and verification) between chunks. */
+    val pauseGate = PauseGate()
+
     /**
      * Emits throttled progress snapshots (latest wins) and finishes with a terminal status
      * ([TransferStatus.COMPLETED] or [TransferStatus.FAILED]). Cancelling the collector aborts
@@ -180,6 +184,7 @@ class TransferEngine(
                 val buffer = ByteArray(VERIFY_BUFFER_SIZE)
                 while (true) {
                     currentCoroutineContext().ensureActive()
+                    pauseGate.awaitResumed()
                     val read = input.read(buffer)
                     if (read < 0) break
                     digest.update(buffer, 0, read)
@@ -199,7 +204,7 @@ class TransferEngine(
             val digest = if (request.verify) MessageDigest.getInstance("SHA-256") else null
             repository.openInput(item).getOrThrow().use { input ->
                 repository.openOutput(targetDir, name, mime, overwrite).getOrThrow().use { output ->
-                    copier.copy(input, output, item.sizeBytes, digest) { bytes ->
+                    copier.copy(input, output, item.sizeBytes, digest, pauseGate) { bytes ->
                         doneBytes += bytes
                         tick()
                     }

@@ -116,6 +116,8 @@ class MainViewModel(
 
     fun cancelTransfers() = coordinator.cancelAll()
 
+    fun togglePauseTransfers() = coordinator.togglePause()
+
     fun confirmDrop(copy: Boolean) {
         val drop = dragDrop.pendingDrop.value ?: return
         viewModelScope.launch {

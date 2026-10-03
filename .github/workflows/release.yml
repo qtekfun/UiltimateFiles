@@ -29,8 +29,12 @@ jobs:
       - name: Compute version
         id: version
         run: |
-          name="$(tr -d '[:space:]' < VERSION).${{ github.run_number }}"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
+          ./scripts/check-version.sh
+          base_name="$(sed -n 's/^versionName=//p' version.properties | tr -d '[:space:]')"
+          base_code="$(sed -n 's/^versionCode=//p' version.properties | tr -d '[:space:]')"
+          # Every merge is its own build: 0.2.0.57, versionCode 20000057. Always above the committed code.
+          echo "name=$base_name.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "code=$(( base_code * 100000 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
 
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
@@ -56,20 +60,20 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: >
           ./gradlew assembleRelease
-          -PversionCode=${{ github.run_number }}
+          -PversionCode=${{ steps.version.outputs.code }}
           -PversionName=${{ steps.version.outputs.name }}
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk "fexplo-${{ steps.version.outputs.name }}.apk"
+        run: cp app/build/outputs/apk/release/app-release.apk "UltimateFiles-${{ steps.version.outputs.name }}.apk"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.name }}
           target_commitish: ${{ github.sha }}
-          name: Fexplo ${{ steps.version.outputs.name }}
+          name: UltimateFiles ${{ steps.version.outputs.name }}
           generate_release_notes: true
           prerelease: false
           make_latest: true
           body: ${{ steps.signing.outputs.signed != 'true' && 'Signed with the debug key because no release keystore is configured (set the SIGNING_* secrets to sign with your own key).' || '' }}
-          files: fexplo-${{ steps.version.outputs.name }}.apk
+          files: UltimateFiles-${{ steps.version.outputs.name }}.apk

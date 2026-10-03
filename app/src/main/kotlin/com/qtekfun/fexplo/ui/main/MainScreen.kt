@@ -152,8 +152,12 @@ fun MainScreen() {
                     )
                     AppScreen.HISTORY -> {
                         val entries by historyViewModel.entries.collectAsStateWithLifecycle()
+                        val running by historyViewModel.transfer.collectAsStateWithLifecycle()
                         HistoryScreen(
                             entries = entries,
+                            running = running,
+                            onTogglePause = historyViewModel::togglePause,
+                            onCancelRunning = historyViewModel::cancelRunning,
                             onClear = historyViewModel::clear,
                             onBack = { screen = AppScreen.BROWSER },
                         )
@@ -161,8 +165,15 @@ fun MainScreen() {
                     AppScreen.SETTINGS -> {
                         val preferences by settingsViewModel.preferences.collectAsStateWithLifecycle()
                         preferences?.let { current ->
+                            val outcome by settingsViewModel.outcome.collectAsStateWithLifecycle()
+                            val accountCount by settingsViewModel.accountCount.collectAsStateWithLifecycle()
                             SettingsScreen(
                                 preferences = current,
+                                accountCount = accountCount,
+                                outcome = outcome,
+                                onExport = settingsViewModel::exportBackup,
+                                onImport = settingsViewModel::importBackup,
+                                onDismissOutcome = settingsViewModel::dismissOutcome,
                                 onThemeMode = settingsViewModel::setThemeMode,
                                 onDynamicColor = settingsViewModel::setDynamicColor,
                                 onVerifyCopies = settingsViewModel::setVerifyCopies,
@@ -172,7 +183,12 @@ fun MainScreen() {
                     }
                 }
             }
-            TransferProgressBar(progress = transfer.progress, onCancel = viewModel::cancelTransfers)
+            TransferProgressBar(
+                progress = transfer.progress,
+                paused = transfer.paused,
+                onTogglePause = viewModel::togglePauseTransfers,
+                onCancel = viewModel::cancelTransfers,
+            )
         }
     }
 

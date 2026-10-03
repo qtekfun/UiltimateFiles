@@ -8,7 +8,11 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.datastore.DataStoreUserPreferencesRepository
 import com.qtekfun.fexplo.core.model.PanelId
+import com.qtekfun.fexplo.data.backup.BackupFiles
+import com.qtekfun.fexplo.data.backup.BackupManager
 import com.qtekfun.fexplo.data.io.FileStreamCopier
+import com.qtekfun.fexplo.data.network.FileUploadResumeStore
+import com.qtekfun.fexplo.data.network.UploadResumeStore
 import com.qtekfun.fexplo.data.network.WebDavAccountService
 import com.qtekfun.fexplo.data.network.WebDavClient
 import com.qtekfun.fexplo.data.repository.DataStoreAccountRepository
@@ -64,7 +68,8 @@ val appModule = module {
     single<SecretCipher> { AndroidKeystoreCipher() }
     single<AccountRepository> { DataStoreAccountRepository(get(), get()) }
     single { WebDavClient() }
-    single { WebDavFileSystemRepository(accounts = get(), client = get()) }
+    single<UploadResumeStore> { FileUploadResumeStore(File(androidContext().filesDir, "upload-resume.tsv")) }
+    single { WebDavFileSystemRepository(accounts = get(), client = get(), resumeStore = get()) }
     single { WebDavAccountService(accounts = get(), client = get()) }
     single<FileSystemRepository> {
         RoutingFileSystemRepository(
@@ -97,8 +102,10 @@ val appModule = module {
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
     factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { SettingsViewModel(get()) }
-    factory { HistoryViewModel(get()) }
+    single { BackupManager(preferences = get(), accounts = get()) }
+    single { BackupFiles(androidContext()) }
+    factory { SettingsViewModel(get(), get(), get()) }
+    factory { HistoryViewModel(get(), get()) }
     factory { params ->
         BrowserViewModel(
             panel = params.get<PanelId>(),

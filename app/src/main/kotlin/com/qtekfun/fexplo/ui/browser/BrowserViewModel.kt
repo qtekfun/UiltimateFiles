@@ -9,6 +9,7 @@ import com.qtekfun.fexplo.core.model.OperationType
 import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.core.model.SortOrder
 import com.qtekfun.fexplo.core.model.TransferStatus
+import com.qtekfun.fexplo.core.model.ViewMode
 import com.qtekfun.fexplo.core.util.MimeTypes
 import com.qtekfun.fexplo.core.util.sortedByOrder
 import com.qtekfun.fexplo.domain.clipboard.ClipboardManager
@@ -68,8 +69,14 @@ class BrowserViewModel(
     init {
         viewModelScope.launch {
             val saved = preferences.preferences.first()
-            _state.update { it.copy(sortOrder = saved.sortOrder) }
+            _state.update { it.copy(sortOrder = saved.sortOrder, viewMode = saved.viewMode) }
             openInitialDirectory(saved.lastDirectoryPaths[panel])
+        }
+        viewModelScope.launch {
+            // Both panels follow the shared view mode (list or grid) too.
+            preferences.preferences.map { it.viewMode }.distinctUntilChanged().collect { mode ->
+                _state.update { it.copy(viewMode = mode) }
+            }
         }
         viewModelScope.launch {
             // Both panels follow the shared sort preference.
@@ -101,6 +108,9 @@ class BrowserViewModel(
             is BrowserEvent.Navigate -> load(event.path)
             BrowserEvent.NavigateUp -> _state.value.parentPath?.let(::load)
             BrowserEvent.Refresh -> revalidate()
+            BrowserEvent.ToggleViewMode -> viewModelScope.launch {
+                preferences.setViewMode(if (_state.value.viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
+            }
             BrowserEvent.ToggleSearch -> _state.update { it.copy(searchQuery = if (it.searchQuery == null) "" else null) }
             is BrowserEvent.SetSearchQuery -> _state.update { it.copy(searchQuery = event.query) }
             is BrowserEvent.OpenItem -> when {

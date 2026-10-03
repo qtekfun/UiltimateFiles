@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Fexplo</string>
+    <string name="app_name">UltimateFiles</string>
     <string name="panel_tab_format">Panel %1$d</string>
     <string name="storage_internal">Almacenamiento interno</string>
     <string name="transfer_channel_name">Transferencias de archivos</string>
@@ -8,6 +8,16 @@
     <string name="transfer_preparing">Preparando…</string>
     <string name="transfer_progress_text">%1$d%% · %2$s/s</string>
     <string name="transfer_conflict_waiting">Conflicto de nombres: abre la app para elegir</string>
+    <string name="transfer_pause">Pausar</string>
+    <string name="transfer_resume">Reanudar</string>
+    <string name="transfer_paused">Transferencia en pausa</string>
+    <string name="history_running">En curso</string>
+    <string name="history_copying_one">Copiando \"%1$s\"</string>
+    <string name="history_copying_many">Copiando %1$d elementos</string>
+    <string name="history_moving_one">Moviendo \"%1$s\"</string>
+    <string name="history_moving_many">Moviendo %1$d elementos</string>
+    <string name="history_queued">En cola</string>
+    <string name="history_paused">En pausa</string>
     <string name="transfer_cancel">Cancelar</string>
     <string name="transfer_done">Transferencia completada</string>
     <string name="transfer_cancelled">Transferencia cancelada</string>
@@ -25,6 +35,8 @@
     <string name="action_open_with">Abrir con</string>
     <string name="action_new_folder">Nueva carpeta</string>
     <string name="action_new_file">Nuevo archivo</string>
+    <string name="action_view_grid">Vista en cuadrícula</string>
+    <string name="action_view_list">Vista en lista</string>
     <string name="action_select_all">Seleccionar todo</string>
     <string name="action_sort_by">Ordenar por</string>
     <string name="sort_name">Nombre</string>
@@ -73,6 +85,8 @@
     <string name="drop_copy">Copiar</string>
     <string name="drop_move">Mover</string>
     <string name="transfer_speed">%1$s/s</string>
+    <string name="install_permission_needed">Permite a UltimateFiles instalar apps en esta pantalla y abre el APK de nuevo.</string>
+    <string name="error_open_failed">No se pudo abrir el archivo: %1$s</string>
     <string name="error_no_app">Ninguna app puede abrir este archivo</string>
     <string name="error_share_folders">No se pueden compartir carpetas</string>
     <string name="error_operation_failed">La operación falló</string>
@@ -84,7 +98,7 @@
     <string name="drawer_add_storage">Añadir carpeta USB / SD</string>
     <string name="drawer_eject">Extraer de forma segura</string>
     <string name="permission_title">Se necesita acceso al almacenamiento</string>
-    <string name="permission_message">Fexplo necesita acceso a todos los archivos para explorar y gestionar tu almacenamiento.</string>
+    <string name="permission_message">UltimateFiles necesita acceso a todos los archivos para explorar y gestionar tu almacenamiento.</string>
     <string name="permission_grant">Conceder acceso</string>
     <string name="action_back">Atrás</string>
     <string name="error_volume_gone">Almacenamiento desconectado. Se volvió a una carpeta disponible.</string>
@@ -118,9 +132,9 @@
     <string name="settings_verify_copies_summary">Lee cada archivo copiado y compara su SHA-256 antes de que un movimiento borre el original. Más lento, recomendado para archivos grandes.</string>
     <string name="drawer_add_account">Añadir Nextcloud / WebDAV</string>
     <string name="account_title">Conectar un servidor</string>
-    <string name="account_hint">Introduce la dirección de tu Nextcloud. Iniciarás sesión y aprobarás Fexplo en el navegador, así que la app nunca ve tu contraseña. Solo se admite HTTPS.</string>
+    <string name="account_hint">Introduce la dirección de tu Nextcloud. Iniciarás sesión y aprobarás UltimateFiles en el navegador, así que la app nunca ve tu contraseña. Solo se admite HTTPS.</string>
     <string name="account_server">Dirección del servidor</string>
-    <string name="account_waiting">Esperando a que apruebes Fexplo en el navegador…</string>
+    <string name="account_waiting">Esperando a que apruebes UltimateFiles en el navegador…</string>
     <string name="account_error_expired">No se aprobó el inicio de sesión a tiempo. Inténtalo de nuevo.</string>
     <string name="account_error_browser">No se encontró ningún navegador para abrir la página de inicio de sesión.</string>
     <string name="account_label">Nombre (opcional)</string>
@@ -131,6 +145,36 @@
     <string name="account_error_generic">No se pudo conectar: %1$s</string>
     <string name="account_remove">Quitar cuenta</string>
     <string name="account_remove_title">Quitar cuenta</string>
-    <string name="account_remove_message">¿Desconectar \"%1$s\" de Fexplo? No se borra nada en el servidor.</string>
+    <string name="account_remove_message">¿Desconectar \"%1$s\" de UltimateFiles? No se borra nada en el servidor.</string>
     <string name="error_remote_open">Copia los archivos de red al dispositivo antes de abrirlos o compartirlos.</string>
+    <string name="settings_backup">Copia de seguridad</string>
+    <string name="settings_export">Exportar ajustes y cuentas</string>
+    <string name="settings_export_summary">Guarda tus ajustes y cuentas de Nextcloud en un archivo</string>
+    <string name="settings_import">Importar ajustes y cuentas</string>
+    <string name="settings_import_summary">Restáuralos desde un archivo de copia</string>
+    <string name="backup_export_title">Exportar copia</string>
+    <string name="backup_export_hint">La copia incluye el tema y los ajustes de vista y, si quieres, tus cuentas conectadas. No se guardan las últimas carpetas abiertas.</string>
+    <plurals name="backup_include_accounts">
+        <item quantity="one">Incluir %1$d cuenta</item>
+        <item quantity="other">Incluir %1$d cuentas</item>
+    </plurals>
+    <string name="backup_passphrase_hint">Las contraseñas de las cuentas se cifran en el archivo con una frase de contraseña que elijas. Guárdala: sin ella no se pueden restaurar.</string>
+    <string name="backup_passphrase">Frase de contraseña</string>
+    <string name="backup_passphrase_confirm">Repite la frase de contraseña</string>
+    <string name="backup_passphrase_short">Usa al menos %1$d caracteres</string>
+    <string name="backup_passphrase_mismatch">Las frases no coinciden</string>
+    <string name="backup_choose_location">Elegir dónde guardar</string>
+    <string name="backup_import_passphrase_title">Frase de la copia</string>
+    <string name="backup_import_passphrase_message">Esta copia contiene cuentas. Introduce la frase con la que se exportó.</string>
+    <string name="backup_wrong_passphrase">Frase incorrecta</string>
+    <string name="backup_import_action">Importar</string>
+    <string name="backup_done_export">Copia guardada.</string>
+    <string name="backup_done_import">Ajustes restaurados. %1$s.</string>
+    <plurals name="backup_accounts_restored">
+        <item quantity="one">%1$d cuenta restaurada</item>
+        <item quantity="other">%1$d cuentas restauradas</item>
+    </plurals>
+    <string name="backup_invalid">Este archivo no es una copia de UltimateFiles.</string>
+    <string name="backup_unsupported">Esta copia la hizo una versión más nueva de la app.</string>
+    <string name="backup_failed">No se pudo completar la copia: %1$s</string>
 </resources>

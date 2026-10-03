@@ -38,3 +38,8 @@
   - [x] 7.1 Copias robustas de ficheros grandes: escritura a `*.fexplo-part` + renombrado, verificación SHA-256 opcional antes de borrar el origen en movimientos, buffer de 1 MiB, wake lock, ETA.
   - [x] 7.2 Test de transferencia de 8 GiB simulada (flujo generado, CRC32) sin necesidad de disco.
   - [x] 7.3 Cuentas WebDAV/Nextcloud (HTTPS, contraseña de aplicación cifrada con Android Keystore), subida por trozos de Nextcloud (chunked v2) y descarga reanudable (Range).
+  - [x] 7.4 Pausar/reanudar copias, tareas en curso en el historial y notificación visible en la pantalla de bloqueo.
+  - [x] 7.5 Exportar/importar ajustes y cuentas (cifrado con frase de contraseña) y renombrado de la app a UltimateFiles.
+  - [x] 7.6 Vista en cuadrícula compartida por los dos paneles.
+  - [x] 7.7 Subidas a Nextcloud reanudables tras morir la app (hash por trozo).
+  - [x] 7.8 Versión en el código (`version.properties`) compatible con F-Droid; releases de CI con `versionCode` creciente.

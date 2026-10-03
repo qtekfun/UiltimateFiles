@@ -2,14 +2,20 @@ package com.qtekfun.fexplo.ui.browser
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.qtekfun.fexplo.core.model.FileItem
+import com.qtekfun.fexplo.core.model.ViewMode
 
 @Composable
 fun FileList(
     items: List<FileItem>,
+    viewMode: ViewMode,
     selectedPaths: Set<String>,
     isSelecting: Boolean,
     dragAndDropEnabled: Boolean,
@@ -21,6 +27,23 @@ fun FileList(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
+    if (viewMode == ViewMode.GRID) {
+        LazyVerticalGrid(columns = GridCells.Adaptive(GRID_CELL_MIN_WIDTH), modifier = modifier, contentPadding = contentPadding) {
+            gridItems(items, key = { it.path }) { item ->
+                FileGridItem(
+                    item = item,
+                    selected = item.path in selectedPaths,
+                    dragAndDropEnabled = dragAndDropEnabled,
+                    onClick = { if (isSelecting) onToggleSelection(item) else onItemClick(item) },
+                    onToggleSelection = { onToggleSelection(item) },
+                    onAction = { onAction(it, item) },
+                    onDragStart = { onDragStart(item) },
+                    onDropInside = onDropInside,
+                )
+            }
+        }
+        return
+    }
     LazyColumn(modifier = modifier, contentPadding = contentPadding) {
         items(items, key = { it.path }) { item ->
             FileItemRow(
@@ -37,3 +60,5 @@ fun FileList(
         }
     }
 }
+
+private val GRID_CELL_MIN_WIDTH = 104.dp

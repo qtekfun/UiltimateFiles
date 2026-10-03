@@ -6,6 +6,7 @@ import com.qtekfun.fexplo.core.model.FileItem
 import com.qtekfun.fexplo.core.model.HashState
 import com.qtekfun.fexplo.core.model.SortField
 import com.qtekfun.fexplo.core.model.SortOrder
+import com.qtekfun.fexplo.core.model.ViewMode
 
 data class BrowserState(
     val currentPath: String? = null,
@@ -16,6 +17,7 @@ data class BrowserState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val sortOrder: SortOrder = SortOrder(),
+    val viewMode: ViewMode = ViewMode.LIST,
     val dialog: BrowserDialog? = null,
     /** Null when the search field is closed; otherwise the name filter applied to [items]. */
     val searchQuery: String? = null,
@@ -41,6 +43,7 @@ sealed interface BrowserEvent {
     data object NavigateUp : BrowserEvent
     data object Refresh : BrowserEvent
     data object ToggleSearch : BrowserEvent
+    data object ToggleViewMode : BrowserEvent
     data class SetSearchQuery(val query: String) : BrowserEvent
     data class OpenItem(val item: FileItem) : BrowserEvent
     data class OpenWith(val item: FileItem) : BrowserEvent

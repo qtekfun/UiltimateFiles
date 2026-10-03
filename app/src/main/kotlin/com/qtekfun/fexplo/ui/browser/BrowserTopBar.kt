@@ -37,6 +37,7 @@ import com.qtekfun.fexplo.R
 import com.qtekfun.fexplo.core.model.BreadcrumbSegment
 import com.qtekfun.fexplo.core.model.SortField
 import com.qtekfun.fexplo.core.model.SortOrder
+import com.qtekfun.fexplo.core.model.ViewMode
 import com.qtekfun.fexplo.ui.components.BreadcrumbBar
 import com.qtekfun.fexplo.ui.components.labelRes
 
@@ -46,6 +47,7 @@ import com.qtekfun.fexplo.ui.components.labelRes
 fun BrowserTopBar(
     segments: List<BreadcrumbSegment>,
     sortOrder: SortOrder,
+    viewMode: ViewMode,
     searchQuery: String?,
     onMenuClick: () -> Unit,
     onSegmentClick: (BreadcrumbSegment) -> Unit,
@@ -55,6 +57,7 @@ fun BrowserTopBar(
     onNewFile: () -> Unit,
     onSortSelected: (SortField) -> Unit,
     onSelectAll: () -> Unit,
+    onToggleViewMode: () -> Unit,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
@@ -138,6 +141,12 @@ fun BrowserTopBar(
                         )
                     }
                     HorizontalDivider()
+                    DropdownMenuItem(
+                        text = {
+                            Text(stringResource(if (viewMode == ViewMode.LIST) R.string.action_view_grid else R.string.action_view_list))
+                        },
+                        onClick = { menuOpen = false; onToggleViewMode() },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_select_all)) },
                         onClick = { menuOpen = false; onSelectAll() },
