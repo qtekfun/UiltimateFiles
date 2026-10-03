@@ -69,5 +69,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: Fexplo ${{ steps.version.outputs.name }}
           generate_release_notes: true
-          prerelease: ${{ steps.signing.outputs.signed != 'true' }}
+          prerelease: false
+          make_latest: true
+          body: ${{ steps.signing.outputs.signed != 'true' && 'Signed with the debug key because no release keystore is configured (set the SIGNING_* secrets to sign with your own key).' || '' }}
           files: fexplo-${{ steps.version.outputs.name }}.apk
