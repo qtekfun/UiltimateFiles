@@ -172,6 +172,17 @@ class BrowserViewModelTest {
     }
 
     @Test
+    fun `the view mode toggles between list and grid and is shared through the preferences`() = runTest {
+        assertEquals(ViewMode.LIST, loaded().viewMode)
+
+        viewModel.onEvent(BrowserEvent.ToggleViewMode)
+        assertEquals(ViewMode.GRID, viewModel.state.first { it.viewMode == ViewMode.GRID }.viewMode)
+
+        viewModel.onEvent(BrowserEvent.ToggleViewMode)
+        assertEquals(ViewMode.LIST, viewModel.state.first { it.viewMode == ViewMode.LIST }.viewMode)
+    }
+
+    @Test
     fun `new folder dialog creates the folder`() = runTest {
         loaded()
 

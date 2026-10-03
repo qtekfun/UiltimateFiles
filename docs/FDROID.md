@@ -28,13 +28,13 @@ Still to add: phone screenshots in `images/phoneScreenshots/` and per-version ch
 Categories:
   - System
 License: GPL-3.0-or-later
-SourceCode: https://github.com/qtekfun/fexplo
-IssueTracker: https://github.com/qtekfun/fexplo/issues
+SourceCode: https://github.com/qtekfun/UiltimateFiles
+IssueTracker: https://github.com/qtekfun/UiltimateFiles/issues
 
 AutoName: UltimateFiles
 
 RepoType: git
-Repo: https://github.com/qtekfun/fexplo.git
+Repo: https://github.com/qtekfun/UiltimateFiles.git
 
 Builds:
   - versionName: 0.1.7

@@ -1,4 +1,4 @@
-# Product Requirement Document (PRD) - Open Source File Manager
+# Product Requirement Document (PRD) - UltimateFiles, gestor de archivos open source
 
 ## 1. Visión del Producto
 Clon funcional y visual de Solid Explorer para Android, optimizado para productividad con navegación dual panel, alta fidelidad en operaciones de archivo (interno y USB OTG), arquitectura en segundo plano no bloqueante y preparado para F-Droid.
@@ -37,3 +37,15 @@ Clon funcional y visual de Solid Explorer para Android, optimizado para producti
 - Compresión y descompresión ZIP/TAR/7z como carpetas virtuales - *Fase 2*.
 - Visores internos multimedia (se delega mediante Intents del sistema a apps externas).
 - Acceso Root.
+
+## 4. Ampliaciones posteriores al MVP (implementadas)
+- Historial de tareas (también en curso y en cola), detección de volúmenes expulsados, ajustes de tema con modo AMOLED.
+- Copias robustas de ficheros enormes (nombre temporal, verificación SHA-256 opcional), pausar/reanudar, notificación en pantalla de bloqueo.
+- Nextcloud/WebDAV con *Login Flow v2*, subida por trozos y descarga reanudable (solo HTTPS).
+- Vista en cuadrícula, abrir APK, exportar/importar ajustes y cuentas.
+
+## 5. Pendiente / ideas
+- Certificados autofirmados y HTTP para servidores propios (hoy solo HTTPS con certificado válido).
+- Reanudar una subida interrumpida tras morir el proceso.
+- SMB/SFTP, compresión/descompresión, visores integrados (ver sección 3).
+- Pruebas instrumentadas de UI y prueba real en dispositivo con ficheros de varios GB.

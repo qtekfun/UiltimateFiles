@@ -35,6 +35,8 @@
     <string name="action_open_with">Abrir con</string>
     <string name="action_new_folder">Nueva carpeta</string>
     <string name="action_new_file">Nuevo archivo</string>
+    <string name="action_view_grid">Vista en cuadrícula</string>
+    <string name="action_view_list">Vista en lista</string>
     <string name="action_select_all">Seleccionar todo</string>
     <string name="action_sort_by">Ordenar por</string>
     <string name="sort_name">Nombre</string>

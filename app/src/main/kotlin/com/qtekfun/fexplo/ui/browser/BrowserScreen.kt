@@ -135,6 +135,8 @@ fun BrowserScreen(
                 BrowserTopBar(
                     segments = state.breadcrumb,
                     sortOrder = state.sortOrder,
+                    viewMode = state.viewMode,
+                    onToggleViewMode = { onEvent(BrowserEvent.ToggleViewMode) },
                     onMenuClick = onOpenDrawer,
                     onSegmentClick = { onEvent(BrowserEvent.Navigate(it.path)) },
                     searchQuery = state.searchQuery,
@@ -169,6 +171,7 @@ fun BrowserScreen(
                 }
                 else -> FileList(
                     items = state.visibleItems,
+                    viewMode = state.viewMode,
                     selectedPaths = state.selectedPaths,
                     isSelecting = state.isSelecting,
                     dragAndDropEnabled = dragAndDropEnabled,

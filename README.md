@@ -1,25 +1,52 @@
 # UltimateFiles
 
-Explorador de archivos open source de doble panel para Android (F-Droid compatible, sin Google Play Services).
-Ver [PRD.md](PRD.md), [ARCHITECTURE.md](ARCHITECTURE.md) y [TASK_PLAN.md](TASK_PLAN.md).
+Explorador de archivos libre (GPL-3.0-or-later) de **doble panel** para Android, pensado para trabajar con ficheros
+grandes (footage de vídeo, copias de seguridad) y para mover cosas a Nextcloud. Compatible con F-Droid: sin Google
+Play Services, sin analíticas, sin dependencias cerradas.
 
-Licencia: GPL-3.0-or-later.
+## Qué hace
+- **Dos paneles**: pestañas deslizables en vertical, 50/50 en horizontal o pantallas anchas; arrastrar y soltar entre
+  paneles con confirmación "¿Copiar o mover?".
+- **Navegación**: ruta segmentada (breadcrumbs), búsqueda por nombre, ordenación, vista en lista o cuadrícula,
+  cajón lateral con volúmenes (interno, USB OTG, tarjeta SD) y accesos rápidos.
+- **Acciones sin FAB**: barra superior contextual al seleccionar, menú por elemento, barra de pegado acoplada abajo.
+- **Copias y movimientos en segundo plano** con servicio en primer plano: notificación con progreso, velocidad y
+  tiempo restante, visible en la pantalla de bloqueo, con **pausar/reanudar** y cancelar.
+- **Ficheros enormes**: se escriben con nombre temporal (`*.fexplo-part`) y se renombran al terminar; verificación
+  SHA-256 opcional antes de borrar el origen en un movimiento; conflictos (sobrescribir, omitir, renombrar, aplicar a todos).
+- **Nextcloud / WebDAV**: inicio de sesión con *Login Flow* en el navegador (nunca ves ni guardas tu contraseña,
+  solo una contraseña de aplicación revocable, cifrada con el Keystore), subida por trozos y descarga reanudable.
+  Solo HTTPS.
+- **Historial** de tareas, incluidas las que están en curso o en cola.
+- **Propiedades** con permisos y hashes MD5/SHA-256.
+- **Ajustes**: tema (sistema, claro, oscuro, AMOLED), colores dinámicos, verificar copias, y **copia de seguridad**
+  exportable/importable (ajustes y cuentas; las contraseñas se cifran con una frase que eliges).
+- **Abrir APK**: pide una vez el permiso "instalar apps desconocidas" y delega en el instalador del sistema.
+
+## Permisos
+Acceso a todos los archivos (`MANAGE_EXTERNAL_STORAGE`), servicio en primer plano de sincronización de datos,
+notificaciones, `WAKE_LOCK` (copias largas con la pantalla apagada), `INTERNET` (solo para Nextcloud/WebDAV) y
+`REQUEST_INSTALL_PACKAGES` (abrir APK). No hay nada que se envíe a terceros.
 
 ## Desarrollo
 ```
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
+Java 21, Kotlin 2.x, Jetpack Compose + Material 3, Koin, DataStore, OkHttp. Ver [PRD.md](PRD.md),
+[ARCHITECTURE.md](ARCHITECTURE.md) y [TASK_PLAN.md](TASK_PLAN.md).
+
+Las pruebas de Nextcloud corren contra un servidor simulado en memoria, y la copia de 8 GiB contra un flujo
+generado: no sustituyen una prueba real en un dispositivo.
 
 ## CI/CD
-- `ci.yml`: tests, lint y APK debug en cada PR y push a `master`.
-- GitGuardian: escaneo de secretos mediante su app de GitHub (check "GitGuardian Security Checks"), sin workflow ni API key.
-- `release.yml`: en cada push a `master` publica una GitHub Release con el APK (`versionName = VERSION.<run_number>`).
-  Para firmar: secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`.
-  Sin ellos el APK usa la clave debug y la release se marca como pre-release.
+- `ci.yml`: tests, lint y APK debug en cada PR y push a `master` y a ramas `claude/**`.
+- GitGuardian: escaneo de secretos mediante su app de GitHub, sin workflow ni API key.
+- `release.yml`: en cada push a `master` publica una release con el APK `UltimateFiles-<versión>.apk`
+  (`versionName = VERSION.<run_number>`). Para firmar con tu clave: secrets `SIGNING_KEYSTORE_BASE64`,
+  `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. Sin ellos se usa la clave debug.
 - Dependabot: Gradle y GitHub Actions, semanal.
+- Publicación en F-Droid: ver [docs/FDROID.md](docs/FDROID.md).
 
 ## Nombre y paquete
-La app se llama **UltimateFiles**. El identificador técnico (`com.qtekfun.fexplo`) y el nombre del repositorio se mantienen para que las instalaciones existentes se actualicen sin perder datos.
-
-## Copia de seguridad
-Ajustes → Copia de seguridad exporta e importa los ajustes y las cuentas de Nextcloud a un archivo JSON (`ultimatefiles-backup.json`). Las contraseñas de aplicación de las cuentas se cifran en el archivo con una frase de contraseña (PBKDF2-SHA256 + AES-256-GCM); sin ella no se pueden restaurar.
+La app se llama **UltimateFiles**. El identificador técnico (`com.qtekfun.fexplo`) se mantiene para que las
+instalaciones existentes se actualicen sin perder datos. El repositorio es `qtekfun/UiltimateFiles`.
