@@ -24,6 +24,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,7 +39,14 @@ import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
 import com.qtekfun.ultimatefiles.core.model.UserPreferences
-import com.qtekfun.ultimatefiles.ui.components.rememberIgnoringBatteryOptimizations
+import com.qtekfun.ultimatefiles.ui.components.CheckNotice
+import com.qtekfun.ultimatefiles.ui.components.aggressiveBatteryVendor
+import com.qtekfun.ultimatefiles.ui.components.areNotificationsAllowed
+import com.qtekfun.ultimatefiles.ui.components.isIgnoringBatteryOptimizations
+import com.qtekfun.ultimatefiles.ui.components.isProgressChannelUsable
+import com.qtekfun.ultimatefiles.ui.components.openAppDetails
+import com.qtekfun.ultimatefiles.ui.components.openAppNotificationSettings
+import com.qtekfun.ultimatefiles.ui.components.rememberCheck
 import com.qtekfun.ultimatefiles.ui.components.requestIgnoreBatteryOptimizations
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,16 +163,7 @@ fun SettingsScreen(
                     ),
                 )
             }
-            val batteryExempt by rememberIgnoringBatteryOptimizations()
-            val context = LocalContext.current
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_battery)) },
-                supportingContent = {
-                    Text(stringResource(if (batteryExempt) R.string.settings_battery_on else R.string.settings_battery_off))
-                },
-                trailingContent = { Switch(checked = batteryExempt, onCheckedChange = null) },
-                modifier = Modifier.clickable { requestIgnoreBatteryOptimizations(context) },
-            )
+            ReliabilitySection()
             Text(
                 text = stringResource(R.string.settings_backup),
                 style = MaterialTheme.typography.titleSmall,
@@ -200,3 +199,46 @@ private fun ThemeMode.descriptionRes(): Int? = when (this) {
 }
 
 private const val BACKUP_FILE_NAME = "ultimatefiles-backup.json"
+
+/**
+ * Everything long copies need from the system, checked live: a red notice with a fix button for each thing missing, and
+ * for phone makers that kill background apps on their own, the steps their battery manager needs.
+ */
+@Composable
+private fun ReliabilitySection() {
+    val context = LocalContext.current
+    val notifications by rememberCheck { areNotificationsAllowed(context) }
+    val channel by rememberCheck { isProgressChannelUsable(context) }
+    val battery by rememberCheck { isIgnoringBatteryOptimizations(context) }
+    val vendor = remember { aggressiveBatteryVendor() }
+
+    Text(
+        text = stringResource(R.string.settings_reliability),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+    )
+    CheckNotice(notifications, R.string.check_notifications_off, R.string.check_open_notification_settings) {
+        openAppNotificationSettings(context)
+    }
+    CheckNotice(channel, R.string.check_channel_off, R.string.check_open_notification_settings) {
+        openAppNotificationSettings(context)
+    }
+    CheckNotice(battery, R.string.settings_battery_off, R.string.battery_hint_allow) {
+        requestIgnoreBatteryOptimizations(context)
+    }
+    if (vendor != null) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(stringResource(R.string.check_vendor_title, vendor), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.check_vendor_steps), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { openAppDetails(context) }) { Text(stringResource(R.string.check_open_app_settings)) }
+        }
+    }
+    if (notifications && channel && battery && vendor == null) {
+        Text(
+            text = stringResource(R.string.check_all_ok),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+}

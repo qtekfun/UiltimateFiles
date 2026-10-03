@@ -157,8 +157,6 @@
     <string name="account_remove_title">Remove account</string>
     <string name="account_remove_message">Disconnect \"%1$s\" from UltimateFiles? Nothing is deleted on the server.</string>
     <string name="error_remote_open">Copy network files to this device first to open or share them.</string>
-    <string name="settings_battery">Run copies in the background without limits</string>
-    <string name="settings_battery_on">Allowed: copies keep going with the screen off. Some phone makers have their own battery settings too; look for UltimateFiles there if copies still stop.</string>
     <string name="settings_battery_off">Not allowed: Android may cut the network or stop copies when the screen turns off. Tap to allow.</string>
     <string name="battery_hint_title">Keep copies running with the screen off</string>
     <string name="battery_hint_message">To keep a long copy going when the screen turns off, Android has to exempt UltimateFiles from battery optimisation. Without it the connection can be cut and the copy stops. You can change this later in Settings.</string>
@@ -172,6 +170,14 @@
     </plurals>
     <string name="interrupted_resume">Resume</string>
     <string name="interrupted_discard">Discard</string>
+    <string name="settings_reliability">Reliability</string>
+    <string name="check_notifications_off">Notifications are blocked. Without them Android may stop long copies and you will not see progress.</string>
+    <string name="check_channel_off">The copy progress notification is turned off or hidden. Turn it on to keep it on the lock screen and status bar.</string>
+    <string name="check_open_notification_settings">Notification settings</string>
+    <string name="check_vendor_title">%1$s phones close background apps aggressively</string>
+    <string name="check_vendor_steps">In the system settings open Battery for UltimateFiles and allow background activity / autostart, lock the app in the recents screen, and enable its status-bar icon in notification settings.</string>
+    <string name="check_open_app_settings">App settings</string>
+    <string name="check_all_ok">Everything looks fine.</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_export">Export settings and accounts</string>
     <string name="settings_export_summary">Save your settings and Nextcloud accounts to a file</string>

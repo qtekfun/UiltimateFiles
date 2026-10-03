@@ -128,6 +128,6 @@ class TransferNotifications(private val context: Context) {
         const val ONGOING_ID = 1
         const val RESULT_ID = 2
         private val OLD_CHANNEL_IDS = listOf("transfers", "transfers_lockscreen")
-        private const val CHANNEL_ID = "transfers_progress"
+        const val CHANNEL_ID = "transfers_progress"
     }
 }
