@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "fexplo"
+rootProject.name = "UltimateFiles"
 include(":app")

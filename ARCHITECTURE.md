@@ -11,7 +11,7 @@
 
 ## 2. Módulos y Estructura de Paquetes
 ```text
-com.qtekfun.fexplo/
+com.qtekfun.ultimatefiles/
 ├── core/
 │   ├── model/             # FileItem, StorageVolume, TransferProgress, TransferStatus, ConflictResolution
 │   ├── datastore/         # Persistencia de preferencias (rutas, ordenación, vistas)
@@ -50,7 +50,7 @@ interface FileSystemRepository {
 El contrato base se amplía con lo necesario para el motor de copia (`volumes`, `stat`, `parentOf`, `openInput`, `openOutput`), de modo que `FileStreamCopier` funcione con cualquier backend.
 
 ## 4. Ficheros enormes y red (Fase 7)
-- `TransferEngine` escribe los ficheros ≥ 64 MiB como `<nombre>.fexplo-part` y los renombra al terminar; en movimientos el origen solo se borra tras copiar (y verificar SHA-256 si está activado en Ajustes). Buffer de 1 MiB para ficheros grandes.
+- `TransferEngine` escribe los ficheros ≥ 64 MiB como `<nombre>.ultimatefiles-part` y los renombra al terminar; en movimientos el origen solo se borra tras copiar (y verificar SHA-256 si está activado en Ajustes). Buffer de 1 MiB para ficheros grandes.
 - `data/network/`: cliente WebDAV sobre OkHttp (`dav://<cuenta>/<ruta>`), enrutado por `RoutingFileSystemRepository`. Nextcloud: subida por trozos de 10 MB (chunked v2); descarga reanudable con `Range`. Solo HTTPS. Permiso `INTERNET` añadido.
 
 ## 5. Pausa, historial en vivo y copias de seguridad
@@ -63,7 +63,7 @@ El contrato base se amplía con lo necesario para el motor de copia (`volumes`, 
   lee/escribe vía el selector de documentos (sin permisos de almacenamiento).
 - Vista lista/cuadrícula: `ViewMode` compartido por ambos paneles mediante las preferencias.
 - Subidas reanudables: `WebDavUploadStream` guarda en `UploadResumeStore` (fichero en `filesDir`) el id de subida del servidor y el
-  SHA-256 de cada trozo enviado. Al repetir la copia al mismo destino (el nombre temporal `.fexplo-part` es estable) se relee el
+  SHA-256 de cada trozo enviado. Al repetir la copia al mismo destino (el nombre temporal `.ultimatefiles-part` es estable) se relee el
   origen y se salta cada trozo cuyo hash coincide y que el servidor sigue teniendo; el resto se sube y los trozos sobrantes se
   borran. No se confía en fechas ni tamaños del origen. Las subidas guardadas caducan a las 20 h.
 - Versión: `version.properties` es la fuente de verdad (`scripts/check-version.sh` la valida en CI); las releases de GitHub usan

@@ -30,19 +30,19 @@ version, which is what F-Droid needs.
    check that the build server image provides that platform.
 3. **Screenshots** in `fastlane/metadata/android/<locale>/images/phoneScreenshots/`.
 
-## Draft recipe for fdroiddata (`metadata/com.qtekfun.fexplo.yml`)
+## Draft recipe for fdroiddata (`metadata/com.qtekfun.ultimatefiles.yml`)
 
 ```yaml
 Categories:
   - System
 License: GPL-3.0-or-later
-SourceCode: https://github.com/qtekfun/UiltimateFiles
-IssueTracker: https://github.com/qtekfun/UiltimateFiles/issues
+SourceCode: https://github.com/qtekfun/UltimateFiles
+IssueTracker: https://github.com/qtekfun/UltimateFiles/issues
 
 AutoName: UltimateFiles
 
 RepoType: git
-Repo: https://github.com/qtekfun/UiltimateFiles.git
+Repo: https://github.com/qtekfun/UltimateFiles.git
 
 Builds:
   - versionName: 0.2.0
