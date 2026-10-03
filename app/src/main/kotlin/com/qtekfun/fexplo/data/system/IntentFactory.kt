@@ -35,6 +35,14 @@ class IntentFactory(private val context: Context) {
         return Intent.createChooser(intent, null)
     }
 
+    /** Opening an APK needs the user to allow Fexplo as an install source (Android 8+). */
+    fun needsInstallPermission(item: FileItem): Boolean =
+        (item.mimeType ?: MimeTypes.fromName(item.name)) == APK_MIME && !context.packageManager.canRequestPackageInstalls()
+
+    /** The system page where the user allows installing apps from Fexplo. */
+    fun installPermissionSettings(): Intent =
+        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+
     /** There is no public API to unmount a volume; the system storage screen is where it is done. */
     fun ejectSettings(): Intent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
 
@@ -44,4 +52,8 @@ class IntentFactory(private val context: Context) {
         } else {
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(item.path))
         }
+
+    private companion object {
+        const val APK_MIME = "application/vnd.android.package-archive"
+    }
 }

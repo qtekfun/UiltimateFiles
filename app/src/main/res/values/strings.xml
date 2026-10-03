@@ -73,6 +73,8 @@
     <string name="drop_copy">Copy</string>
     <string name="drop_move">Move</string>
     <string name="transfer_speed">%1$s/s</string>
+    <string name="install_permission_needed">Allow Fexplo to install apps in this screen, then open the APK again.</string>
+    <string name="error_open_failed">Could not open the file: %1$s</string>
     <string name="error_no_app">No app can open this file</string>
     <string name="error_share_folders">Folders cannot be shared</string>
     <string name="error_operation_failed">Operation failed</string>

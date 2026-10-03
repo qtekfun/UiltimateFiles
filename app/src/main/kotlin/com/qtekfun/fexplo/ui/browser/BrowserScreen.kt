@@ -66,9 +66,16 @@ fun BrowserScreen(
         viewModel.effects.collect { effect ->
             when (effect) {
                 is BrowserEffect.OpenFile -> try {
-                    context.startActivity(intents.view(effect.item, effect.chooser))
+                    if (intents.needsInstallPermission(effect.item)) {
+                        context.startActivity(intents.installPermissionSettings())
+                        snackbar.showSnackbar(resources.getString(R.string.install_permission_needed))
+                    } else {
+                        context.startActivity(intents.view(effect.item, effect.chooser))
+                    }
                 } catch (e: ActivityNotFoundException) {
                     snackbar.showSnackbar(resources.getString(R.string.error_no_app))
+                } catch (e: RuntimeException) {
+                    snackbar.showSnackbar(resources.getString(R.string.error_open_failed, e.message.orEmpty()))
                 }
                 is BrowserEffect.ShareFiles -> try {
                     context.startActivity(intents.share(effect.items))
