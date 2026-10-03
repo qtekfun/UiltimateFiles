@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Check
@@ -16,7 +17,6 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -160,7 +160,7 @@ private fun FileKind.icon(): ImageVector = when (this) {
     FileKind.TEXT -> Icons.Filled.Description
     FileKind.ARCHIVE -> Icons.Filled.FolderZip
     FileKind.APK -> Icons.Filled.Android
-    FileKind.OTHER -> Icons.Filled.InsertDriveFile
+    FileKind.OTHER -> Icons.AutoMirrored.Filled.InsertDriveFile
 }
 
 private fun FileItem.summary(): String {

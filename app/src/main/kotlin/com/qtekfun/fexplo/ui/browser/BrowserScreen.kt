@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.qtekfun.fexplo.R
@@ -56,6 +57,7 @@ fun BrowserScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard by viewModel.clipboard.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val intents = remember { KoinPlatform.getKoin().get<IntentFactory>() }
     val snackbar = remember { SnackbarHostState() }
     val onEvent = viewModel::onEvent
@@ -66,15 +68,15 @@ fun BrowserScreen(
                 is BrowserEffect.OpenFile -> try {
                     context.startActivity(intents.view(effect.item, effect.chooser))
                 } catch (e: ActivityNotFoundException) {
-                    snackbar.showSnackbar(context.getString(R.string.error_no_app))
+                    snackbar.showSnackbar(resources.getString(R.string.error_no_app))
                 }
                 is BrowserEffect.ShareFiles -> try {
                     context.startActivity(intents.share(effect.items))
                 } catch (e: ActivityNotFoundException) {
-                    snackbar.showSnackbar(context.getString(R.string.error_no_app))
+                    snackbar.showSnackbar(resources.getString(R.string.error_no_app))
                 }
                 is BrowserEffect.Message -> snackbar.showSnackbar(
-                    listOfNotNull(context.getString(effect.resId), effect.detail).joinToString(": "),
+                    listOfNotNull(resources.getString(effect.resId), effect.detail).joinToString(": "),
                 )
             }
         }
