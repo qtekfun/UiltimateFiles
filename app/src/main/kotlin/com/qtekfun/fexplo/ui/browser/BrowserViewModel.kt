@@ -14,6 +14,7 @@ import com.qtekfun.fexplo.core.util.sortedByOrder
 import com.qtekfun.fexplo.domain.clipboard.ClipboardManager
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
 import com.qtekfun.fexplo.domain.repository.UserPreferencesRepository
+import com.qtekfun.fexplo.domain.repository.VolumeChangeSource
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import com.qtekfun.fexplo.domain.usecase.BatchCopyUseCase
 import com.qtekfun.fexplo.domain.usecase.BatchMoveUseCase
@@ -25,6 +26,7 @@ import com.qtekfun.fexplo.ui.dualpanel.DragPayload
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,6 +51,7 @@ class BrowserViewModel(
     private val copyFiles: BatchCopyUseCase,
     private val moveFiles: BatchMoveUseCase,
     private val dragDrop: DragDropState,
+    private val volumeChanges: VolumeChangeSource,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrowserState())
@@ -75,6 +78,13 @@ class BrowserViewModel(
             }
         }
         viewModelScope.launch {
+            // A drive may have been ejected or unplugged: make sure this panel is not left on a dead path.
+            volumeChanges.changes.collect {
+                delay(VOLUME_SETTLE_MILLIS)
+                revalidate()
+            }
+        }
+        viewModelScope.launch {
             // A finished transfer may have changed this folder.
             coordinator.state.map { it.progress?.status }.distinctUntilChanged().collect { status ->
                 if (status == TransferStatus.COMPLETED || status == TransferStatus.CANCELLED ||
@@ -90,7 +100,7 @@ class BrowserViewModel(
         when (event) {
             is BrowserEvent.Navigate -> load(event.path)
             BrowserEvent.NavigateUp -> _state.value.parentPath?.let(::load)
-            BrowserEvent.Refresh -> refresh()
+            BrowserEvent.Refresh -> revalidate()
             BrowserEvent.ToggleSearch -> _state.update { it.copy(searchQuery = if (it.searchQuery == null) "" else null) }
             is BrowserEvent.SetSearchQuery -> _state.update { it.copy(searchQuery = event.query) }
             is BrowserEvent.OpenItem ->
@@ -136,10 +146,39 @@ class BrowserViewModel(
     }
 
     private fun refresh() {
-        _state.value.currentPath?.let(::load)
+        _state.value.currentPath?.let { load(it) }
     }
 
-    private fun load(path: String) {
+    /**
+     * Checks that the current folder still exists. If not (drive ejected, folder deleted from outside),
+     * falls back to the nearest ancestor that does, or to a volume root, and tells the user.
+     */
+    private fun revalidate() {
+        viewModelScope.launch {
+            val snapshot = _state.value
+            val current = snapshot.currentPath ?: return@launch
+            _state.update { it.copy(isLoading = true) }
+            val volumes = repository.volumes()
+            val candidates = snapshot.breadcrumb.reversed().map { it.path } + volumes.map { it.rootPath }
+            val target = candidates.firstOrNull { repository.stat(it).isSuccess }
+            if (target == null) {
+                _state.update {
+                    it.copy(isLoading = false, items = emptyList(), selectedPaths = emptySet(), errorMessage = NO_STORAGE)
+                }
+                return@launch
+            }
+            if (target == current) {
+                load(current, allowFallback = false)
+                return@launch
+            }
+            val volumeRoot = snapshot.breadcrumb.firstOrNull()?.path
+            val volumeGone = volumeRoot != null && volumes.none { it.rootPath == volumeRoot }
+            emit(BrowserEffect.Message(if (volumeGone) R.string.error_volume_gone else R.string.error_folder_gone))
+            load(target, allowFallback = false)
+        }
+    }
+
+    private fun load(path: String, allowFallback: Boolean = true) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
@@ -165,7 +204,13 @@ class BrowserViewModel(
                 },
                 onFailure = { error ->
                     if (error is CancellationException) throw error
-                    _state.update { it.copy(isLoading = false, errorMessage = error.message ?: error.javaClass.simpleName) }
+                    if (allowFallback && _state.value.currentPath != null) {
+                        revalidate()
+                    } else {
+                        _state.update {
+                            it.copy(isLoading = false, errorMessage = error.message ?: error.javaClass.simpleName)
+                        }
+                    }
                 },
             )
         }
@@ -270,6 +315,9 @@ class BrowserViewModel(
     }
 
     companion object {
+        /** Time the system needs to finish mounting or unmounting before the volumes are re-read. */
+        private const val VOLUME_SETTLE_MILLIS = 500L
+
         /** Marker stored in [BrowserState.errorMessage] when there is no volume to browse. */
         const val NO_STORAGE = "no-storage"
     }

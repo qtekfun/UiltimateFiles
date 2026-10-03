@@ -3,6 +3,7 @@ package com.qtekfun.fexplo.domain.usecase
 import com.qtekfun.fexplo.core.model.FileItem
 import com.qtekfun.fexplo.core.model.OperationType
 import com.qtekfun.fexplo.core.model.TransferRequest
+import com.qtekfun.fexplo.domain.history.TransferHistoryRecorder
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 
@@ -20,6 +21,10 @@ class BatchMoveUseCase(private val coordinator: TransferCoordinator) {
     }
 }
 
-class DeleteUseCase(private val repository: FileSystemRepository) {
-    suspend operator fun invoke(items: List<FileItem>): Result<Unit> = repository.delete(items)
+class DeleteUseCase(
+    private val repository: FileSystemRepository,
+    private val recorder: TransferHistoryRecorder,
+) {
+    suspend operator fun invoke(items: List<FileItem>): Result<Unit> =
+        repository.delete(items).also { recorder.recordDelete(items, it) }
 }
