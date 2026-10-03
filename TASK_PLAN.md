@@ -47,4 +47,5 @@
   - [x] 7.11 Comprimir en ZIP y extraer ZIP/TAR/TAR.GZ (`ArchiveEngine`, protección zip-slip).
   - [x] 7.12 Visores integrados (imagen, texto, PDF, audio/vídeo) en `ViewerActivity`.
   - [x] 7.13 Archivos comprimidos como carpetas (`archive://`), extracción de 7z y apertura desde otras apps.
+  - [x] 7.14 Cuentas SFTP con contraseña y huella del host fijada (sshj); R8 y compilación release en CI.
   - [x] 7.8 Versión en el código (`version.properties`) compatible con F-Droid; releases de CI con `versionCode` creciente.
