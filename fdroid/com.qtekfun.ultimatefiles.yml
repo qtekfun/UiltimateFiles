@@ -15,7 +15,7 @@ Binaries: https://github.com/qtekfun/UltimateFiles/releases/download/v%v/Ultimat
 Builds:
   - versionName: 0.3.0
     versionCode: 30099
-    commit: REPLACE_WITH_THE_SHA_OF_TAG_v0.3.0
+    commit: 432bf5567035d492c9b25c4632b4ad94dea218f3
     subdir: app
     sudo:
       - apt-get update
