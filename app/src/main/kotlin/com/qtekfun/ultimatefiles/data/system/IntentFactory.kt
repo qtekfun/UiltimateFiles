@@ -7,6 +7,8 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.util.MimeTypes
+import com.qtekfun.ultimatefiles.domain.usecase.ViewerKind
+import com.qtekfun.ultimatefiles.ui.viewer.ViewerActivity
 import java.io.File
 
 /**
@@ -20,6 +22,16 @@ class IntentFactory(private val context: Context) {
             .setDataAndType(uriFor(item), item.mimeType ?: MimeTypes.fromName(item.name) ?: "*/*")
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         return if (chooser) Intent.createChooser(intent, item.name) else intent
+    }
+
+    /** The in-app viewer for [item], or null when its type is not one the viewer can show. */
+    fun viewer(item: FileItem): Intent? {
+        val kind = ViewerKind.of(item.name, item.mimeType ?: MimeTypes.fromName(item.name)) ?: return null
+        return Intent(context, ViewerActivity::class.java)
+            .setData(uriFor(item))
+            .putExtra(ViewerActivity.EXTRA_NAME, item.name)
+            .putExtra(ViewerActivity.EXTRA_KIND, kind.name)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
     fun share(items: List<FileItem>): Intent {

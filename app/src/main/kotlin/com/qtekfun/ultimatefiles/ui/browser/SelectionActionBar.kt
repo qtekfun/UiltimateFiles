@@ -42,6 +42,9 @@ fun SelectionActionBar(
     onShare: () -> Unit,
     onRename: () -> Unit,
     onProperties: () -> Unit,
+    onCompress: () -> Unit,
+    onExtract: () -> Unit,
+    canExtract: Boolean,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
@@ -84,6 +87,15 @@ fun SelectionActionBar(
                         text = { Text(stringResource(R.string.action_rename)) },
                         enabled = single,
                         onClick = { menuOpen = false; onRename() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_compress)) },
+                        onClick = { menuOpen = false; onCompress() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_extract)) },
+                        enabled = canExtract,
+                        onClick = { menuOpen = false; onExtract() },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_properties)) },

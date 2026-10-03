@@ -106,6 +106,8 @@ private fun HistoryRow(entry: HistoryEntry) {
         HistoryOperation.COPY -> if (entry.itemCount == 1) R.string.history_copied_one else R.string.history_copied_many
         HistoryOperation.MOVE -> if (entry.itemCount == 1) R.string.history_moved_one else R.string.history_moved_many
         HistoryOperation.DELETE -> if (entry.itemCount == 1) R.string.history_deleted_one else R.string.history_deleted_many
+        HistoryOperation.COMPRESS -> if (entry.itemCount == 1) R.string.history_compressed_one else R.string.history_compressed_many
+        HistoryOperation.EXTRACT -> if (entry.itemCount == 1) R.string.history_extracted_one else R.string.history_extracted_many
     }
     val subject: Any = if (entry.itemCount == 1) entry.firstItemName else entry.itemCount
     val details = listOfNotNull(
@@ -206,6 +208,8 @@ private fun TransferSummary.runningTitle(): String {
     val one = itemCount == 1
     val title = when (operation) {
         OperationType.CUT -> if (one) R.string.history_moving_one else R.string.history_moving_many
+        OperationType.COMPRESS -> if (one) R.string.history_compressing_one else R.string.history_compressing_many
+        OperationType.EXTRACT -> if (one) R.string.history_extracting_one else R.string.history_extracting_many
         else -> if (one) R.string.history_copying_one else R.string.history_copying_many
     }
     return stringResource(title, if (one) firstItemName else itemCount)

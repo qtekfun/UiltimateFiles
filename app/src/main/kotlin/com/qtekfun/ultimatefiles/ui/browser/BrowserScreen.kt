@@ -1,6 +1,7 @@
 package com.qtekfun.ultimatefiles.ui.browser
 
 import android.content.ActivityNotFoundException
+import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -77,6 +78,14 @@ fun BrowserScreen(
                 } catch (e: RuntimeException) {
                     snackbar.showSnackbar(resources.getString(R.string.error_open_failed, e.message.orEmpty()))
                 }
+                is BrowserEffect.OpenViewer -> try {
+                    val viewer = intents.viewer(effect.item)
+                    if (viewer != null) context.startActivity(viewer) else context.startActivity(intents.view(effect.item, false))
+                } catch (e: ActivityNotFoundException) {
+                    snackbar.showSnackbar(resources.getString(R.string.error_no_app))
+                } catch (e: RuntimeException) {
+                    snackbar.showSnackbar(resources.getString(R.string.error_open_failed, e.message.orEmpty()))
+                }
                 is BrowserEffect.ShareFiles -> try {
                     context.startActivity(intents.share(effect.items))
                 } catch (e: ActivityNotFoundException) {
@@ -129,6 +138,9 @@ fun BrowserScreen(
                     onShare = { onEvent(BrowserEvent.Share(selected)) },
                     onRename = { selected.singleOrNull()?.let { onEvent(BrowserEvent.RequestRename(it)) } },
                     onProperties = { selected.singleOrNull()?.let { onEvent(BrowserEvent.ShowProperties(it)) } },
+                    onCompress = { onEvent(BrowserEvent.RequestCompress(selected)) },
+                    onExtract = { onEvent(BrowserEvent.Extract(selected)) },
+                    canExtract = selected.all { !it.isDirectory && ArchiveFormat.of(it.name) != null },
                     windowInsets = topInsets,
                 )
             } else {
@@ -202,6 +214,12 @@ fun BrowserScreen(
         BrowserDialog.NewFile -> NameInputDialog(
             title = R.string.action_new_file,
             initialName = "",
+            onConfirm = { onEvent(BrowserEvent.ConfirmName(it)) },
+            onDismiss = { onEvent(BrowserEvent.DismissDialog) },
+        )
+        is BrowserDialog.Compress -> NameInputDialog(
+            title = R.string.action_compress,
+            initialName = (dialog.items.singleOrNull()?.name?.substringBeforeLast('.') ?: "archive") + ".zip",
             onConfirm = { onEvent(BrowserEvent.ConfirmName(it)) },
             onDismiss = { onEvent(BrowserEvent.DismissDialog) },
         )

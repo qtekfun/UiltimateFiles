@@ -112,6 +112,16 @@
     <string name="history_moved_many">Movidos %1$d elementos</string>
     <string name="history_deleted_one">Eliminado \"%1$s\"</string>
     <string name="history_deleted_many">Eliminados %1$d elementos</string>
+    <string name="action_compress">Comprimir en ZIP</string>
+    <string name="action_extract">Extraer aquí</string>
+    <string name="history_compressing_one">Comprimiendo \"%1$s\"</string>
+    <string name="history_compressing_many">Comprimiendo %1$d elementos</string>
+    <string name="history_extracting_one">Extrayendo \"%1$s\"</string>
+    <string name="history_extracting_many">Extrayendo %1$d archivos</string>
+    <string name="history_compressed_one">Comprimido \"%1$s\"</string>
+    <string name="history_compressed_many">Comprimidos %1$d elementos</string>
+    <string name="history_extracted_one">Extraído \"%1$s\"</string>
+    <string name="history_extracted_many">Extraídos %1$d archivos</string>
     <string name="history_to">A %1$s</string>
     <string name="history_status_failed">Fallida</string>
     <string name="history_status_cancelled">Cancelada</string>
@@ -178,6 +188,9 @@
     <string name="check_vendor_steps">En los ajustes del sistema abre Batería de UltimateFiles y permite la actividad en segundo plano / inicio automático, bloquea la app en recientes y activa su icono en la barra de estado en los ajustes de notificaciones.</string>
     <string name="check_open_app_settings">Ajustes de la app</string>
     <string name="check_all_ok">Todo en orden.</string>
+    <string name="viewer_unsupported">Este archivo no se puede mostrar aquí.</string>
+    <string name="viewer_error">No se puede mostrar este archivo</string>
+    <string name="viewer_truncated">Se muestra solo el primer megabyte.</string>
     <string name="settings_backup">Copia de seguridad</string>
     <string name="settings_export">Exportar ajustes y cuentas</string>
     <string name="settings_export_summary">Guarda tus ajustes y cuentas de Nextcloud en un archivo</string>

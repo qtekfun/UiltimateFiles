@@ -6,6 +6,8 @@ import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.HashState
 import com.qtekfun.ultimatefiles.core.model.OperationType
+import com.qtekfun.ultimatefiles.core.model.TransferRequest
+import com.qtekfun.ultimatefiles.domain.usecase.ViewerKind
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortOrder
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
@@ -116,6 +118,7 @@ class BrowserViewModel(
             is BrowserEvent.OpenItem -> when {
                 event.item.isDirectory -> load(event.item.path)
                 event.item.isRemote() -> emit(BrowserEffect.Message(R.string.error_remote_open))
+                ViewerKind.of(event.item.name, event.item.mimeType) != null -> emit(BrowserEffect.OpenViewer(event.item))
                 else -> emit(BrowserEffect.OpenFile(event.item, false))
             }
             is BrowserEvent.OpenWith ->
@@ -138,6 +141,8 @@ class BrowserViewModel(
             is BrowserEvent.RequestDelete -> showDialog(BrowserDialog.ConfirmDelete(event.items))
             is BrowserEvent.RequestRename -> showDialog(BrowserDialog.Rename(event.item))
             BrowserEvent.RequestNewFolder -> showDialog(BrowserDialog.NewFolder)
+            is BrowserEvent.RequestCompress -> showDialog(BrowserDialog.Compress(event.items))
+            is BrowserEvent.Extract -> archive(OperationType.EXTRACT, event.items, null)
             BrowserEvent.RequestNewFile -> showDialog(BrowserDialog.NewFile)
             is BrowserEvent.ShowProperties -> showProperties(event.item)
             is BrowserEvent.ConfirmName -> confirmName(event.name)
@@ -254,6 +259,7 @@ class BrowserViewModel(
                 OperationType.COPY -> copyFiles(clip.items, target)
                 // Moving into the folder the items already live in changes nothing.
                 OperationType.CUT -> if (clip.sourcePath != target) moveFiles(clip.items, target)
+                else -> Unit
             }
         }
         clipboardManager.clear()
@@ -296,6 +302,10 @@ class BrowserViewModel(
         val parent = _state.value.currentPath
         _state.update { it.copy(dialog = null) }
         if (parent == null) return
+        if (dialog is BrowserDialog.Compress) {
+            archive(OperationType.COMPRESS, dialog.items, name)
+            return
+        }
         viewModelScope.launch {
             val result = when (dialog) {
                 BrowserDialog.NewFolder -> repository.createDirectory(parent, name)
@@ -307,6 +317,13 @@ class BrowserViewModel(
             result.onFailure { reportFailure(R.string.error_operation_failed, it) }
             refresh()
         }
+    }
+
+    /** Queues packing [items] into a ZIP called [archiveName], or unpacking each of them, in the current folder. */
+    private fun archive(operation: OperationType, items: List<FileItem>, archiveName: String?) {
+        val target = _state.value.currentPath ?: return
+        clearSelection()
+        coordinator.enqueue(TransferRequest(operation, items, target, archiveName = archiveName))
     }
 
     private fun confirmDelete() {

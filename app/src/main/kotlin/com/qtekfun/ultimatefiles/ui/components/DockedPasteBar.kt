@@ -34,6 +34,7 @@ fun DockedPasteBar(
     val summary = when (clipboard.operation) {
         OperationType.COPY -> R.string.clipboard_copy_summary
         OperationType.CUT -> R.string.clipboard_move_summary
+        else -> R.string.clipboard_copy_summary
     }
     Surface(modifier = modifier.fillMaxWidth(), tonalElevation = 3.dp) {
         Row(

@@ -112,6 +112,16 @@
     <string name="history_moved_many">Moved %1$d items</string>
     <string name="history_deleted_one">Deleted \"%1$s\"</string>
     <string name="history_deleted_many">Deleted %1$d items</string>
+    <string name="action_compress">Compress to ZIP</string>
+    <string name="action_extract">Extract here</string>
+    <string name="history_compressing_one">Compressing \"%1$s\"</string>
+    <string name="history_compressing_many">Compressing %1$d items</string>
+    <string name="history_extracting_one">Extracting \"%1$s\"</string>
+    <string name="history_extracting_many">Extracting %1$d archives</string>
+    <string name="history_compressed_one">Compressed \"%1$s\"</string>
+    <string name="history_compressed_many">Compressed %1$d items</string>
+    <string name="history_extracted_one">Extracted \"%1$s\"</string>
+    <string name="history_extracted_many">Extracted %1$d archives</string>
     <string name="history_to">To %1$s</string>
     <string name="history_status_failed">Failed</string>
     <string name="history_status_cancelled">Cancelled</string>
@@ -178,6 +188,9 @@
     <string name="check_vendor_steps">In the system settings open Battery for UltimateFiles and allow background activity / autostart, lock the app in the recents screen, and enable its status-bar icon in notification settings.</string>
     <string name="check_open_app_settings">App settings</string>
     <string name="check_all_ok">Everything looks fine.</string>
+    <string name="viewer_unsupported">This file cannot be shown here.</string>
+    <string name="viewer_error">Cannot show this file</string>
+    <string name="viewer_truncated">Showing only the first megabyte.</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_export">Export settings and accounts</string>
     <string name="settings_export_summary">Save your settings and Nextcloud accounts to a file</string>

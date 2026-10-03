@@ -29,13 +29,18 @@ enum class ConflictResolution { OVERWRITE, SKIP, RENAME }
 /** A user's answer to a name collision; [applyToAll] reuses it for the rest of the batch. */
 data class ConflictDecision(val resolution: ConflictResolution, val applyToAll: Boolean = false)
 
-/** A batch to copy or move ([OperationType.COPY] / [OperationType.CUT]) into [targetDirectory]. */
+/**
+ * A batch to copy or move ([OperationType.COPY] / [OperationType.CUT]) into [targetDirectory], to pack [items] into one
+ * ZIP there ([OperationType.COMPRESS]) or to unpack each archive of [items] into its own folder ([OperationType.EXTRACT]).
+ */
 data class TransferRequest(
     val operation: OperationType,
     val items: List<FileItem>,
     val targetDirectory: String,
     /** Read every copied file back and compare its SHA-256 before the source of a move is deleted. */
     val verify: Boolean = false,
+    /** [OperationType.COMPRESS] only: file name of the ZIP to create inside [targetDirectory]. */
+    val archiveName: String? = null,
 )
 
 /** Asks the user how to resolve a name collision between [source] and the entry already at the destination. */

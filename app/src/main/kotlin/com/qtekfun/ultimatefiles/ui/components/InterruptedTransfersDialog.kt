@@ -24,6 +24,8 @@ fun InterruptedTransfersDialog(tasks: List<TransferSummary>, onResume: () -> Uni
                     val one = task.itemCount == 1
                     val text = when (task.operation) {
                         OperationType.CUT -> if (one) R.string.history_moving_one else R.string.history_moving_many
+                        OperationType.COMPRESS -> if (one) R.string.history_compressing_one else R.string.history_compressing_many
+                        OperationType.EXTRACT -> if (one) R.string.history_extracting_one else R.string.history_extracting_many
                         else -> if (one) R.string.history_copying_one else R.string.history_copying_many
                     }
                     Text("• " + stringResource(text, if (one) task.firstItemName else task.itemCount))

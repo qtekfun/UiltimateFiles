@@ -16,7 +16,12 @@ Play Services, sin analíticas, sin dependencias cerradas.
   SHA-256 opcional antes de borrar el origen en un movimiento; conflictos (sobrescribir, omitir, renombrar, aplicar a todos).
 - **Nextcloud / WebDAV**: inicio de sesión con *Login Flow* en el navegador (nunca ves ni guardas tu contraseña,
   solo una contraseña de aplicación revocable, cifrada con el Keystore), subida por trozos y descarga reanudable.
-  Solo HTTPS.
+  HTTPS por defecto; para servidores propios puedes confiar en un certificado autofirmado (se fija su huella SHA-256
+  por cuenta, nunca se acepta "todo") o permitir HTTP tras una confirmación explícita.
+- **Comprimir y extraer**: "Comprimir en ZIP" y "Extraer aquí" (ZIP, TAR, TAR.GZ) desde el menú de la selección, por la
+  misma cola que las copias (progreso, pausa, historial). Extraer crea una carpeta nueva, se deshace entera si falla y
+  rechaza entradas con `../`. 7z no está soportado.
+- **Visores integrados**: imagen (con zoom), texto, PDF, audio y vídeo; "Abrir con…" delega en otras apps.
 - **Historial** de tareas, incluidas las que están en curso o en cola.
 - **Propiedades** con permisos y hashes MD5/SHA-256.
 - **Ajustes**: tema (sistema, claro, oscuro, AMOLED), colores dinámicos, verificar copias, y **copia de seguridad**
