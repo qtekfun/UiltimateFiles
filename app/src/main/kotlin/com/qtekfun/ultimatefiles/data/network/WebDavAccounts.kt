@@ -30,8 +30,8 @@ class WebDavAccountService(
     suspend fun connectWithLoginFlow(
         serverUrl: String,
         label: String,
-        openBrowser: (String) -> Unit,
         trust: TrustChoice = TrustChoice(),
+        openBrowser: (String) -> Unit,
     ): Result<WebDavAccount> = try {
         val start = loginFlow.start(serverUrl, trust)
         openBrowser(start.loginUrl) // runs in the caller's context (the UI thread for the ViewModel)

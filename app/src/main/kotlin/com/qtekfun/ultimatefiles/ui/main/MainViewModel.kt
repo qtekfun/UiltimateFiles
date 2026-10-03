@@ -110,7 +110,7 @@ class MainViewModel(
     ) {
         loginJob?.cancel()
         loginJob = viewModelScope.launch {
-            val result = accountService.connectWithLoginFlow(serverUrl, label, openBrowser, trust).map { }
+            val result = accountService.connectWithLoginFlow(serverUrl, label, trust, openBrowser).map { }
             if (result.isSuccess) refreshVolumes()
             onDone(result)
         }
