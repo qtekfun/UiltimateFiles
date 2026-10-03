@@ -112,6 +112,16 @@
     <string name="history_moved_many">Moved %1$d items</string>
     <string name="history_deleted_one">Deleted \"%1$s\"</string>
     <string name="history_deleted_many">Deleted %1$d items</string>
+    <string name="action_compress">Compress to ZIP</string>
+    <string name="action_extract">Extract here</string>
+    <string name="history_compressing_one">Compressing \"%1$s\"</string>
+    <string name="history_compressing_many">Compressing %1$d items</string>
+    <string name="history_extracting_one">Extracting \"%1$s\"</string>
+    <string name="history_extracting_many">Extracting %1$d archives</string>
+    <string name="history_compressed_one">Compressed \"%1$s\"</string>
+    <string name="history_compressed_many">Compressed %1$d items</string>
+    <string name="history_extracted_one">Extracted \"%1$s\"</string>
+    <string name="history_extracted_many">Extracted %1$d archives</string>
     <string name="history_to">To %1$s</string>
     <string name="history_status_failed">Failed</string>
     <string name="history_status_cancelled">Cancelled</string>

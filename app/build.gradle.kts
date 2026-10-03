@@ -94,6 +94,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.okhttp)
+    implementation(libs.commons.compress)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 

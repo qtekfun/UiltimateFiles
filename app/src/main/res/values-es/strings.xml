@@ -112,6 +112,16 @@
     <string name="history_moved_many">Movidos %1$d elementos</string>
     <string name="history_deleted_one">Eliminado \"%1$s\"</string>
     <string name="history_deleted_many">Eliminados %1$d elementos</string>
+    <string name="action_compress">Comprimir en ZIP</string>
+    <string name="action_extract">Extraer aquí</string>
+    <string name="history_compressing_one">Comprimiendo \"%1$s\"</string>
+    <string name="history_compressing_many">Comprimiendo %1$d elementos</string>
+    <string name="history_extracting_one">Extrayendo \"%1$s\"</string>
+    <string name="history_extracting_many">Extrayendo %1$d archivos</string>
+    <string name="history_compressed_one">Comprimido \"%1$s\"</string>
+    <string name="history_compressed_many">Comprimidos %1$d elementos</string>
+    <string name="history_extracted_one">Extraído \"%1$s\"</string>
+    <string name="history_extracted_many">Extraídos %1$d archivos</string>
     <string name="history_to">A %1$s</string>
     <string name="history_status_failed">Fallida</string>
     <string name="history_status_cancelled">Cancelada</string>

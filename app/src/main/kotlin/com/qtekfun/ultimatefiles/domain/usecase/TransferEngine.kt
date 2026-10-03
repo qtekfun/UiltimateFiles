@@ -45,15 +45,21 @@ class TransferEngine(
     /** Pausing this gate suspends the running copy (and verification) between chunks. */
     val pauseGate = PauseGate()
 
+    private val archives = ArchiveEngine(repository, pauseGate, clockMillis)
+
     /**
      * Emits throttled progress snapshots (latest wins) and finishes with a terminal status
      * ([TransferStatus.COMPLETED] or [TransferStatus.FAILED]). Cancelling the collector aborts
      * the transfer and removes the partially written file.
      */
     fun execute(request: TransferRequest, resolver: ConflictResolver): Flow<TransferProgress> =
-        channelFlow { Run(request, resolver, this).run() }
-            .conflate()
-            .flowOn(Dispatchers.IO)
+        if (request.operation == OperationType.COMPRESS || request.operation == OperationType.EXTRACT) {
+            archives.execute(request)
+        } else {
+            channelFlow { Run(request, resolver, this).run() }
+                .conflate()
+                .flowOn(Dispatchers.IO)
+        }
 
     private inner class Run(
         private val request: TransferRequest,

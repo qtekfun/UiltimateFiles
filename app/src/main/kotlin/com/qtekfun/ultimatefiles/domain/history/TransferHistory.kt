@@ -8,7 +8,7 @@ import com.qtekfun.ultimatefiles.core.model.TransferStatus
 import com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository
 import kotlinx.coroutines.flow.Flow
 
-enum class HistoryOperation { COPY, MOVE, DELETE }
+enum class HistoryOperation { COPY, MOVE, DELETE, COMPRESS, EXTRACT }
 
 /** One finished (or failed / cancelled) copy, move or delete. */
 data class HistoryEntry(
@@ -50,7 +50,12 @@ class TransferHistoryRecorder(
         record(
             HistoryEntry(
                 finishedAtMillis = clockMillis(),
-                operation = if (request.operation == OperationType.CUT) HistoryOperation.MOVE else HistoryOperation.COPY,
+                operation = when (request.operation) {
+                    OperationType.CUT -> HistoryOperation.MOVE
+                    OperationType.COMPRESS -> HistoryOperation.COMPRESS
+                    OperationType.EXTRACT -> HistoryOperation.EXTRACT
+                    else -> HistoryOperation.COPY
+                },
                 status = status,
                 itemCount = request.items.size,
                 totalBytes = finalProgress?.processedBytes ?: 0L,

@@ -45,6 +45,7 @@ class FileTransferJournal(private val file: File) : TransferJournal {
         .put("operation", request.operation.name)
         .put("target", request.targetDirectory)
         .put("verify", request.verify)
+        .put("archiveName", request.archiveName ?: JSONObject.NULL)
         .put(
             "items",
             JSONArray().also { items ->
@@ -83,6 +84,7 @@ class FileTransferJournal(private val file: File) : TransferJournal {
             },
             targetDirectory = json.getString("target"),
             verify = json.optBoolean("verify", false),
+            archiveName = if (json.isNull("archiveName")) null else json.optString("archiveName"),
         )
     }
 }

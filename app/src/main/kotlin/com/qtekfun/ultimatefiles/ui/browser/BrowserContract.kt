@@ -34,6 +34,7 @@ sealed interface BrowserDialog {
     data object NewFile : BrowserDialog
     data class Rename(val item: FileItem) : BrowserDialog
     data class ConfirmDelete(val items: List<FileItem>) : BrowserDialog
+    data class Compress(val items: List<FileItem>) : BrowserDialog
     data class Properties(val item: FileItem, val hash: HashState = HashState.Idle) : BrowserDialog
 }
 
@@ -59,6 +60,8 @@ sealed interface BrowserEvent {
     data class RequestDelete(val items: List<FileItem>) : BrowserEvent
     data class RequestRename(val item: FileItem) : BrowserEvent
     data object RequestNewFolder : BrowserEvent
+    data class RequestCompress(val items: List<FileItem>) : BrowserEvent
+    data class Extract(val items: List<FileItem>) : BrowserEvent
     data object RequestNewFile : BrowserEvent
     data class ShowProperties(val item: FileItem) : BrowserEvent
     data class ConfirmName(val name: String) : BrowserEvent
