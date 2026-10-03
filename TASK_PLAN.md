@@ -11,12 +11,12 @@
   - [x] 2.3 Implementar `SafFileSystemRepository` para gestionar Almacenamiento Interno y USB OTG vía Storage Access Framework.
   - [x] 2.4 Lógica de resolución de colisiones de nombres (sobrescribir, omitir, autorenombramiento).
 
-- [ ] **Fase 3: Componentes de UI y Sistema de Menús**
-  - [ ] 3.1 Implementar `BreadcrumbBar` interactivo con saltos de ruta en la Top Bar.
-  - [ ] 3.2 Implementar barra superior en reposo con overflow (*Nueva carpeta*, *Ordenar*, *Seleccionar todo*).
-  - [ ] 3.3 Implementar Contextual Action Bar (CAB) cuando hay selección activa (*Copiar*, *Cortar*, *Eliminar*).
-  - [ ] 3.4 Implementar `DockedPasteBar` inferior que se activa según el estado del `ClipboardManager`.
-  - [ ] 3.5 Crear `PropertiesBottomSheet` con cálculo de hash MD5/SHA-256 en corrutina background.
+- [x] **Fase 3: Componentes de UI y Sistema de Menús**
+  - [x] 3.1 Implementar `BreadcrumbBar` interactivo con saltos de ruta en la Top Bar.
+  - [x] 3.2 Implementar barra superior en reposo con overflow (*Nueva carpeta*, *Ordenar*, *Seleccionar todo*).
+  - [x] 3.3 Implementar Contextual Action Bar (CAB) cuando hay selección activa (*Copiar*, *Cortar*, *Eliminar*).
+  - [x] 3.4 Implementar `DockedPasteBar` inferior que se activa según el estado del `ClipboardManager`.
+  - [x] 3.5 Crear `PropertiesBottomSheet` con cálculo de hash MD5/SHA-256 en corrutina background.
 
 - [ ] **Fase 4: Navegador de Archivos (Single Panel)**
   - [ ] 4.1 Crear `BrowserViewModel` para gestionar listado, ordenación, carga asíncrona y selección.

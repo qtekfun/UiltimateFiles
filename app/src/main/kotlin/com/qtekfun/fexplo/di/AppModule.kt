@@ -14,7 +14,9 @@ import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import com.qtekfun.fexplo.domain.transfer.TransferServiceLauncher
 import com.qtekfun.fexplo.domain.usecase.BatchCopyUseCase
 import com.qtekfun.fexplo.domain.usecase.BatchMoveUseCase
+import com.qtekfun.fexplo.domain.usecase.BuildBreadcrumbUseCase
 import com.qtekfun.fexplo.domain.usecase.DeleteUseCase
+import com.qtekfun.fexplo.domain.usecase.HashCalcUseCase
 import com.qtekfun.fexplo.domain.usecase.StreamCopier
 import com.qtekfun.fexplo.domain.usecase.TransferEngine
 import org.koin.android.ext.koin.androidContext
@@ -44,4 +46,6 @@ val appModule = module {
     factory { BatchCopyUseCase(get()) }
     factory { BatchMoveUseCase(get()) }
     factory { DeleteUseCase(get()) }
+    factory { BuildBreadcrumbUseCase(get()) }
+    factory { HashCalcUseCase(get()) }
 }

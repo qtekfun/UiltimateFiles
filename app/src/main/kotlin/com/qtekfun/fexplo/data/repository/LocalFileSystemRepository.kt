@@ -100,6 +100,8 @@ class LocalFileSystemRepository(
             sizeBytes = if (isDirectory) 0L else file.length(),
             lastModifiedMillis = file.lastModified(),
             mimeType = if (isDirectory) null else mimeOf(file.name),
+            isWritable = file.canWrite(),
+            isHidden = file.isHidden,
         )
     }
 

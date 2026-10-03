@@ -13,4 +13,6 @@ data class FileItem(
     val sizeBytes: Long,
     val lastModifiedMillis: Long,
     val mimeType: String?,
+    val isWritable: Boolean = true,
+    val isHidden: Boolean = false,
 )
