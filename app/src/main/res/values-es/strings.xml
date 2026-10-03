@@ -165,6 +165,10 @@
     <string name="account_share">Nombre del recurso</string>
     <string name="account_domain">Dominio (opcional)</string>
     <string name="account_error_share">Ese recurso no existe en el servidor.</string>
+    <string name="account_key_pick">Usar un archivo de clave privada en lugar de contraseña</string>
+    <string name="account_key_loaded">Clave: %1$s (toca para cambiarla)</string>
+    <string name="account_key_passphrase">Contraseña de la clave (vacía si no tiene)</string>
+    <string name="account_error_key">Ese archivo no es una clave privada.</string>
     <string name="account_label">Nombre (opcional)</string>
     <string name="account_connect">Iniciar sesión en el navegador</string>
     <string name="account_error_url">Esa dirección no es válida. Usa una dirección https://.</string>

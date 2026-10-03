@@ -165,6 +165,10 @@
     <string name="account_share">Share name</string>
     <string name="account_domain">Domain (optional)</string>
     <string name="account_error_share">That share does not exist on the server.</string>
+    <string name="account_key_pick">Use a private key file instead of a password</string>
+    <string name="account_key_loaded">Key: %1$s (tap to change)</string>
+    <string name="account_key_passphrase">Key passphrase (leave empty if it has none)</string>
+    <string name="account_error_key">That file is not a private key.</string>
     <string name="account_label">Name (optional)</string>
     <string name="account_connect">Sign in with browser</string>
     <string name="account_error_url">That address is not valid. Use an https:// address.</string>
