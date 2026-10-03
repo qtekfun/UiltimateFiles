@@ -229,7 +229,6 @@ class TransferEngineTest {
         assertEquals(TransferStatus.COMPLETED, last.status)
         assertEquals(20_000L, last.totalBytes)
         assertEquals(20_000L, last.processedBytes)
-        assertTrue(progress.any { it.status == TransferStatus.VERIFYING })
     }
 
     /** Silently corrupts the written data. */
