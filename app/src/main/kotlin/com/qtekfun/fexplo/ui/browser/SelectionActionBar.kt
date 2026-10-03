@@ -1,6 +1,7 @@
 package com.qtekfun.fexplo.ui.browser
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -42,10 +43,12 @@ fun SelectionActionBar(
     onRename: () -> Unit,
     onProperties: () -> Unit,
     modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     TopAppBar(
         modifier = modifier,
+        windowInsets = windowInsets,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,

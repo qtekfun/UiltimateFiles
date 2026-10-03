@@ -18,13 +18,13 @@
   - [x] 3.4 Implementar `DockedPasteBar` inferior que se activa según el estado del `ClipboardManager`.
   - [x] 3.5 Crear `PropertiesBottomSheet` con cálculo de hash MD5/SHA-256 en corrutina background.
 
-- [ ] **Fase 4: Navegador de Archivos (Single Panel)**
-  - [ ] 4.1 Crear `BrowserViewModel` para gestionar listado, ordenación, carga asíncrona y selección.
-  - [ ] 4.2 Crear `FileList` y filas con iconos representativos según MIME type y tamaño legible.
-  - [ ] 4.3 Menú contextual por ítem (pulsación larga / botón 3 puntos en fila).
+- [x] **Fase 4: Navegador de Archivos (Single Panel)**
+  - [x] 4.1 Crear `BrowserViewModel` para gestionar listado, ordenación, carga asíncrona y selección.
+  - [x] 4.2 Crear `FileList` y filas con iconos representativos según MIME type y tamaño legible.
+  - [x] 4.3 Menú contextual por ítem (pulsación larga / botón 3 puntos en fila).
 
-- [ ] **Fase 5: Integración Dual Panel y Drag & Drop**
-  - [ ] 5.1 Implementar `DualPanelScaffold` con detección de tamaño de pantalla (Compact vs Expanded).
-  - [ ] 5.2 Configurar `HorizontalPager` para modo retrato y layout split 50/50 para apaisado.
-  - [ ] 5.3 Integrar APIs de Drag & Drop entre paneles en modo split con diálogo modal "¿Copiar o Mover?".
-  - [ ] 5.4 Navigation Drawer lateral con volúmenes detectados (Interno, USB).
+- [x] **Fase 5: Integración Dual Panel y Drag & Drop**
+  - [x] 5.1 Implementar `DualPanelScaffold` con detección de tamaño de pantalla (Compact vs Expanded).
+  - [x] 5.2 Configurar `HorizontalPager` para modo retrato y layout split 50/50 para apaisado.
+  - [x] 5.3 Integrar APIs de Drag & Drop entre paneles en modo split con diálogo modal "¿Copiar o Mover?".
+  - [x] 5.4 Navigation Drawer lateral con volúmenes detectados (Interno, USB).

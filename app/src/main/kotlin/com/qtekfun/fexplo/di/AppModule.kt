@@ -1,15 +1,23 @@
 package com.qtekfun.fexplo.di
 
 import android.os.Environment
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.qtekfun.fexplo.R
+import com.qtekfun.fexplo.core.datastore.DataStoreUserPreferencesRepository
+import com.qtekfun.fexplo.core.model.PanelId
 import com.qtekfun.fexplo.data.io.FileStreamCopier
 import com.qtekfun.fexplo.data.repository.LocalFileSystemRepository
 import com.qtekfun.fexplo.data.repository.RoutingFileSystemRepository
 import com.qtekfun.fexplo.data.repository.SafFileSystemRepository
 import com.qtekfun.fexplo.data.service.ServiceTransferLauncher
 import com.qtekfun.fexplo.data.service.TransferNotifications
+import com.qtekfun.fexplo.data.system.IntentFactory
 import com.qtekfun.fexplo.domain.clipboard.ClipboardManager
 import com.qtekfun.fexplo.domain.repository.FileSystemRepository
+import com.qtekfun.fexplo.domain.repository.UserPreferencesRepository
 import com.qtekfun.fexplo.domain.transfer.TransferCoordinator
 import com.qtekfun.fexplo.domain.transfer.TransferServiceLauncher
 import com.qtekfun.fexplo.domain.usecase.BatchCopyUseCase
@@ -19,6 +27,9 @@ import com.qtekfun.fexplo.domain.usecase.DeleteUseCase
 import com.qtekfun.fexplo.domain.usecase.HashCalcUseCase
 import com.qtekfun.fexplo.domain.usecase.StreamCopier
 import com.qtekfun.fexplo.domain.usecase.TransferEngine
+import com.qtekfun.fexplo.ui.browser.BrowserViewModel
+import com.qtekfun.fexplo.ui.dualpanel.DragDropState
+import com.qtekfun.fexplo.ui.main.MainViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -48,4 +59,29 @@ val appModule = module {
     factory { DeleteUseCase(get()) }
     factory { BuildBreadcrumbUseCase(get()) }
     factory { HashCalcUseCase(get()) }
+
+    single<DataStore<Preferences>> {
+        PreferenceDataStoreFactory.create { androidContext().preferencesDataStoreFile("settings") }
+    }
+    single<UserPreferencesRepository> { DataStoreUserPreferencesRepository(get()) }
+    single { IntentFactory(androidContext()) }
+    single { DragDropState() }
+
+    // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
+    factory { MainViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { params ->
+        BrowserViewModel(
+            panel = params.get<PanelId>(),
+            repository = get(),
+            preferences = get(),
+            clipboardManager = get(),
+            coordinator = get(),
+            buildBreadcrumb = get(),
+            deleteFiles = get(),
+            calculateHash = get(),
+            copyFiles = get(),
+            moveFiles = get(),
+            dragDrop = get(),
+        )
+    }
 }
