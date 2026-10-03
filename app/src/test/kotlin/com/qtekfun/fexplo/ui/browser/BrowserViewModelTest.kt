@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -176,10 +177,14 @@ class BrowserViewModelTest {
         assertEquals(ViewMode.LIST, loaded().viewMode)
 
         viewModel.onEvent(BrowserEvent.ToggleViewMode)
-        assertEquals(ViewMode.GRID, viewModel.state.first { it.viewMode == ViewMode.GRID }.viewMode)
+        advanceUntilIdle()
+        assertEquals("preference after the first toggle", ViewMode.GRID, prefs.flow.value.viewMode)
+        assertEquals("panel state after the first toggle", ViewMode.GRID, viewModel.state.value.viewMode)
 
         viewModel.onEvent(BrowserEvent.ToggleViewMode)
-        assertEquals(ViewMode.LIST, viewModel.state.first { it.viewMode == ViewMode.LIST }.viewMode)
+        advanceUntilIdle()
+        assertEquals("preference after the second toggle", ViewMode.LIST, prefs.flow.value.viewMode)
+        assertEquals("panel state after the second toggle", ViewMode.LIST, viewModel.state.value.viewMode)
     }
 
     @Test
