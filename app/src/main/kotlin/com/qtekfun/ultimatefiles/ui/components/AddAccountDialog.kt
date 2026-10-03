@@ -22,7 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.data.network.InsecureServerException
 import com.qtekfun.ultimatefiles.data.network.InvalidServerUrlException
+import com.qtekfun.ultimatefiles.data.network.TrustChoice
+import com.qtekfun.ultimatefiles.data.network.UntrustedCertificateException
 import com.qtekfun.ultimatefiles.data.network.LoginFlowExpiredException
 import com.qtekfun.ultimatefiles.data.network.WebDavException
 
@@ -32,7 +35,13 @@ import com.qtekfun.ultimatefiles.data.network.WebDavException
  */
 @Composable
 fun AddAccountDialog(
-    onConnect: (serverUrl: String, label: String, openBrowser: (String) -> Unit, onDone: (Result<Unit>) -> Unit) -> Unit,
+    onConnect: (
+        serverUrl: String,
+        label: String,
+        trust: TrustChoice,
+        openBrowser: (String) -> Unit,
+        onDone: (Result<Unit>) -> Unit,
+    ) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -40,7 +49,38 @@ fun AddAccountDialog(
     var label by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Throwable?>(null) }
+    var prompt by remember { mutableStateOf<TrustPrompt?>(null) }
     val uriHandler = LocalUriHandler.current
+
+    fun connect(choice: TrustChoice) {
+        busy = true
+        error = null
+        onConnect(server, label, choice, { url -> uriHandler.openUri(url) }) { result ->
+            busy = false
+            result.fold(
+                onSuccess = { onDismiss() },
+                onFailure = { failure ->
+                    when (failure) {
+                        // Not errors: the user is asked, and the same attempt continues with their answer.
+                        is UntrustedCertificateException -> prompt = TrustPrompt.Certificate(failure.info, choice)
+                        is InsecureServerException -> prompt = TrustPrompt.Insecure(choice)
+                        else -> error = failure
+                    }
+                },
+            )
+        }
+    }
+
+    prompt?.let { asked ->
+        TrustPromptDialog(
+            prompt = asked,
+            onAccept = { choice ->
+                prompt = null
+                connect(choice)
+            },
+            onDismiss = { prompt = null },
+        )
+    }
 
     fun close() {
         if (busy) onCancel()
@@ -87,18 +127,7 @@ fun AddAccountDialog(
         confirmButton = {
             TextButton(
                 enabled = !busy && server.isNotBlank(),
-                onClick = {
-                    busy = true
-                    error = null
-                    onConnect(
-                        server,
-                        label,
-                        { url -> uriHandler.openUri(url) },
-                    ) { result ->
-                        busy = false
-                        result.fold(onSuccess = { onDismiss() }, onFailure = { error = it })
-                    }
-                },
+                onClick = { connect(TrustChoice()) },
             ) { Text(stringResource(R.string.account_connect)) }
         },
         dismissButton = {
@@ -110,6 +139,7 @@ fun AddAccountDialog(
 private fun Throwable.messageRes(): Int = when {
     this is InvalidServerUrlException -> R.string.account_error_url
     this is LoginFlowExpiredException -> R.string.account_error_expired
+    this is javax.net.ssl.SSLException -> R.string.account_error_certificate
     this is ActivityNotFoundException -> R.string.account_error_browser
     this is WebDavException && code == 401 -> R.string.account_error_auth
     this is WebDavException && code == 404 -> R.string.account_error_path

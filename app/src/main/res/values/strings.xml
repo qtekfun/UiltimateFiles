@@ -143,6 +143,16 @@
     <string name="account_error_auth">The server rejected the sign-in.</string>
     <string name="account_error_path">The server did not find your files at that address.</string>
     <string name="account_error_generic">Could not connect: %1$s</string>
+    <string name="account_error_certificate">The server\'s certificate is not valid, or it is not the one you trusted. If you did not change anything on the server, someone may be intercepting the connection.</string>
+    <string name="trust_certificate_title">Untrusted certificate</string>
+    <string name="trust_certificate_message">This server\'s certificate is not signed by an authority your device trusts (it may be self-signed). Only continue if you recognise this fingerprint. From then on, only this exact certificate is accepted for this server.</string>
+    <string name="trust_certificate_subject">Subject: %1$s</string>
+    <string name="trust_certificate_expires">Valid until %1$s</string>
+    <string name="trust_certificate_fingerprint">SHA-256 fingerprint</string>
+    <string name="trust_certificate_accept">Trust this certificate</string>
+    <string name="trust_insecure_title">Connection without encryption</string>
+    <string name="trust_insecure_message">This address uses plain HTTP: your files, user name and password travel unprotected and anyone on the network can read or change them. Only continue on a network you fully control.</string>
+    <string name="trust_insecure_accept">Connect without encryption</string>
     <string name="account_remove">Remove account</string>
     <string name="account_remove_title">Remove account</string>
     <string name="account_remove_message">Disconnect \"%1$s\" from UltimateFiles? Nothing is deleted on the server.</string>

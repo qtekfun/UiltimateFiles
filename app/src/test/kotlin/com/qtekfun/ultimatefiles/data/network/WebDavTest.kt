@@ -53,7 +53,7 @@ class WebDavTest {
     private val root = "dav://a1/"
 
     private fun repository(password: String = "secret", chunkSize: Int = 1_000): WebDavFileSystemRepository {
-        val account = WebDavAccount("a1", "My cloud", server.baseUrl, "alice")
+        val account = WebDavAccount("a1", "My cloud", server.baseUrl, "alice", allowInsecureHttp = true) // the fake speaks plain HTTP
         return WebDavFileSystemRepository(
             FakeAccounts(account, password),
             WebDavClient(retryDelayMillis = 1),
@@ -278,7 +278,7 @@ class WebDavTest {
             val file = File(tmp.root, "a.preferences_pb")
             val store = PreferenceDataStoreFactory.create(scope = scope) { file }
             val accounts = DataStoreAccountRepository(store, ReversingCipher)
-            val account = WebDavAccount("id1", "Home\tcloud", "https://h.example/remote.php/dav/files/me", "me")
+            val account = WebDavAccount("id1", "Home\tcloud", "https://h.example/remote.php/dav/files/me", "me", "ab".repeat(32), allowInsecureHttp = true)
 
             accounts.add(account, "p@ss\nword\\")
 

@@ -9,6 +9,7 @@ import com.qtekfun.ultimatefiles.core.model.ConflictDecision
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
+import com.qtekfun.ultimatefiles.data.network.TrustChoice
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.repository.SafFileSystemRepository
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
@@ -90,10 +91,16 @@ class MainViewModel(
      * Signs in to a Nextcloud server through Login Flow v2. [openBrowser] gets the approval page;
      * [onDone] runs on the main thread with the outcome. A second call replaces a pending one.
      */
-    fun connectAccount(serverUrl: String, label: String, openBrowser: (String) -> Unit, onDone: (Result<Unit>) -> Unit) {
+    fun connectAccount(
+        serverUrl: String,
+        label: String,
+        trust: TrustChoice,
+        openBrowser: (String) -> Unit,
+        onDone: (Result<Unit>) -> Unit,
+    ) {
         loginJob?.cancel()
         loginJob = viewModelScope.launch {
-            val result = accountService.connectWithLoginFlow(serverUrl, label, openBrowser).map { }
+            val result = accountService.connectWithLoginFlow(serverUrl, label, openBrowser, trust).map { }
             if (result.isSuccess) refreshVolumes()
             onDone(result)
         }

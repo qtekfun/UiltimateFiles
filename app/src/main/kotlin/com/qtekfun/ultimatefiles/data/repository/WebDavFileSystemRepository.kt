@@ -42,14 +42,14 @@ class WebDavFileSystemRepository(
     }
 
     override suspend fun listFiles(uriOrPath: String): Result<List<FileItem>> = ioResult {
-        val (account, session, path) = resolve(uriOrPath)
+        val (account, session, path, client) = resolve(uriOrPath)
         client.propfind(session, path, depth = 1)
             .filter { it.path != path } // the first entry is the folder itself
             .map { it.toItem(account.id) }
     }
 
     override suspend fun stat(uriOrPath: String): Result<FileItem> = ioResult {
-        val (account, session, path) = resolve(uriOrPath)
+        val (account, session, path, client) = resolve(uriOrPath)
         client.propfind(session, path, depth = 0).firstOrNull()?.toItem(account.id)
             ?: throw IOException("Not found: $uriOrPath")
     }
@@ -62,7 +62,7 @@ class WebDavFileSystemRepository(
 
     override suspend fun createDirectory(parentUriOrPath: String, name: String): Result<FileItem> = ioResult {
         requireValidName(name)
-        val (account, session, parent) = resolve(parentUriOrPath)
+        val (account, session, parent, client) = resolve(parentUriOrPath)
         val path = join(parent, name)
         client.mkcol(session, path)
         FileItem(pathOf(account.id, path), name, true, 0L, System.currentTimeMillis(), null)
@@ -70,7 +70,7 @@ class WebDavFileSystemRepository(
 
     override suspend fun createFile(parentUriOrPath: String, name: String, mimeType: String): Result<FileItem> = ioResult {
         requireValidName(name)
-        val (account, session, parent) = resolve(parentUriOrPath)
+        val (account, session, parent, client) = resolve(parentUriOrPath)
         val path = join(parent, name)
         client.putBytes(session, path, ByteArray(0), 0, mimeType, overwrite = false)
         FileItem(pathOf(account.id, path), name, false, 0L, System.currentTimeMillis(), mimeType)
@@ -78,21 +78,21 @@ class WebDavFileSystemRepository(
 
     override suspend fun delete(items: List<FileItem>): Result<Unit> = ioResult {
         items.forEach { item ->
-            val (_, session, path) = resolve(item.path)
+            val (_, session, path, client) = resolve(item.path)
             client.delete(session, path)
         }
     }
 
     override suspend fun rename(item: FileItem, newName: String): Result<FileItem> = ioResult {
         requireValidName(newName)
-        val (account, session, path) = resolve(item.path)
+        val (account, session, path, client) = resolve(item.path)
         val target = join(path.substringBeforeLast('/', ""), newName)
         client.move(session, path, target, overwrite = false)
         item.copy(path = pathOf(account.id, target), name = newName)
     }
 
     override suspend fun openInput(item: FileItem): Result<InputStream> = ioResult {
-        val (_, session, path) = resolve(item.path)
+        val (_, session, path, client) = resolve(item.path)
         client.open(session, path)
     }
 
@@ -103,7 +103,7 @@ class WebDavFileSystemRepository(
         overwrite: Boolean,
     ): Result<OutputStream> = ioResult {
         requireValidName(name)
-        val (account, session, parent) = resolve(parentUriOrPath)
+        val (account, session, parent, client) = resolve(parentUriOrPath)
         val path = join(parent, name)
         if (!overwrite && client.exists(session, path)) throw IOException("Already exists: $name")
         // Same account and destination (the engine's temporary name is stable) means the same resumable upload.
@@ -113,14 +113,24 @@ class WebDavFileSystemRepository(
 
     // --- helpers --------------------------------------------------------------------------------
 
-    private data class Target(val account: WebDavAccount, val session: WebDavSession, val path: String)
+    private val clients = java.util.concurrent.ConcurrentHashMap<String, WebDavClient>()
+
+    /** The client for one account: with its pinned certificate when it has one. */
+    private fun clientFor(account: WebDavAccount): WebDavClient =
+        clients.getOrPut("${account.id}|${account.pinnedCertSha256}") { client.pinnedTo(account.pinnedCertSha256) }
+
+    private data class Target(val account: WebDavAccount, val session: WebDavSession, val path: String, val client: WebDavClient)
 
     private suspend fun resolve(uriOrPath: String): Target {
         val (accountId, path) = split(uriOrPath)
         val account = accounts.accounts.first().firstOrNull { it.id == accountId }
             ?: throw IOException("Unknown account for $uriOrPath")
         val password = accounts.passwordOf(accountId) ?: throw IOException("No stored password for ${account.label}")
-        return Target(account, WebDavSession(account.baseUrl.toHttpUrl(), account.username, password), path)
+        val baseUrl = account.baseUrl.toHttpUrl()
+        if (!baseUrl.isHttps && !account.allowInsecureHttp) {
+            throw IOException("${account.label} uses an unencrypted address and was not allowed to")
+        }
+        return Target(account, WebDavSession(baseUrl, account.username, password), path, clientFor(account))
     }
 
     private fun DavEntry.toItem(accountId: String) = FileItem(

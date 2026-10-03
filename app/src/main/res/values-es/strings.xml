@@ -143,6 +143,16 @@
     <string name="account_error_auth">El servidor rechazó el inicio de sesión.</string>
     <string name="account_error_path">El servidor no encontró tus archivos en esa dirección.</string>
     <string name="account_error_generic">No se pudo conectar: %1$s</string>
+    <string name="account_error_certificate">El certificado del servidor no es válido, o no es el que aceptaste. Si no has cambiado nada en el servidor, alguien podría estar interceptando la conexión.</string>
+    <string name="trust_certificate_title">Certificado no fiable</string>
+    <string name="trust_certificate_message">El certificado de este servidor no está firmado por una autoridad en la que confíe tu dispositivo (puede ser autofirmado). Continúa solo si reconoces esta huella. A partir de entonces solo se aceptará exactamente este certificado para este servidor.</string>
+    <string name="trust_certificate_subject">Sujeto: %1$s</string>
+    <string name="trust_certificate_expires">Válido hasta %1$s</string>
+    <string name="trust_certificate_fingerprint">Huella SHA-256</string>
+    <string name="trust_certificate_accept">Confiar en este certificado</string>
+    <string name="trust_insecure_title">Conexión sin cifrar</string>
+    <string name="trust_insecure_message">Esta dirección usa HTTP sin cifrar: tus archivos, usuario y contraseña viajan sin protección y cualquiera en la red puede leerlos o modificarlos. Continúa solo en una red que controles por completo.</string>
+    <string name="trust_insecure_accept">Conectar sin cifrar</string>
     <string name="account_remove">Quitar cuenta</string>
     <string name="account_remove_title">Quitar cuenta</string>
     <string name="account_remove_message">¿Desconectar \"%1$s\" de UltimateFiles? No se borra nada en el servidor.</string>
