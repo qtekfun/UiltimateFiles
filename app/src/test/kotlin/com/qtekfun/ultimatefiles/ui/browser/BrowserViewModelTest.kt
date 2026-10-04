@@ -24,12 +24,15 @@ import com.qtekfun.ultimatefiles.domain.usecase.DeleteUseCase
 import com.qtekfun.ultimatefiles.domain.usecase.HashCalcUseCase
 import com.qtekfun.ultimatefiles.domain.usecase.TransferEngine
 import com.qtekfun.ultimatefiles.ui.dualpanel.DragDropState
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -64,10 +67,6 @@ class BrowserViewModelTest {
         override suspend fun setThemeMode(mode: ThemeMode) = flow.update { it.copy(themeMode = mode) }
         override suspend fun setDynamicColor(enabled: Boolean) = flow.update { it.copy(dynamicColor = enabled) }
         override suspend fun setVerifyCopies(enabled: Boolean) = flow.update { it.copy(verifyCopies = enabled) }
-
-        private fun MutableStateFlow<UserPreferences>.update(block: (UserPreferences) -> UserPreferences) {
-            value = block(value)
-        }
     }
 
     private class FakeHistory : TransferHistoryRepository {
@@ -113,7 +112,11 @@ class BrowserViewModelTest {
     }
 
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() {
+        // The view model's coroutines resume on IO threads; one still running after resetMain() would fail the next test.
+        viewModel.viewModelScope.cancel()
+        Dispatchers.resetMain()
+    }
 
     private suspend fun loaded(): BrowserState = viewModel.state.first { !it.isLoading && it.currentPath != null }
 
