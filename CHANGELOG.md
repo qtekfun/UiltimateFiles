@@ -4,6 +4,16 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-04
+
+### Added
+- Dynamic panels: add as many as you need with **+** and close them from the panel menu (with undo). Panels and their folders are remembered.
+- Panel bar showing each panel's folder, with a drop-down to pick which panel a side shows; the active panel is highlighted.
+- Setting to put the panel bar at the top or the bottom.
+
+### Changed
+- Landscape shows two fixed panels; portrait still swipes between panels.
+
 ## [0.3.0] - 2026-10-03
 
 ### Added
