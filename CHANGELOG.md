@@ -4,6 +4,11 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-04
+
+### Fixed
+- With two panels side by side, tapping a folder in a side where you had chosen another panel sent it back to the previous panel.
+
 ## [0.4.0] - 2026-10-04
 
 ### Added

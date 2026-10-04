@@ -1,0 +1,1 @@
+- Corrección: con dos paneles a la vez, un lado que habías cambiado a otro panel volvía al anterior al tocarlo

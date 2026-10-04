@@ -1,0 +1,1 @@
+- Fix: with two panels side by side, a side you had switched to another panel went back to the previous one when tapped
