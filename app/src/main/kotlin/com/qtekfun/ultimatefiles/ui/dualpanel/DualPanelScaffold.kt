@@ -6,127 +6,174 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.ui.browser.BrowserScreen
 import com.qtekfun.ultimatefiles.ui.browser.BrowserViewModel
-import kotlinx.coroutines.launch
+import com.qtekfun.ultimatefiles.ui.main.PanelSlot
 
-/** Width (dp) from which both panels are shown side by side; mirrors the Medium window size class. */
+/** Width (dp) from which two panels are shown side by side; mirrors the Medium window size class. */
 const val SPLIT_MIN_WIDTH_DP = 600
 
 fun isSplitLayout(widthDp: Int): Boolean = widthDp >= SPLIT_MIN_WIDTH_DP
 
+/** An open panel together with the state holder behind it. */
+data class PanelEntry(val id: PanelId, val viewModel: BrowserViewModel)
+
 /**
- * Compact widths (portrait phones): a pager with one panel per tab. Wider windows (landscape,
- * tablets): a fixed 50/50 split with both panels visible, which is also where drag and drop works.
+ * Compact widths (portrait phones): one panel at a time, swiped through like pages. Wider windows
+ * (landscape, tablets): two fixed slots, each with its own [PanelBar] to choose which of the open
+ * panels it shows; this is also where drag and drop between panels works.
  */
 @Composable
 fun DualPanelScaffold(
-    left: BrowserViewModel,
-    right: BrowserViewModel,
+    panels: List<PanelEntry>,
+    startPanel: PanelId,
+    endPanel: PanelId,
     activePanel: PanelId,
+    barPosition: PanelBarPosition,
     onActivePanelChange: (PanelId) -> Unit,
+    onShowPanel: (PanelId, PanelSlot) -> Unit,
+    onAddPanel: () -> Unit,
+    onClosePanel: (PanelId) -> Unit,
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (panels.size < MIN_PANELS) return
     if (isSplitLayout(LocalConfiguration.current.screenWidthDp)) {
-        SplitPanels(left, right, activePanel, onActivePanelChange, onOpenDrawer, modifier)
+        SplitPanels(panels, startPanel, endPanel, activePanel, barPosition, onActivePanelChange, onShowPanel, onAddPanel, onClosePanel, onOpenDrawer, modifier)
     } else {
-        PagedPanels(left, right, onActivePanelChange, onOpenDrawer, modifier)
+        PagedPanels(panels, activePanel, barPosition, onActivePanelChange, onAddPanel, onClosePanel, onOpenDrawer, modifier)
     }
 }
 
 @Composable
 private fun SplitPanels(
-    left: BrowserViewModel,
-    right: BrowserViewModel,
+    panels: List<PanelEntry>,
+    startPanel: PanelId,
+    endPanel: PanelId,
     activePanel: PanelId,
+    barPosition: PanelBarPosition,
     onActivePanelChange: (PanelId) -> Unit,
+    onShowPanel: (PanelId, PanelSlot) -> Unit,
+    onAddPanel: () -> Unit,
+    onClosePanel: (PanelId) -> Unit,
     onOpenDrawer: () -> Unit,
     modifier: Modifier,
 ) {
     Row(modifier = modifier.fillMaxSize()) {
-        PanelId.entries.forEach { panel ->
-            if (panel == PanelId.RIGHT) VerticalDivider()
-            BrowserScreen(
-                viewModel = if (panel == PanelId.LEFT) left else right,
-                isActive = activePanel == panel,
-                dragAndDropEnabled = true,
-                onOpenDrawer = onOpenDrawer,
+        listOf(PanelSlot.START to startPanel, PanelSlot.END to endPanel).forEach { (slot, id) ->
+            if (slot == PanelSlot.END) VerticalDivider()
+            val index = panels.indexOfFirst { it.id == id }
+            if (index < 0) return@forEach
+            val otherId = if (slot == PanelSlot.START) endPanel else startPanel
+            val bar = @Composable {
+                PanelBar(
+                    panels = panels,
+                    shownIndex = index,
+                    isActive = activePanel == id,
+                    position = barPosition,
+                    otherShown = otherId,
+                    onSelect = { onShowPanel(it, slot) },
+                    onAdd = onAddPanel,
+                    onClose = { onClosePanel(id) },
+                )
+            }
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .activateOnTouch(panel, onActivePanelChange),
-            )
+                    .activateOnTouch { onActivePanelChange(id) },
+            ) {
+                if (barPosition == PanelBarPosition.TOP) bar()
+                // A slot that switches to another panel starts from a fresh composition (scroll position, dialogs).
+                key(id) {
+                    BrowserScreen(
+                        viewModel = panels[index].viewModel,
+                        isActive = activePanel == id,
+                        dragAndDropEnabled = true,
+                        onOpenDrawer = onOpenDrawer,
+                        modifier = Modifier.weight(1f),
+                        topInsets = if (barPosition == PanelBarPosition.TOP) NoInsets else androidx.compose.material3.TopAppBarDefaults.windowInsets,
+                        consumeNavigationBar = barPosition == PanelBarPosition.BOTTOM,
+                    )
+                }
+                if (barPosition == PanelBarPosition.BOTTOM) bar()
+            }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+/** The bar above already consumes the status bar inset. */
+private val NoInsets = WindowInsets(0, 0, 0, 0)
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PagedPanels(
-    left: BrowserViewModel,
-    right: BrowserViewModel,
+    panels: List<PanelEntry>,
+    activePanel: PanelId,
+    barPosition: PanelBarPosition,
     onActivePanelChange: (PanelId) -> Unit,
+    onAddPanel: () -> Unit,
+    onClosePanel: (PanelId) -> Unit,
     onOpenDrawer: () -> Unit,
     modifier: Modifier,
 ) {
-    val pagerState = rememberPagerState { PanelId.entries.size }
-    val scope = rememberCoroutineScope()
-    LaunchedEffect(pagerState.currentPage) { onActivePanelChange(PanelId.entries[pagerState.currentPage]) }
-
+    val activeIndex = panels.indexOfFirst { it.id == activePanel }.coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = activeIndex) { panels.size }
+    // The bar, adding and closing move the active panel; the pager follows it, and the other way round.
+    LaunchedEffect(activeIndex, panels.size) {
+        if (pagerState.currentPage != activeIndex) pagerState.animateScrollToPage(activeIndex)
+    }
+    LaunchedEffect(pagerState.settledPage) {
+        panels.getOrNull(pagerState.settledPage)?.let { onActivePanelChange(it.id) }
+    }
+    val bar = @Composable {
+        PanelBar(
+            panels = panels,
+            shownIndex = activeIndex,
+            isActive = true,
+            position = barPosition,
+            otherShown = null,
+            onSelect = onActivePanelChange,
+            onAdd = onAddPanel,
+            onClose = { onClosePanel(panels[activeIndex].id) },
+        )
+    }
     Column(modifier = modifier.fillMaxSize()) {
-        Surface(tonalElevation = 2.dp) {
-            PrimaryTabRow(selectedTabIndex = pagerState.currentPage, modifier = Modifier.statusBarsPadding()) {
-                PanelId.entries.forEachIndexed { index, _ ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(stringResource(R.string.panel_tab_format, index + 1)) },
-                    )
-                }
-            }
-        }
-        HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
+        if (barPosition == PanelBarPosition.TOP) bar()
+        HorizontalPager(state = pagerState, key = { panels[it].id.value }, modifier = Modifier.weight(1f)) { page ->
             BrowserScreen(
-                viewModel = if (page == 0) left else right,
+                viewModel = panels[page].viewModel,
                 isActive = pagerState.currentPage == page,
                 dragAndDropEnabled = false,
                 onOpenDrawer = onOpenDrawer,
-                // The tab row above already consumes the status bar inset.
-                topInsets = WindowInsets(0, 0, 0, 0),
+                topInsets = if (barPosition == PanelBarPosition.TOP) NoInsets else androidx.compose.material3.TopAppBarDefaults.windowInsets,
+                consumeNavigationBar = barPosition == PanelBarPosition.BOTTOM,
             )
         }
+        if (barPosition == PanelBarPosition.BOTTOM) bar()
     }
 }
 
-/** Marks [panel] as the one the drawer and back button act on as soon as it is touched. */
-private fun Modifier.activateOnTouch(panel: PanelId, onActivate: (PanelId) -> Unit): Modifier =
-    pointerInput(panel) {
+/** Marks a panel as the one the drawer and back button act on as soon as it is touched. */
+private fun Modifier.activateOnTouch(onActivate: () -> Unit): Modifier =
+    pointerInput(Unit) {
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
-                if (event.type == PointerEventType.Press) onActivate(panel)
+                if (event.type == PointerEventType.Press) onActivate()
             }
         }
     }

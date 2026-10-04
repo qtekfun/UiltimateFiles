@@ -23,6 +23,10 @@ import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -36,17 +40,22 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -67,6 +76,7 @@ import com.qtekfun.ultimatefiles.ui.components.ConflictDialog
 import com.qtekfun.ultimatefiles.ui.components.DropActionDialog
 import com.qtekfun.ultimatefiles.ui.components.TransferProgressBar
 import com.qtekfun.ultimatefiles.ui.dualpanel.DualPanelScaffold
+import com.qtekfun.ultimatefiles.ui.dualpanel.PanelEntry
 import com.qtekfun.ultimatefiles.ui.history.HistoryScreen
 import com.qtekfun.ultimatefiles.ui.history.HistoryViewModel
 import com.qtekfun.ultimatefiles.ui.settings.SettingsScreen
@@ -84,9 +94,6 @@ private enum class AppScreen { BROWSER, HISTORY, SETTINGS }
 fun MainScreen() {
     val koin = remember { KoinPlatform.getKoin() }
     val viewModel = viewModel<MainViewModel>(factory = viewModelFactory { initializer { koin.get<MainViewModel>() } })
-    val left = rememberBrowserViewModel(PanelId.LEFT)
-    val right = rememberBrowserViewModel(PanelId.RIGHT)
-
     val settingsViewModel = viewModel<SettingsViewModel>(factory = viewModelFactory { initializer { koin.get<SettingsViewModel>() } })
     val historyViewModel = viewModel<HistoryViewModel>(factory = viewModelFactory { initializer { koin.get<HistoryViewModel>() } })
     var screen by rememberSaveable { mutableStateOf(AppScreen.BROWSER) }
@@ -95,11 +102,26 @@ fun MainScreen() {
     BackHandler(enabled = screen != AppScreen.BROWSER) { screen = AppScreen.BROWSER }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val panels = state.panels.map { id -> key(id) { PanelEntry(id, rememberBrowserViewModel(id, viewModel)) } }
     val transfer by viewModel.transfer.collectAsStateWithLifecycle()
     val pendingDrop by viewModel.pendingDrop.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Closing a panel can be undone for a few seconds.
+    val snackbar = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    LaunchedEffect(viewModel) {
+        viewModel.closedPanels.collect { closed ->
+            val result = snackbar.showSnackbar(
+                message = resources.getString(R.string.panel_closed),
+                actionLabel = resources.getString(R.string.action_undo),
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) viewModel.restorePanel(closed)
+        }
+    }
 
     LaunchedEffect(drawerState.currentValue) {
         if (drawerState.currentValue == DrawerValue.Open) viewModel.refreshVolumes()
@@ -110,7 +132,7 @@ fun MainScreen() {
     }
 
     fun openInActivePanel(path: String) {
-        (if (state.activePanel == PanelId.LEFT) left else right).onEvent(BrowserEvent.Navigate(path))
+        panels.firstOrNull { it.id == state.activePanel }?.viewModel?.onEvent(BrowserEvent.Navigate(path))
         scope.launch { drawerState.close() }
     }
 
@@ -159,12 +181,23 @@ fun MainScreen() {
     ) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
+                SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).zIndex(1f))
                 when (screen) {
                     AppScreen.BROWSER -> DualPanelScaffold(
-                        left = left,
-                        right = right,
+                        panels = panels,
+                        startPanel = state.startPanel,
+                        endPanel = state.endPanel,
                         activePanel = state.activePanel,
+                        barPosition = state.panelBarPosition,
                         onActivePanelChange = viewModel::setActivePanel,
+                        onShowPanel = viewModel::showPanel,
+                        onAddPanel = {
+                            val active = panels.firstOrNull { it.id == state.activePanel }
+                            viewModel.addPanel(active?.viewModel?.state?.value?.currentPath)
+                        },
+                        onClosePanel = { id ->
+                            viewModel.closePanel(id, panels.firstOrNull { it.id == id }?.viewModel?.state?.value?.currentPath)
+                        },
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                     )
                     AppScreen.HISTORY -> {
@@ -194,6 +227,7 @@ fun MainScreen() {
                                 onThemeMode = settingsViewModel::setThemeMode,
                                 onDynamicColor = settingsViewModel::setDynamicColor,
                                 onVerifyCopies = settingsViewModel::setVerifyCopies,
+                                onPanelBarPosition = settingsViewModel::setPanelBarPosition,
                                 onBack = { screen = AppScreen.BROWSER },
                             )
                         }
@@ -276,10 +310,17 @@ fun MainScreen() {
 }
 
 @Composable
-private fun rememberBrowserViewModel(panel: PanelId): BrowserViewModel {
+private fun rememberBrowserViewModel(panel: PanelId, main: MainViewModel): BrowserViewModel {
     val koin = remember { KoinPlatform.getKoin() }
+    // Each panel has a store of its own in [main] so that closing one disposes of just its state holder.
+    val owner = remember(panel) {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = main.storeFor(panel)
+        }
+    }
     return viewModel(
-        key = panel.name,
+        viewModelStoreOwner = owner,
+        key = panel.value.toString(),
         factory = viewModelFactory {
             initializer { koin.get<BrowserViewModel>(parameters = { parametersOf(panel) }) }
         },

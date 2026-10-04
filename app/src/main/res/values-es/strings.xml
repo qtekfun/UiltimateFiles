@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">UltimateFiles</string>
     <string name="panel_tab_format">Panel %1$d</string>
+    <string name="panel_add">Añadir panel</string>
+    <string name="panel_close">Cerrar panel</string>
     <string name="storage_internal">Almacenamiento interno</string>
     <string name="transfer_channel_name">Transferencias de archivos</string>
     <string name="transfer_title">Transfiriendo archivos</string>
@@ -243,4 +245,14 @@
     <string name="backup_invalid">Este archivo no es una copia de UltimateFiles.</string>
     <string name="backup_unsupported">Esta copia la hizo una versión más nueva de la app.</string>
     <string name="backup_failed">No se pudo completar la copia: %1$s</string>
+    <string name="panel_new">Nuevo panel</string>
+    <string name="panel_closed">Panel cerrado</string>
+    <string name="panel_select">Elegir panel</string>
+    <string name="panel_shown_other_side">Se muestra en el otro lado</string>
+    <string name="panel_position_format">%1$d/%2$d</string>
+    <string name="panel_item_format">%1$d · %2$s</string>
+    <string name="action_undo">Deshacer</string>
+    <string name="settings_panels">Paneles</string>
+    <string name="settings_panel_bar_top">Barra de paneles arriba</string>
+    <string name="settings_panel_bar_bottom">Barra de paneles abajo</string>
 </resources>

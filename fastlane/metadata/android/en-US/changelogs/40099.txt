@@ -1,0 +1,3 @@
+- Add as many panels as you need with +, close them with undo; they are remembered
+- Panel bar with the folder of each panel and a menu to choose what each side shows
+- Panel bar at the top or bottom (Settings)

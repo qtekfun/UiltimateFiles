@@ -1,5 +1,6 @@
 package com.qtekfun.ultimatefiles.domain.repository
 
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortOrder
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
@@ -15,6 +16,11 @@ interface UserPreferencesRepository {
     suspend fun setSortOrder(order: SortOrder)
 
     suspend fun setLastDirectory(panel: PanelId, directoryPath: String)
+
+    /** Stores which panels are open; the saved directories of panels no longer listed are forgotten. */
+    suspend fun setPanelIds(panels: List<PanelId>)
+
+    suspend fun setPanelBarPosition(position: PanelBarPosition)
 
     suspend fun setThemeMode(mode: ThemeMode)
 

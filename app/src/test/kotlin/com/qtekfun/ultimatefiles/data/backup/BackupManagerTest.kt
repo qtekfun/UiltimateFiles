@@ -1,5 +1,6 @@
 package com.qtekfun.ultimatefiles.data.backup
 
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortField
 import com.qtekfun.ultimatefiles.core.model.SortOrder
@@ -27,6 +28,8 @@ private class MemoryPrefs : UserPreferencesRepository {
     override suspend fun setLastDirectory(panel: PanelId, directoryPath: String) {
         state.value = state.value.copy(lastDirectoryPaths = state.value.lastDirectoryPaths + (panel to directoryPath))
     }
+    override suspend fun setPanelIds(panels: List<PanelId>) { state.value = state.value.copy(panelIds = panels) }
+    override suspend fun setPanelBarPosition(position: PanelBarPosition) { state.value = state.value.copy(panelBarPosition = position) }
     override suspend fun setThemeMode(mode: ThemeMode) { state.value = state.value.copy(themeMode = mode) }
     override suspend fun setDynamicColor(enabled: Boolean) { state.value = state.value.copy(dynamicColor = enabled) }
     override suspend fun setVerifyCopies(enabled: Boolean) { state.value = state.value.copy(verifyCopies = enabled) }

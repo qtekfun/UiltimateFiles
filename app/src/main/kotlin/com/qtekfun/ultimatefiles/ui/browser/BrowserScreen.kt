@@ -7,7 +7,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -16,6 +20,7 @@ import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -55,6 +60,8 @@ fun BrowserScreen(
     onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier,
     topInsets: WindowInsets = TopAppBarDefaults.windowInsets,
+    /** Set when something docked under this panel already takes care of the navigation bar inset. */
+    consumeNavigationBar: Boolean = false,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard by viewModel.clipboard.collectAsStateWithLifecycle()
@@ -126,7 +133,12 @@ fun BrowserScreen(
     }
 
     Scaffold(
-        modifier = panelModifier,
+        modifier = if (consumeNavigationBar) panelModifier.consumeWindowInsets(WindowInsets.navigationBars) else panelModifier,
+        contentWindowInsets = if (consumeNavigationBar) {
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        } else {
+            ScaffoldDefaults.contentWindowInsets
+        },
         topBar = {
             if (state.isSelecting) {
                 val selected = state.selectedItems
@@ -193,7 +205,7 @@ fun BrowserScreen(
                     onAction = { action, item -> onEvent(action.toEvent(item)) },
                     onDragStart = { onEvent(BrowserEvent.StartDrag(it)) },
                     onDropInside = { onEvent(BrowserEvent.DropItems(it)) },
-                    contentPadding = if (clipboard == null) {
+                    contentPadding = if (clipboard == null && !consumeNavigationBar) {
                         WindowInsets.navigationBars.asPaddingValues()
                     } else {
                         PaddingValues()

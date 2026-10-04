@@ -1,0 +1,3 @@
+- Añade todos los paneles que necesites con + y ciérralos con deshacer; se recuerdan
+- Barra de paneles con la carpeta de cada uno y un menú para elegir qué muestra cada lado
+- Barra de paneles arriba o abajo (Ajustes)
