@@ -94,7 +94,7 @@ private fun SplitPanels(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .activateOnTouch { onActivePanelChange(id) },
+                    .activateOnTouch(id) { onActivePanelChange(id) },
             ) {
                 if (barPosition == PanelBarPosition.TOP) bar()
                 // A slot that switches to another panel starts from a fresh composition (scroll position, dialogs).
@@ -167,9 +167,12 @@ private fun PagedPanels(
     }
 }
 
-/** Marks a panel as the one the drawer and back button act on as soon as it is touched. */
-private fun Modifier.activateOnTouch(onActivate: () -> Unit): Modifier =
-    pointerInput(Unit) {
+/**
+ * Marks a panel as the one the drawer and back button act on as soon as it is touched. [panel] restarts
+ * the listener when a slot starts showing another panel; otherwise it would keep activating the old one.
+ */
+private fun Modifier.activateOnTouch(panel: PanelId, onActivate: () -> Unit): Modifier =
+    pointerInput(panel) {
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
