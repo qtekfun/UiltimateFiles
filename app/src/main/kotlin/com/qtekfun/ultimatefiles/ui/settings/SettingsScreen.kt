@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
 import com.qtekfun.ultimatefiles.core.model.UserPreferences
 import com.qtekfun.ultimatefiles.ui.components.CheckNotice
@@ -61,6 +62,7 @@ fun SettingsScreen(
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
     onVerifyCopies: (Boolean) -> Unit,
+    onPanelBarPosition: (PanelBarPosition) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -136,6 +138,25 @@ fun SettingsScreen(
                 }
             }
             Text(
+                text = stringResource(R.string.settings_panels),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            Column(Modifier.selectableGroup()) {
+                PanelBarPosition.entries.forEach { position ->
+                    ListItem(
+                        modifier = Modifier.selectable(
+                            selected = preferences.panelBarPosition == position,
+                            role = Role.RadioButton,
+                            onClick = { onPanelBarPosition(position) },
+                        ),
+                        headlineContent = { Text(stringResource(position.labelRes())) },
+                        leadingContent = { RadioButton(selected = preferences.panelBarPosition == position, onClick = null) },
+                    )
+                }
+            }
+            Text(
                 text = stringResource(R.string.settings_transfers),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
@@ -184,6 +205,11 @@ fun SettingsScreen(
             )
         }
     }
+}
+
+private fun PanelBarPosition.labelRes(): Int = when (this) {
+    PanelBarPosition.TOP -> R.string.settings_panel_bar_top
+    PanelBarPosition.BOTTOM -> R.string.settings_panel_bar_bottom
 }
 
 private fun ThemeMode.labelRes(): Int = when (this) {

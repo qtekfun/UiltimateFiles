@@ -1,6 +1,7 @@
 package com.qtekfun.ultimatefiles.ui.browser
 
 import com.qtekfun.ultimatefiles.core.model.OperationType
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortField
 import com.qtekfun.ultimatefiles.core.model.SortOrder
@@ -55,6 +56,10 @@ class BrowserViewModelTest {
         override suspend fun setSortOrder(order: SortOrder) = flow.update { it.copy(sortOrder = order) }
         override suspend fun setLastDirectory(panel: PanelId, directoryPath: String) =
             flow.update { it.copy(lastDirectoryPaths = it.lastDirectoryPaths + (panel to directoryPath)) }
+
+        override suspend fun setPanelIds(panels: List<PanelId>) = flow.update { it.copy(panelIds = panels) }
+
+        override suspend fun setPanelBarPosition(position: PanelBarPosition) = flow.update { it.copy(panelBarPosition = position) }
 
         override suspend fun setThemeMode(mode: ThemeMode) = flow.update { it.copy(themeMode = mode) }
         override suspend fun setDynamicColor(enabled: Boolean) = flow.update { it.copy(dynamicColor = enabled) }

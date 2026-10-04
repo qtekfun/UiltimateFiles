@@ -126,7 +126,7 @@ val appModule = module {
     single { DragDropState() }
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
-    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { BackupManager(preferences = get(), accounts = get()) }
     single { BackupFiles(androidContext()) }
     factory { SettingsViewModel(get(), get(), get()) }

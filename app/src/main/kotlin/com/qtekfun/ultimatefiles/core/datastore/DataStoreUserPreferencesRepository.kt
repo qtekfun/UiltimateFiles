@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.SortField
 import com.qtekfun.ultimatefiles.core.model.SortOrder
@@ -18,13 +19,16 @@ import kotlinx.coroutines.flow.map
 class DataStoreUserPreferencesRepository(private val store: DataStore<Preferences>) : UserPreferencesRepository {
 
     override val preferences: Flow<UserPreferences> = store.data.map { prefs ->
+        val panelIds = readPanelIds(prefs)
         UserPreferences(
             viewMode = prefs[VIEW_MODE]?.let { runCatching { ViewMode.valueOf(it) }.getOrNull() } ?: ViewMode.LIST,
             sortOrder = SortOrder(
                 field = prefs[SORT_FIELD]?.let { runCatching { SortField.valueOf(it) }.getOrNull() } ?: SortField.NAME,
                 ascending = prefs[SORT_ASCENDING] ?: true,
             ),
-            lastDirectoryPaths = PanelId.entries.associateWith { prefs[lastPathKey(it)] },
+            panelIds = panelIds,
+            lastDirectoryPaths = panelIds.associateWith { prefs[lastPathKey(it)] },
+            panelBarPosition = prefs[PANEL_BAR_POSITION]?.let { runCatching { PanelBarPosition.valueOf(it) }.getOrNull() } ?: PanelBarPosition.TOP,
             themeMode = prefs[THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
             dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
             verifyCopies = prefs[VERIFY_COPIES] ?: false,
@@ -46,6 +50,17 @@ class DataStoreUserPreferencesRepository(private val store: DataStore<Preference
         store.edit { it[lastPathKey(panel)] = directoryPath }
     }
 
+    override suspend fun setPanelIds(panels: List<PanelId>) {
+        store.edit { prefs ->
+            (readPanelIds(prefs) - panels.toSet()).forEach { prefs.remove(lastPathKey(it)) }
+            prefs[PANEL_IDS] = panels.joinToString(",") { it.value.toString() }
+        }
+    }
+
+    override suspend fun setPanelBarPosition(position: PanelBarPosition) {
+        store.edit { it[PANEL_BAR_POSITION] = position.name }
+    }
+
     override suspend fun setThemeMode(mode: ThemeMode) {
         store.edit { it[THEME_MODE] = mode.name }
     }
@@ -65,6 +80,21 @@ class DataStoreUserPreferencesRepository(private val store: DataStore<Preference
         val VERIFY_COPIES = booleanPreferencesKey("verify_copies")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
-        fun lastPathKey(panel: PanelId) = stringPreferencesKey("last_path_${panel.name.lowercase()}")
+        val PANEL_IDS = stringPreferencesKey("panel_ids")
+        val PANEL_BAR_POSITION = stringPreferencesKey("panel_bar_position")
+
+        /** The first two panels keep the keys of the original left/right panels. */
+        fun lastPathKey(panel: PanelId) = stringPreferencesKey(
+            when (panel) {
+                PanelId.LEFT -> "last_path_left"
+                PanelId.RIGHT -> "last_path_right"
+                else -> "last_path_${panel.value}"
+            },
+        )
+
+        fun readPanelIds(prefs: Preferences): List<PanelId> {
+            val ids = prefs[PANEL_IDS]?.split(',')?.mapNotNull { it.toIntOrNull()?.let(::PanelId) }?.distinct().orEmpty()
+            return if (ids.size >= 2) ids else PanelId.DEFAULTS
+        }
     }
 }

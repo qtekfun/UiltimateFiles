@@ -3,6 +3,7 @@ package com.qtekfun.ultimatefiles.ui.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
 import com.qtekfun.ultimatefiles.core.model.UserPreferences
 import com.qtekfun.ultimatefiles.data.backup.BackupException
@@ -51,6 +52,10 @@ class SettingsViewModel(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { preferencesRepository.setThemeMode(mode) }
+    }
+
+    fun setPanelBarPosition(position: PanelBarPosition) {
+        viewModelScope.launch { preferencesRepository.setPanelBarPosition(position) }
     }
 
     fun setVerifyCopies(enabled: Boolean) {
