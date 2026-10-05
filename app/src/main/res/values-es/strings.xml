@@ -255,4 +255,8 @@
     <string name="settings_panels">Paneles</string>
     <string name="settings_panel_bar_top">Barra de paneles arriba</string>
     <string name="settings_panel_bar_bottom">Barra de paneles abajo</string>
+    <string name="settings_thumbnails">Miniaturas</string>
+    <string name="settings_thumbnails_network">Miniaturas en cuentas de red</string>
+    <string name="settings_thumbnails_network_summary">Muestra vistas previas pequeñas de las fotos en Nextcloud, SFTP y SMB. Descarga cada foto para dibujarla: gasta datos y batería.</string>
+    <string name="thumbnail_video">Vídeo</string>
 </resources>

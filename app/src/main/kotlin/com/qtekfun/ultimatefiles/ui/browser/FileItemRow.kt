@@ -100,9 +100,9 @@ fun FileItemRow(
         )
     }
 
-    var iconModifier = Modifier.size(40.dp)
+    var leadingModifier: Modifier = Modifier
     if (dragAndDropEnabled) {
-        iconModifier = iconModifier.dragAndDropSource { _ ->
+        leadingModifier = leadingModifier.dragAndDropSource { _ ->
             onDragStart()
             DragAndDropTransferData(ClipData.newPlainText(DragDropState.CLIP_LABEL, item.name))
         }
@@ -114,16 +114,7 @@ fun FileItemRow(
             containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
         ),
         leadingContent = {
-            Box(
-                modifier = iconModifier.clickable(onClick = onToggleSelection),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if (selected) Icons.Filled.Check else item.kind().icon(),
-                    contentDescription = null,
-                    tint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            FileLeading(item, selected, leadingModifier.clickable(onClick = onToggleSelection))
         },
         headlineContent = { Text(item.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = { Text(item.summary(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
