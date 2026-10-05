@@ -172,6 +172,7 @@
     <string name="account_key_passphrase">Contraseña de la clave (vacía si no tiene)</string>
     <string name="account_error_key">Ese archivo no es una clave privada.</string>
     <string name="account_label">Nombre (opcional)</string>
+    <string name="account_connect_credentials">Conectar</string>
     <string name="account_connect">Iniciar sesión en el navegador</string>
     <string name="account_error_url">Esa dirección no es válida. Usa una dirección https://.</string>
     <string name="account_error_auth">El servidor rechazó el inicio de sesión.</string>

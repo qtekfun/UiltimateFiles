@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Eject
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -70,6 +74,7 @@ import com.qtekfun.ultimatefiles.ui.browser.BrowserViewModel
 import com.qtekfun.ultimatefiles.ui.components.AddAccountDialog
 import com.qtekfun.ultimatefiles.ui.components.BatteryHintDialog
 import com.qtekfun.ultimatefiles.ui.components.InterruptedTransfersDialog
+import com.qtekfun.ultimatefiles.ui.components.NameInputDialog
 import com.qtekfun.ultimatefiles.ui.components.rememberIgnoringBatteryOptimizations
 import com.qtekfun.ultimatefiles.ui.components.requestIgnoreBatteryOptimizations
 import com.qtekfun.ultimatefiles.ui.components.ConflictDialog
@@ -99,6 +104,7 @@ fun MainScreen() {
     var screen by rememberSaveable { mutableStateOf(AppScreen.BROWSER) }
     var showAddAccount by rememberSaveable { mutableStateOf(false) }
     var accountToRemove by remember { mutableStateOf<StorageVolume?>(null) }
+    var accountToRename by remember { mutableStateOf<StorageVolume?>(null) }
     BackHandler(enabled = screen != AppScreen.BROWSER) { screen = AppScreen.BROWSER }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -161,6 +167,7 @@ fun MainScreen() {
                     scope.launch { drawerState.close() }
                 },
                 onRemoveAccount = { accountToRemove = it },
+                    onRenameAccount = { accountToRename = it },
                 onShowHistory = {
                     screen = AppScreen.HISTORY
                     scope.launch { drawerState.close() }
@@ -278,6 +285,17 @@ fun MainScreen() {
             onDismiss = { showAddAccount = false },
         )
     }
+    accountToRename?.let { volume ->
+        NameInputDialog(
+            title = R.string.action_rename,
+            initialName = volume.label,
+            onConfirm = {
+                viewModel.renameAccount(volume, it)
+                accountToRename = null
+            },
+            onDismiss = { accountToRename = null },
+        )
+    }
     accountToRemove?.let { volume ->
         AlertDialog(
             onDismissRequest = { accountToRemove = null },
@@ -327,6 +345,35 @@ private fun rememberBrowserViewModel(panel: PanelId, main: MainViewModel): Brows
     )
 }
 
+/** The three-dot menu of a network account in the drawer. */
+@Composable
+private fun AccountMenu(onRename: () -> Unit, onRemove: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.action_more))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_rename)) },
+                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                onClick = {
+                    open = false
+                    onRename()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.account_remove)) },
+                leadingIcon = { Icon(Icons.Filled.CloudOff, contentDescription = null) },
+                onClick = {
+                    open = false
+                    onRemove()
+                },
+            )
+        }
+    }
+}
+
 @Composable
 private fun DrawerContent(
     volumes: List<StorageVolume>,
@@ -335,6 +382,7 @@ private fun DrawerContent(
     onAddStorage: () -> Unit,
     onAddAccount: () -> Unit,
     onRemoveAccount: (StorageVolume) -> Unit,
+    onRenameAccount: (StorageVolume) -> Unit,
     onShowHistory: () -> Unit,
     onShowSettings: () -> Unit,
     onEject: () -> Unit,
@@ -352,9 +400,7 @@ private fun DrawerContent(
                     icon = { Icon(volume.icon(), contentDescription = null) },
                     badge = {
                         if (volume.kind == StorageKind.NETWORK) {
-                            IconButton(onClick = { onRemoveAccount(volume) }) {
-                                Icon(Icons.Filled.CloudOff, contentDescription = stringResource(R.string.account_remove))
-                            }
+                            AccountMenu(onRename = { onRenameAccount(volume) }, onRemove = { onRemoveAccount(volume) })
                         } else if (volume.isEjectable) {
                             IconButton(onClick = onEject) {
                                 Icon(Icons.Filled.Eject, contentDescription = stringResource(R.string.drawer_eject))

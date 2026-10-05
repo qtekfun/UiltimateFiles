@@ -4,6 +4,12 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Added
+- Rename a network account: three-dot menu of the account in the side drawer.
+
+### Fixed
+- The Connect a server dialog squeezed the SMB option into a column of letters; the options now wrap, the form scrolls on short screens and SFTP and SMB confirm with **Connect** instead of "Sign in with browser".
+
 ## [0.4.1] - 2026-10-04
 
 ### Fixed
