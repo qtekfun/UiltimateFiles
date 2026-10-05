@@ -62,6 +62,7 @@ fun SettingsScreen(
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
     onVerifyCopies: (Boolean) -> Unit,
+    onThumbnailsOnNetwork: (Boolean) -> Unit,
     onPanelBarPosition: (PanelBarPosition) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -156,6 +157,22 @@ fun SettingsScreen(
                     )
                 }
             }
+            Text(
+                text = stringResource(R.string.settings_thumbnails),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_thumbnails_network)) },
+                supportingContent = { Text(stringResource(R.string.settings_thumbnails_network_summary)) },
+                trailingContent = { Switch(checked = preferences.thumbnailsOnNetwork, onCheckedChange = null) },
+                modifier = Modifier.selectable(
+                    selected = preferences.thumbnailsOnNetwork,
+                    role = Role.Switch,
+                    onClick = { onThumbnailsOnNetwork(!preferences.thumbnailsOnNetwork) },
+                ),
+            )
             Text(
                 text = stringResource(R.string.settings_transfers),
                 style = MaterialTheme.typography.titleSmall,

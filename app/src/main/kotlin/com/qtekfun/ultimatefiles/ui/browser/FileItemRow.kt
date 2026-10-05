@@ -56,12 +56,16 @@ import java.text.DateFormat
 import java.util.Date
 
 /** Quick actions offered by the per-row menu (long press or the three-dot button). */
-enum class FileItemAction { OPEN_WITH, COPY, CUT, EXTRACT, COMPRESS, RENAME, DELETE, PROPERTIES }
+enum class FileItemAction { SELECT, OPEN_WITH, COPY, CUT, EXTRACT, COMPRESS, RENAME, DELETE, PROPERTIES }
 
-/** Whether [this] makes sense for [item]: archives are only extracted outside archives, and nothing is packed from inside one. */
-internal fun FileItemAction.appliesTo(item: FileItem): Boolean {
+/**
+ * Whether [this] makes sense for [item]: archives are only extracted outside archives, and nothing is packed from
+ * inside one. Starting a selection from the menu is pointless for an item that is already selected.
+ */
+internal fun FileItemAction.appliesTo(item: FileItem, selected: Boolean = false): Boolean {
     val insideArchive = ArchivePaths.isArchivePath(item.path)
     return when (this) {
+        FileItemAction.SELECT -> !selected
         FileItemAction.OPEN_WITH -> !item.isDirectory
         FileItemAction.EXTRACT -> !item.isDirectory && !insideArchive && ArchiveFormat.of(item.name) != null
         FileItemAction.COMPRESS -> !insideArchive
@@ -100,9 +104,9 @@ fun FileItemRow(
         )
     }
 
-    var iconModifier = Modifier.size(40.dp)
+    var leadingModifier: Modifier = Modifier
     if (dragAndDropEnabled) {
-        iconModifier = iconModifier.dragAndDropSource { _ ->
+        leadingModifier = leadingModifier.dragAndDropSource { _ ->
             onDragStart()
             DragAndDropTransferData(ClipData.newPlainText(DragDropState.CLIP_LABEL, item.name))
         }
@@ -111,19 +115,11 @@ fun FileItemRow(
     ListItem(
         modifier = rowModifier,
         colors = ListItemDefaults.colors(
-            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+            // The item the menu is about stays highlighted while the menu is open.
+            containerColor = if (selected || menuOpen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
         ),
         leadingContent = {
-            Box(
-                modifier = iconModifier.clickable(onClick = onToggleSelection),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if (selected) Icons.Filled.Check else item.kind().icon(),
-                    contentDescription = null,
-                    tint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            FileLeading(item, selected, leadingModifier.clickable(onClick = onToggleSelection))
         },
         headlineContent = { Text(item.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = { Text(item.summary(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -134,7 +130,7 @@ fun FileItemRow(
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     FileItemAction.entries
-                        .filter { it.appliesTo(item) }
+                        .filter { it.appliesTo(item, selected) }
                         .forEach { action ->
                             DropdownMenuItem(
                                 text = { Text(stringResource(action.labelRes())) },
@@ -156,6 +152,7 @@ fun DragAndDropEvent.isOurDrag(): Boolean =
     toAndroidDragEvent().clipDescription?.label?.toString() == DragDropState.CLIP_LABEL
 
 internal fun FileItemAction.labelRes(): Int = when (this) {
+    FileItemAction.SELECT -> R.string.action_select
     FileItemAction.OPEN_WITH -> R.string.action_open_with
     FileItemAction.COPY -> R.string.action_copy
     FileItemAction.CUT -> R.string.action_cut

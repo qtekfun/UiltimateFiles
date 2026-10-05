@@ -34,4 +34,6 @@ data class UserPreferences(
     val dynamicColor: Boolean = true,
     /** Read back and checksum every copied file (slower, safer for big or irreplaceable files). */
     val verifyCopies: Boolean = false,
+    /** Draw thumbnails of photos on WebDAV, SFTP and SMB accounts too; it downloads each photo, so it is off by default. */
+    val thumbnailsOnNetwork: Boolean = false,
 )

@@ -33,6 +33,7 @@ private class MemoryPrefs : UserPreferencesRepository {
     override suspend fun setThemeMode(mode: ThemeMode) { state.value = state.value.copy(themeMode = mode) }
     override suspend fun setDynamicColor(enabled: Boolean) { state.value = state.value.copy(dynamicColor = enabled) }
     override suspend fun setVerifyCopies(enabled: Boolean) { state.value = state.value.copy(verifyCopies = enabled) }
+    override suspend fun setThumbnailsOnNetwork(enabled: Boolean) { state.value = state.value.copy(thumbnailsOnNetwork = enabled) }
 }
 
 private class MemoryAccounts : AccountRepository {

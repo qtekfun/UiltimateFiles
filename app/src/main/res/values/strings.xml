@@ -39,6 +39,7 @@
     <string name="action_new_file">New file</string>
     <string name="action_view_grid">Grid view</string>
     <string name="action_view_list">List view</string>
+    <string name="action_select">Select</string>
     <string name="action_select_all">Select all</string>
     <string name="action_sort_by">Sort by</string>
     <string name="sort_name">Name</string>
@@ -256,4 +257,8 @@
     <string name="settings_panels">Panels</string>
     <string name="settings_panel_bar_top">Panel bar at the top</string>
     <string name="settings_panel_bar_bottom">Panel bar at the bottom</string>
+    <string name="settings_thumbnails">Thumbnails</string>
+    <string name="settings_thumbnails_network">Thumbnails on network accounts</string>
+    <string name="settings_thumbnails_network_summary">Show small previews of photos on Nextcloud, SFTP and SMB. Downloads each photo to draw it: uses data and battery.</string>
+    <string name="thumbnail_video">Video</string>
 </resources>

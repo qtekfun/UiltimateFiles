@@ -66,15 +66,15 @@ fun FileGridItem(
     var cell = modifier
         .padding(4.dp)
         .clip(RoundedCornerShape(12.dp))
-        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+        .background(if (selected || menuOpen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
         .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
     if (dragAndDropEnabled && item.isDirectory) {
         cell = cell.dragAndDropTarget(shouldStartDragAndDrop = { it.isOurDrag() }, target = dropTarget)
     }
 
-    var iconModifier = Modifier.size(56.dp)
+    var tileModifier: Modifier = Modifier
     if (dragAndDropEnabled) {
-        iconModifier = iconModifier.dragAndDropSource { _ ->
+        tileModifier = tileModifier.dragAndDropSource { _ ->
             onDragStart()
             DragAndDropTransferData(ClipData.newPlainText(DragDropState.CLIP_LABEL, item.name))
         }
@@ -85,14 +85,7 @@ fun FileGridItem(
             modifier = Modifier.padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(iconModifier.clickable(onClick = onToggleSelection), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = if (selected) Icons.Filled.Check else item.kind().icon(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            FileTile(item, selected, tileModifier.clickable(onClick = onToggleSelection))
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.bodySmall,
@@ -103,7 +96,7 @@ fun FileGridItem(
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             FileItemAction.entries
-                .filter { it.appliesTo(item) }
+                .filter { it.appliesTo(item, selected) }
                 .forEach { action ->
                     DropdownMenuItem(
                         text = { Text(stringResource(action.labelRes())) },
