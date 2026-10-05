@@ -271,6 +271,7 @@ private fun ErrorMessage(message: String?) {
 }
 
 private fun FileItemAction.toEvent(item: FileItem): BrowserEvent = when (this) {
+    FileItemAction.SELECT -> BrowserEvent.ToggleSelection(item)
     FileItemAction.OPEN_WITH -> BrowserEvent.OpenWith(item)
     FileItemAction.COPY -> BrowserEvent.Copy(listOf(item))
     FileItemAction.CUT -> BrowserEvent.Cut(listOf(item))

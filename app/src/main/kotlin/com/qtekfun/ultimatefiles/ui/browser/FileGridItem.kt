@@ -66,7 +66,7 @@ fun FileGridItem(
     var cell = modifier
         .padding(4.dp)
         .clip(RoundedCornerShape(12.dp))
-        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+        .background(if (selected || menuOpen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
         .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
     if (dragAndDropEnabled && item.isDirectory) {
         cell = cell.dragAndDropTarget(shouldStartDragAndDrop = { it.isOurDrag() }, target = dropTarget)
@@ -96,7 +96,7 @@ fun FileGridItem(
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             FileItemAction.entries
-                .filter { it.appliesTo(item) }
+                .filter { it.appliesTo(item, selected) }
                 .forEach { action ->
                     DropdownMenuItem(
                         text = { Text(stringResource(action.labelRes())) },
