@@ -34,6 +34,7 @@ import com.qtekfun.ultimatefiles.data.service.TransferNotifications
 import com.qtekfun.ultimatefiles.data.system.AndroidKeystoreCipher
 import com.qtekfun.ultimatefiles.data.system.CompositeVolumeChangeSource
 import com.qtekfun.ultimatefiles.data.system.IntentFactory
+import com.qtekfun.ultimatefiles.data.thumbnail.ThumbnailLoader
 import com.qtekfun.ultimatefiles.data.system.SystemVolumeMonitor
 import com.qtekfun.ultimatefiles.domain.clipboard.ClipboardManager
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
@@ -123,6 +124,7 @@ val appModule = module {
     }
     single<UserPreferencesRepository> { DataStoreUserPreferencesRepository(get()) }
     single { IntentFactory(androidContext()) }
+    single { ThumbnailLoader(androidContext(), get(), get()) }
     single { DragDropState() }
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.

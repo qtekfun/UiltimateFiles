@@ -255,4 +255,8 @@
     <string name="settings_panels">Panels</string>
     <string name="settings_panel_bar_top">Panel bar at the top</string>
     <string name="settings_panel_bar_bottom">Panel bar at the bottom</string>
+    <string name="settings_thumbnails">Thumbnails</string>
+    <string name="settings_thumbnails_network">Thumbnails on network accounts</string>
+    <string name="settings_thumbnails_network_summary">Show small previews of photos on Nextcloud, SFTP and SMB. Downloads each photo to draw it: uses data and battery.</string>
+    <string name="thumbnail_video">Video</string>
 </resources>

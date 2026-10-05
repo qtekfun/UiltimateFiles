@@ -32,6 +32,7 @@ class DataStoreUserPreferencesRepository(private val store: DataStore<Preference
             themeMode = prefs[THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
             dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
             verifyCopies = prefs[VERIFY_COPIES] ?: false,
+            thumbnailsOnNetwork = prefs[THUMBNAILS_ON_NETWORK] ?: false,
         )
     }
 
@@ -73,11 +74,16 @@ class DataStoreUserPreferencesRepository(private val store: DataStore<Preference
         store.edit { it[VERIFY_COPIES] = enabled }
     }
 
+    override suspend fun setThumbnailsOnNetwork(enabled: Boolean) {
+        store.edit { it[THUMBNAILS_ON_NETWORK] = enabled }
+    }
+
     private companion object {
         val VIEW_MODE = stringPreferencesKey("view_mode")
         val SORT_FIELD = stringPreferencesKey("sort_field")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val VERIFY_COPIES = booleanPreferencesKey("verify_copies")
+        val THUMBNAILS_ON_NETWORK = booleanPreferencesKey("thumbnails_on_network")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val PANEL_IDS = stringPreferencesKey("panel_ids")

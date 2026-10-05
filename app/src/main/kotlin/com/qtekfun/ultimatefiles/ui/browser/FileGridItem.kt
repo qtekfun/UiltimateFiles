@@ -72,9 +72,9 @@ fun FileGridItem(
         cell = cell.dragAndDropTarget(shouldStartDragAndDrop = { it.isOurDrag() }, target = dropTarget)
     }
 
-    var iconModifier = Modifier.size(56.dp)
+    var tileModifier: Modifier = Modifier
     if (dragAndDropEnabled) {
-        iconModifier = iconModifier.dragAndDropSource { _ ->
+        tileModifier = tileModifier.dragAndDropSource { _ ->
             onDragStart()
             DragAndDropTransferData(ClipData.newPlainText(DragDropState.CLIP_LABEL, item.name))
         }
@@ -85,14 +85,7 @@ fun FileGridItem(
             modifier = Modifier.padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(iconModifier.clickable(onClick = onToggleSelection), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = if (selected) Icons.Filled.Check else item.kind().icon(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            FileTile(item, selected, tileModifier.clickable(onClick = onToggleSelection))
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.bodySmall,

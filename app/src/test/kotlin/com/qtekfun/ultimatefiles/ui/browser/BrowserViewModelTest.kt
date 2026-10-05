@@ -67,6 +67,7 @@ class BrowserViewModelTest {
         override suspend fun setThemeMode(mode: ThemeMode) = flow.update { it.copy(themeMode = mode) }
         override suspend fun setDynamicColor(enabled: Boolean) = flow.update { it.copy(dynamicColor = enabled) }
         override suspend fun setVerifyCopies(enabled: Boolean) = flow.update { it.copy(verifyCopies = enabled) }
+        override suspend fun setThumbnailsOnNetwork(enabled: Boolean) = flow.update { it.copy(thumbnailsOnNetwork = enabled) }
     }
 
     private class FakeHistory : TransferHistoryRepository {

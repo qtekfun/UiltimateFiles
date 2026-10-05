@@ -27,4 +27,6 @@ interface UserPreferencesRepository {
     suspend fun setDynamicColor(enabled: Boolean)
 
     suspend fun setVerifyCopies(enabled: Boolean)
+
+    suspend fun setThumbnailsOnNetwork(enabled: Boolean)
 }

@@ -62,6 +62,10 @@ class SettingsViewModel(
         viewModelScope.launch { preferencesRepository.setVerifyCopies(enabled) }
     }
 
+    fun setThumbnailsOnNetwork(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setThumbnailsOnNetwork(enabled) }
+    }
+
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setDynamicColor(enabled) }
     }

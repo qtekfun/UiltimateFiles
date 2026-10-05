@@ -38,6 +38,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -75,6 +76,8 @@ import com.qtekfun.ultimatefiles.ui.components.requestIgnoreBatteryOptimizations
 import com.qtekfun.ultimatefiles.ui.components.ConflictDialog
 import com.qtekfun.ultimatefiles.ui.components.DropActionDialog
 import com.qtekfun.ultimatefiles.ui.components.TransferProgressBar
+import com.qtekfun.ultimatefiles.data.thumbnail.ThumbnailLoader
+import com.qtekfun.ultimatefiles.ui.browser.LocalThumbnailLoader
 import com.qtekfun.ultimatefiles.ui.dualpanel.DualPanelScaffold
 import com.qtekfun.ultimatefiles.ui.dualpanel.PanelEntry
 import com.qtekfun.ultimatefiles.ui.history.HistoryScreen
@@ -147,99 +150,102 @@ fun MainScreen() {
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        gesturesEnabled = screen == AppScreen.BROWSER,
-        drawerContent = {
-            DrawerContent(
-                volumes = state.volumes,
-                shortcuts = state.shortcuts,
-                onOpen = ::openInActivePanel,
-                onAddStorage = { pickFolder.launch(null) },
-                onAddAccount = {
-                    showAddAccount = true
-                    scope.launch { drawerState.close() }
-                },
-                onRemoveAccount = { accountToRemove = it },
-                onShowHistory = {
-                    screen = AppScreen.HISTORY
-                    scope.launch { drawerState.close() }
-                },
-                onShowSettings = {
-                    screen = AppScreen.SETTINGS
-                    scope.launch { drawerState.close() }
-                },
-                onEject = {
-                    try {
-                        context.startActivity(KoinPlatform.getKoin().get<IntentFactory>().ejectSettings())
-                    } catch (e: ActivityNotFoundException) {
-                        // No storage settings screen on this device; nothing else can be done safely.
-                    }
-                },
-            )
-        },
-    ) {
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.weight(1f)) {
-                SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).zIndex(1f))
-                when (screen) {
-                    AppScreen.BROWSER -> DualPanelScaffold(
-                        panels = panels,
-                        startPanel = state.startPanel,
-                        endPanel = state.endPanel,
-                        activePanel = state.activePanel,
-                        barPosition = state.panelBarPosition,
-                        onActivePanelChange = viewModel::setActivePanel,
-                        onShowPanel = viewModel::showPanel,
-                        onAddPanel = {
-                            val active = panels.firstOrNull { it.id == state.activePanel }
-                            viewModel.addPanel(active?.viewModel?.state?.value?.currentPath)
-                        },
-                        onClosePanel = { id ->
-                            viewModel.closePanel(id, panels.firstOrNull { it.id == id }?.viewModel?.state?.value?.currentPath)
-                        },
-                        onOpenDrawer = { scope.launch { drawerState.open() } },
-                    )
-                    AppScreen.HISTORY -> {
-                        val entries by historyViewModel.entries.collectAsStateWithLifecycle()
-                        val running by historyViewModel.transfer.collectAsStateWithLifecycle()
-                        HistoryScreen(
-                            entries = entries,
-                            running = running,
-                            onTogglePause = historyViewModel::togglePause,
-                            onCancelRunning = historyViewModel::cancelRunning,
-                            onClear = historyViewModel::clear,
-                            onBack = { screen = AppScreen.BROWSER },
+    CompositionLocalProvider(LocalThumbnailLoader provides remember { koin.get<ThumbnailLoader>() }) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            gesturesEnabled = screen == AppScreen.BROWSER,
+            drawerContent = {
+                DrawerContent(
+                    volumes = state.volumes,
+                    shortcuts = state.shortcuts,
+                    onOpen = ::openInActivePanel,
+                    onAddStorage = { pickFolder.launch(null) },
+                    onAddAccount = {
+                        showAddAccount = true
+                        scope.launch { drawerState.close() }
+                    },
+                    onRemoveAccount = { accountToRemove = it },
+                    onShowHistory = {
+                        screen = AppScreen.HISTORY
+                        scope.launch { drawerState.close() }
+                    },
+                    onShowSettings = {
+                        screen = AppScreen.SETTINGS
+                        scope.launch { drawerState.close() }
+                    },
+                    onEject = {
+                        try {
+                            context.startActivity(KoinPlatform.getKoin().get<IntentFactory>().ejectSettings())
+                        } catch (e: ActivityNotFoundException) {
+                            // No storage settings screen on this device; nothing else can be done safely.
+                        }
+                    },
+                )
+            },
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f)) {
+                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).zIndex(1f))
+                    when (screen) {
+                        AppScreen.BROWSER -> DualPanelScaffold(
+                            panels = panels,
+                            startPanel = state.startPanel,
+                            endPanel = state.endPanel,
+                            activePanel = state.activePanel,
+                            barPosition = state.panelBarPosition,
+                            onActivePanelChange = viewModel::setActivePanel,
+                            onShowPanel = viewModel::showPanel,
+                            onAddPanel = {
+                                val active = panels.firstOrNull { it.id == state.activePanel }
+                                viewModel.addPanel(active?.viewModel?.state?.value?.currentPath)
+                            },
+                            onClosePanel = { id ->
+                                viewModel.closePanel(id, panels.firstOrNull { it.id == id }?.viewModel?.state?.value?.currentPath)
+                            },
+                            onOpenDrawer = { scope.launch { drawerState.open() } },
                         )
-                    }
-                    AppScreen.SETTINGS -> {
-                        val preferences by settingsViewModel.preferences.collectAsStateWithLifecycle()
-                        preferences?.let { current ->
-                            val outcome by settingsViewModel.outcome.collectAsStateWithLifecycle()
-                            val accountCount by settingsViewModel.accountCount.collectAsStateWithLifecycle()
-                            SettingsScreen(
-                                preferences = current,
-                                accountCount = accountCount,
-                                outcome = outcome,
-                                onExport = settingsViewModel::exportBackup,
-                                onImport = settingsViewModel::importBackup,
-                                onDismissOutcome = settingsViewModel::dismissOutcome,
-                                onThemeMode = settingsViewModel::setThemeMode,
-                                onDynamicColor = settingsViewModel::setDynamicColor,
-                                onVerifyCopies = settingsViewModel::setVerifyCopies,
-                                onPanelBarPosition = settingsViewModel::setPanelBarPosition,
+                        AppScreen.HISTORY -> {
+                            val entries by historyViewModel.entries.collectAsStateWithLifecycle()
+                            val running by historyViewModel.transfer.collectAsStateWithLifecycle()
+                            HistoryScreen(
+                                entries = entries,
+                                running = running,
+                                onTogglePause = historyViewModel::togglePause,
+                                onCancelRunning = historyViewModel::cancelRunning,
+                                onClear = historyViewModel::clear,
                                 onBack = { screen = AppScreen.BROWSER },
                             )
                         }
+                        AppScreen.SETTINGS -> {
+                            val preferences by settingsViewModel.preferences.collectAsStateWithLifecycle()
+                            preferences?.let { current ->
+                                val outcome by settingsViewModel.outcome.collectAsStateWithLifecycle()
+                                val accountCount by settingsViewModel.accountCount.collectAsStateWithLifecycle()
+                                SettingsScreen(
+                                    preferences = current,
+                                    accountCount = accountCount,
+                                    outcome = outcome,
+                                    onExport = settingsViewModel::exportBackup,
+                                    onImport = settingsViewModel::importBackup,
+                                    onDismissOutcome = settingsViewModel::dismissOutcome,
+                                    onThemeMode = settingsViewModel::setThemeMode,
+                                    onDynamicColor = settingsViewModel::setDynamicColor,
+                                    onVerifyCopies = settingsViewModel::setVerifyCopies,
+                                    onThumbnailsOnNetwork = settingsViewModel::setThumbnailsOnNetwork,
+                                    onPanelBarPosition = settingsViewModel::setPanelBarPosition,
+                                    onBack = { screen = AppScreen.BROWSER },
+                                )
+                            }
+                        }
                     }
                 }
+                TransferProgressBar(
+                    progress = transfer.progress,
+                    paused = transfer.paused,
+                    onTogglePause = viewModel::togglePauseTransfers,
+                    onCancel = viewModel::cancelTransfers,
+                )
             }
-            TransferProgressBar(
-                progress = transfer.progress,
-                paused = transfer.paused,
-                onTogglePause = viewModel::togglePauseTransfers,
-                onCancel = viewModel::cancelTransfers,
-            )
         }
     }
 
