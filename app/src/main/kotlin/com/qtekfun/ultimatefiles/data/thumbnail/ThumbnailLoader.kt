@@ -86,7 +86,8 @@ class ThumbnailLoader(
 
     private suspend fun decode(item: FileItem, sizePx: Int, open: suspend () -> InputStream?): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        open()?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+        // With inJustDecodeBounds the call fills in the sizes and always returns null, so the result says nothing.
+        open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
         currentCoroutineContext().ensureActive()
         val options = BitmapFactory.Options().apply {
