@@ -4,6 +4,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Changed
+- USB drives and SD cards that Android has mounted now show up in the drawer by themselves and are read and written directly (Android 11 and later), instead of through a folder granted with **Add USB / SD folder**. It is faster, keeps file names as they are, and a folder you had granted for the same drive is no longer listed twice. Before Android 11, or for drives Android does not mount, the folder grant still works.
+
 ### Fixed
 - Copying a big file (64 MB or more) into a folder added with **Add USB / SD folder** failed with "Temporary file … vanished": the storage renamed the temporary file while it was being written. The temporary file now uses the generic type, and is still found if a backend renames it anyway.
 
