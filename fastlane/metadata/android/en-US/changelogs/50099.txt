@@ -1,0 +1,4 @@
+- Thumbnails of photos and videos in the list and grid (network accounts optional, in Settings)
+- The file menu keeps its item highlighted and has a Select entry to start selecting
+- Rename network accounts from the drawer
+- Fix: the Connect a server dialog was squeezed and cut off
