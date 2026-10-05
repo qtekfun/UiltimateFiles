@@ -174,7 +174,7 @@ class TransferEngine(
         /** Replaces any existing [finalName] with the finished temporary file. */
         private suspend fun finalizePart(targetDir: String, partName: String, finalName: String) {
             listings.remove(targetDir)
-            val part = findExisting(targetDir, partName) ?: throw IOException("Temporary file $partName vanished")
+            val part = findPart(targetDir, partName) ?: throw IOException("Temporary file $partName vanished")
             findExisting(targetDir, finalName)?.let { repository.delete(listOf(it)).getOrThrow() }
             repository.rename(part, finalName).getOrThrow()
             listings.remove(targetDir)
@@ -206,7 +206,13 @@ class TransferEngine(
 
         /** Returns the SHA-256 of what was copied when verification is on, else null. */
         private suspend fun copyFile(item: FileItem, targetDir: String, name: String, overwrite: Boolean): ByteArray? {
-            val mime = item.mimeType ?: MimeTypes.fromName(name) ?: MimeTypes.OCTET_STREAM
+            // A temporary file gets the generic type: a documents provider (SAF) adds the extension of the type it is
+            // given to a name that lacks it, which would rename "movie.mp4.part" and make it impossible to find again.
+            val mime = if (name.endsWith(PART_SUFFIX)) {
+                MimeTypes.OCTET_STREAM
+            } else {
+                item.mimeType ?: MimeTypes.fromName(name) ?: MimeTypes.OCTET_STREAM
+            }
             val digest = if (request.verify) MessageDigest.getInstance("SHA-256") else null
             repository.openInput(item).getOrThrow().use { input ->
                 repository.openOutput(targetDir, name, mime, overwrite).getOrThrow().use { output ->
@@ -222,7 +228,7 @@ class TransferEngine(
         private suspend fun discardPartial(targetDir: String, name: String) {
             try {
                 listings.remove(targetDir)
-                findExisting(targetDir, name)?.let { repository.delete(listOf(it)) }
+                findPart(targetDir, name)?.let { repository.delete(listOf(it)) }
             } catch (ignored: Exception) {
                 // Best effort: the original failure is what the caller needs to see.
             }
@@ -270,6 +276,10 @@ class TransferEngine(
         // Case-insensitive: FAT/exFAT volumes (typical for USB drives) do not distinguish case.
         private suspend fun findExisting(dir: String, name: String): FileItem? =
             children(dir).firstOrNull { it.name.equals(name, ignoreCase = true) }
+
+        /** The temporary file called [partName], or one the backend renamed by adding something after it. */
+        private suspend fun findPart(dir: String, partName: String): FileItem? =
+            findExisting(dir, partName) ?: children(dir).firstOrNull { it.name.startsWith(partName, ignoreCase = true) }
 
         private fun snapshot(status: TransferStatus, error: String? = null) = TransferProgress(
             currentName = current,
