@@ -1,0 +1,4 @@
+- Miniaturas de fotos y vídeos en lista y cuadrícula (en cuentas de red es opcional, en Ajustes)
+- El menú de un archivo lo mantiene resaltado y tiene una opción Seleccionar para empezar a seleccionar
+- Renombra cuentas de red desde el menú lateral
+- Arreglo: el diálogo Conectar un servidor salía aplastado y cortado

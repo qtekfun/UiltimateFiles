@@ -4,6 +4,8 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-05
+
 ### Added
 - Thumbnails of photos and videos in the list and grid, so you can tell what you are about to copy. Videos show a frame and a play badge. Photos on network accounts only get them when you turn on **Thumbnails on network accounts** in Settings (off by default; small photos only).
 - The menu of a file or folder keeps it highlighted and has a **Select** entry that starts selecting, so you can add more items.
