@@ -285,6 +285,16 @@ class MainViewModel(
         }
     }
 
+    /** Gives the account behind a network [volume] another name; blank names are ignored. */
+    fun renameAccount(volume: StorageVolume, label: String) {
+        val trimmed = label.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            accountRepository.rename(volume.id.removePrefix("dav:").removePrefix("sftp:").removePrefix("smb:"), trimmed)
+            refreshVolumes()
+        }
+    }
+
     fun answerConflict(decision: ConflictDecision) = coordinator.answerConflict(decision)
 
     fun cancelTransfers() = coordinator.cancelAll()

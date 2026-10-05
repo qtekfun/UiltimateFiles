@@ -11,7 +11,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.FilterChip
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,6 +46,7 @@ import com.qtekfun.ultimatefiles.data.network.UntrustedCertificateException
 import com.qtekfun.ultimatefiles.data.network.LoginFlowExpiredException
 import com.qtekfun.ultimatefiles.data.network.WebDavException
 
+@OptIn(ExperimentalLayoutApi::class)
 /**
  * Asks for the address of a Nextcloud server and signs in with its Login Flow: the approval happens in the browser
  * and the app receives an app password, so no password is ever typed here.
@@ -189,12 +194,19 @@ fun AddAccountDialog(
         onDismiss()
     }
 
+    // The SMB form is taller than a landscape screen, or a portrait one with the keyboard open.
+    val scroll = rememberScrollState()
+    LaunchedEffect(error) {
+        if (error != null) scroll.animateScrollTo(scroll.maxValue)
+    }
+
     AlertDialog(
         onDismissRequest = ::close,
         title = { Text(stringResource(R.string.account_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // The three labels are longer than the dialog is wide, so the chips wrap instead of being cut off.
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = kind == AccountKind.NEXTCLOUD, enabled = !busy, onClick = { kind = AccountKind.NEXTCLOUD }, label = { Text(stringResource(R.string.account_type_nextcloud)) })
                     FilterChip(selected = sftp, enabled = !busy, onClick = { kind = AccountKind.SFTP; port = "22" }, label = { Text(stringResource(R.string.account_type_sftp)) })
                     FilterChip(selected = smb, enabled = !busy, onClick = { kind = AccountKind.SMB; port = "445" }, label = { Text(stringResource(R.string.account_type_smb)) })
@@ -313,7 +325,9 @@ fun AddAccountDialog(
                         AccountKind.SMB -> connectSmb()
                     }
                 },
-            ) { Text(stringResource(R.string.account_connect)) }
+            ) {
+                Text(stringResource(if (kind == AccountKind.NEXTCLOUD) R.string.account_connect else R.string.account_connect_credentials))
+            }
         },
         dismissButton = {
             TextButton(onClick = ::close) { Text(stringResource(R.string.action_cancel)) }

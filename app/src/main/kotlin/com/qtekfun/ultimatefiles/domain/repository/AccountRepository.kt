@@ -12,6 +12,9 @@ interface AccountRepository {
     suspend fun add(account: WebDavAccount, password: String)
 
     suspend fun remove(accountId: String)
+
+    /** Changes only the name shown for the account; its password and settings are untouched. */
+    suspend fun rename(accountId: String, label: String)
 }
 
 /** Reversible encryption for secrets at rest (Android Keystore in the app, a stub in tests). */

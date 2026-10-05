@@ -46,6 +46,7 @@ private class MemoryAccounts : AccountRepository {
         passwords[account.id] = password
     }
     override suspend fun remove(accountId: String) { state.value = state.value.filterNot { it.id == accountId } }
+    override suspend fun rename(accountId: String, label: String) { state.value = state.value.map { if (it.id == accountId) it.copy(label = label) else it } }
 }
 
 class BackupManagerTest {

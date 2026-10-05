@@ -173,6 +173,7 @@
     <string name="account_key_passphrase">Key passphrase (leave empty if it has none)</string>
     <string name="account_error_key">That file is not a private key.</string>
     <string name="account_label">Name (optional)</string>
+    <string name="account_connect_credentials">Connect</string>
     <string name="account_connect">Sign in with browser</string>
     <string name="account_error_url">That address is not valid. Use an https:// address.</string>
     <string name="account_error_auth">The server rejected the sign-in.</string>

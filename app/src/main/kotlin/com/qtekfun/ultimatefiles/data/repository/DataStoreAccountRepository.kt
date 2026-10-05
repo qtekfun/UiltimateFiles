@@ -39,6 +39,13 @@ class DataStoreAccountRepository(
         store.edit { prefs -> prefs[KEY] = serialize(parse(prefs[KEY]).filterNot { it.account.id == accountId }) }
     }
 
+    override suspend fun rename(accountId: String, label: String) {
+        store.edit { prefs ->
+            val rows = parse(prefs[KEY]).map { if (it.account.id == accountId) Row(it.account.copy(label = label), it.secret) else it }
+            prefs[KEY] = serialize(rows)
+        }
+    }
+
     private fun serialize(rows: List<Row>): String = rows.joinToString("\n") { row ->
         listOf(
             row.account.id,
