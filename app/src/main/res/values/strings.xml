@@ -39,6 +39,7 @@
     <string name="action_new_file">New file</string>
     <string name="action_view_grid">Grid view</string>
     <string name="action_view_list">List view</string>
+    <string name="action_select">Select</string>
     <string name="action_select_all">Select all</string>
     <string name="action_sort_by">Sort by</string>
     <string name="sort_name">Name</string>

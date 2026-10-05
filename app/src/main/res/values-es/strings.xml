@@ -39,6 +39,7 @@
     <string name="action_new_file">Nuevo archivo</string>
     <string name="action_view_grid">Vista en cuadrícula</string>
     <string name="action_view_list">Vista en lista</string>
+    <string name="action_select">Seleccionar</string>
     <string name="action_select_all">Seleccionar todo</string>
     <string name="action_sort_by">Ordenar por</string>
     <string name="sort_name">Nombre</string>
