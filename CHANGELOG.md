@@ -4,6 +4,8 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-06
+
 ### Added
 - An **About** section at the end of Settings with the version of the app.
 

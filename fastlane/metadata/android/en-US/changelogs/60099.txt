@@ -1,0 +1,3 @@
+- USB drives and SD cards are used directly when Android mounts them (Android 11+)
+- Fix: copying big files to a USB folder failed with "Temporary file vanished"
+- About section in Settings with the version
