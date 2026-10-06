@@ -262,4 +262,41 @@ class TransferEngineTest {
         assertTrue(source.exists())
         assertFalse(File(dst, "c.bin").exists())
     }
+
+    /**
+     * A repository that renames what it is asked to create the way some backends do. With [always] it adds a suffix to
+     * temporary files whatever their type; otherwise, like a SAF documents provider, it adds the extension of the
+     * requested MIME type to a name that lacks it.
+     */
+    private class RenamingRepository(private val inner: FileSystemRepository, private val always: Boolean) : FileSystemRepository by inner {
+        override suspend fun openOutput(parentUriOrPath: String, name: String, mimeType: String, overwrite: Boolean): Result<OutputStream> {
+            val stored = when {
+                always && name.endsWith(TransferEngine.PART_SUFFIX) -> "$name.tmp"
+                !always && mimeType == "video/mp4" && !name.endsWith(".mp4") -> "$name.mp4"
+                else -> name
+            }
+            return inner.openOutput(parentUriOrPath, stored, mimeType, overwrite)
+        }
+    }
+
+    private suspend fun copyBigVideo(always: Boolean) {
+        val video = File(src, "movie.mp4").apply { writeBytes(ByteArray(64) { it.toByte() }) }
+        val item = repo.stat(video.path).getOrThrow().copy(mimeType = "video/mp4")
+        val bigEngine = TransferEngine(RenamingRepository(repo, always), FileStreamCopier(), bigFileBytes = 10)
+
+        val progress = bigEngine.execute(
+            TransferRequest(OperationType.COPY, listOf(item), dst.path, false),
+            ConflictResolver { _, _ -> error("no conflict expected") },
+        ).toList()
+
+        assertEquals(progress.last().error, TransferStatus.COMPLETED, progress.last().status)
+        assertArrayEquals(video.readBytes(), File(dst, "movie.mp4").readBytes())
+        assertEquals("no temporary file left behind", listOf("movie.mp4"), dst.list()!!.toList())
+    }
+
+    @Test
+    fun `a big file survives a destination that adds an extension to the temporary name`() = runTest { copyBigVideo(always = false) }
+
+    @Test
+    fun `a big file survives a destination that renames the temporary file`() = runTest { copyBigVideo(always = true) }
 }
