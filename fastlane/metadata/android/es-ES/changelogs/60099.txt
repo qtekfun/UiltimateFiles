@@ -1,0 +1,3 @@
+- Los USB y tarjetas SD se usan directamente cuando Android los monta (Android 11+)
+- Arreglo: copiar archivos grandes a una carpeta USB fallaba con "Temporary file vanished"
+- Sección Acerca de en Ajustes con la versión
