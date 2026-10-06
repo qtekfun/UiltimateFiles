@@ -11,6 +11,10 @@
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 ![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84.svg)
 
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" alt="A folder of large video files with thumbnails and sizes" width="30%">&nbsp;
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" alt="The actions for a file: open with, copy, cut, compress to ZIP, rename, delete, properties" width="30%">&nbsp;
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" alt="The built-in video viewer" width="30%">
+
 </div>
 
 UltimateFiles is made for people who shuffle large files around: video footage, backups, whole photo libraries. It is
