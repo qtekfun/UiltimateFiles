@@ -34,6 +34,7 @@ import com.qtekfun.ultimatefiles.data.service.TransferNotifications
 import com.qtekfun.ultimatefiles.data.system.AndroidKeystoreCipher
 import com.qtekfun.ultimatefiles.data.system.CompositeVolumeChangeSource
 import com.qtekfun.ultimatefiles.data.system.IntentFactory
+import com.qtekfun.ultimatefiles.data.system.RemovableStorage
 import com.qtekfun.ultimatefiles.data.thumbnail.ThumbnailLoader
 import com.qtekfun.ultimatefiles.data.system.SystemVolumeMonitor
 import com.qtekfun.ultimatefiles.domain.clipboard.ClipboardManager
@@ -68,11 +69,14 @@ val appModule = module {
     single { ClipboardManager() }
 
     single<StreamCopier> { FileStreamCopier() }
+    single { RemovableStorage(androidContext()) }
     single {
+        val removable = get<RemovableStorage>()
         @Suppress("DEPRECATION")
         LocalFileSystemRepository(
             root = Environment.getExternalStorageDirectory(),
             label = androidContext().getString(R.string.storage_internal),
+            extraVolumes = removable::volumes,
         )
     }
     single { SafFileSystemRepository(androidContext()) }
