@@ -261,4 +261,6 @@
     <string name="settings_thumbnails_network">Miniaturas en cuentas de red</string>
     <string name="settings_thumbnails_network_summary">Muestra vistas previas pequeñas de las fotos en Nextcloud, SFTP y SMB. Descarga cada foto para dibujarla: gasta datos y batería.</string>
     <string name="thumbnail_video">Vídeo</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_version">Versión %1$s</string>
 </resources>
