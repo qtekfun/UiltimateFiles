@@ -16,6 +16,8 @@ import java.nio.file.attribute.PosixFilePermissions
 class LocalFileSystemRepository(
     private val root: File,
     private val label: String,
+    /** Other volumes reachable by path (USB drives, SD cards), asked for every time because they come and go. */
+    private val extraVolumes: () -> List<StorageVolume> = { emptyList() },
     private val mimeOf: (String) -> String? = MimeTypes::fromName,
 ) : FileSystemRepository {
 
@@ -27,7 +29,7 @@ class LocalFileSystemRepository(
             kind = StorageKind.INTERNAL,
             isEjectable = false,
         ),
-    )
+    ) + extraVolumes()
 
     override suspend fun listFiles(uriOrPath: String): Result<List<FileItem>> = ioResult {
         val children = File(uriOrPath).listFiles() ?: throw IOException("Cannot list $uriOrPath")
@@ -41,7 +43,7 @@ class LocalFileSystemRepository(
     }
 
     override suspend fun parentOf(uriOrPath: String): String? {
-        if (uriOrPath == root.path) return null
+        if (uriOrPath == root.path || extraVolumes().any { it.rootPath == uriOrPath }) return null
         return File(uriOrPath).parent
     }
 

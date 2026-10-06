@@ -18,7 +18,8 @@ import java.io.OutputStream
 
 /**
  * Storage Access Framework backend: every path is a document/tree URI string.
- * Used for USB OTG drives and any folder the user grants through the system picker.
+ * Used for any folder the user grants through the system picker, and for USB drives and SD cards before Android 11
+ * (see [com.qtekfun.ultimatefiles.data.system.RemovableStorage]).
  */
 class SafFileSystemRepository(private val context: Context) : FileSystemRepository {
     private val resolver get() = context.contentResolver

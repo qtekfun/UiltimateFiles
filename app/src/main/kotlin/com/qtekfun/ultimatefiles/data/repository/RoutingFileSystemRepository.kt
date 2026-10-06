@@ -2,6 +2,7 @@ package com.qtekfun.ultimatefiles.data.repository
 
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
+import com.qtekfun.ultimatefiles.data.system.RemovableStorage
 import com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository
 import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import java.io.InputStream
@@ -26,7 +27,14 @@ class RoutingFileSystemRepository(
         else -> local
     }
 
-    override suspend fun volumes(): List<StorageVolume> = local.volumes() + saf.volumes() + webDav.volumes() + sftp.volumes() + smb.volumes() + archive.volumes()
+    override suspend fun volumes(): List<StorageVolume> {
+        val byPath = local.volumes()
+        // A drive shown by path is not listed again through a folder that was granted for it before.
+        val granted = saf.volumes().filterNot { tree ->
+            byPath.any { it.id.startsWith(RemovableStorage.ID_PREFIX) && RemovableStorage.isSameVolume(tree.id, it.id) }
+        }
+        return byPath + granted + webDav.volumes() + sftp.volumes() + smb.volumes() + archive.volumes()
+    }
 
     override suspend fun listFiles(uriOrPath: String) = backendFor(uriOrPath).listFiles(uriOrPath)
 

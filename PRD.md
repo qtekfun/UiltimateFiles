@@ -33,7 +33,7 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
 - **Foreground service:** heavy copies and moves run in a `ForegroundService` with a notification showing the current file,
   total percentage and estimated speed (MB/s).
 - **Conflict resolution:** a dialog when duplicates are found: *Overwrite*, *Skip*, *Rename*, with an *Apply to all* option.
-- **USB OTG storage:** integration through the Storage Access Framework (`DocumentFile`), including a safe-eject intent.
+- **USB OTG storage:** drives Android has mounted are used by path from Android 11 (all-files access); otherwise, and for any other folder, through the Storage Access Framework (`DocumentFile`). Both include a safe-eject intent.
 
 ### 2.4 Properties and Metadata
 - **Properties bottom sheet:** name, full path, exact size (bytes and human readable), modification date,
