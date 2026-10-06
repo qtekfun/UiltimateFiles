@@ -4,6 +4,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Added
+- An **About** section at the end of Settings with the version of the app.
+
 ### Fixed
 - Copying a big file (64 MB or more) into a folder added with **Add USB / SD folder** failed with "Temporary file … vanished": the storage renamed the temporary file while it was being written. The temporary file now uses the generic type, and is still found if a backend renames it anyway.
 

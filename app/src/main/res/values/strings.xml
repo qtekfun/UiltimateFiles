@@ -261,4 +261,6 @@
     <string name="settings_thumbnails_network">Thumbnails on network accounts</string>
     <string name="settings_thumbnails_network_summary">Show small previews of photos on Nextcloud, SFTP and SMB. Downloads each photo to draw it: uses data and battery.</string>
     <string name="thumbnail_video">Video</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
 </resources>

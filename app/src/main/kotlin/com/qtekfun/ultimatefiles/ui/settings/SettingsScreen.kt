@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.qtekfun.ultimatefiles.BuildConfig
 import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
@@ -66,6 +67,7 @@ fun SettingsScreen(
     onPanelBarPosition: (PanelBarPosition) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    versionName: String = BuildConfig.VERSION_NAME,
 ) {
     var showExport by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<Pair<Boolean, String?>?>(null) }
@@ -219,6 +221,16 @@ fun SettingsScreen(
                 supportingContent = { Text(stringResource(R.string.settings_import_summary)) },
                 leadingContent = { Icon(Icons.Filled.Download, contentDescription = null) },
                 modifier = Modifier.clickable { importLauncher.launch(arrayOf("*/*")) },
+            )
+            Text(
+                text = stringResource(R.string.settings_about),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+            Text(
+                text = stringResource(R.string.settings_version, versionName),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             )
         }
     }
