@@ -5,6 +5,13 @@ import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
 import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.SdStorage
+import androidx.compose.material.icons.filled.SearchOff
+import com.qtekfun.ultimatefiles.ui.components.PlaceholderTone
+import com.qtekfun.ultimatefiles.ui.components.StatePlaceholder
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -190,9 +197,22 @@ fun BrowserScreen(
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
             when {
-                state.errorMessage != null -> ErrorMessage(state.errorMessage)
-                state.visibleItems.isEmpty() && !state.isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text(stringResource(R.string.folder_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                state.errorMessage != null -> ErrorMessage(state.errorMessage) { onEvent(BrowserEvent.Refresh) }
+                state.visibleItems.isEmpty() && !state.isLoading -> {
+                    val query = state.searchQuery?.takeIf { it.isNotBlank() }
+                    if (query != null) {
+                        StatePlaceholder(
+                            icon = Icons.Filled.SearchOff,
+                            title = stringResource(R.string.search_no_results),
+                            message = stringResource(R.string.search_no_results_hint, query),
+                        )
+                    } else {
+                        StatePlaceholder(
+                            icon = Icons.Filled.FolderOpen,
+                            title = stringResource(R.string.folder_empty),
+                            message = stringResource(R.string.folder_empty_hint),
+                        )
+                    }
                 }
                 else -> FileList(
                     items = state.visibleItems,
@@ -257,17 +277,16 @@ fun BrowserScreen(
 }
 
 @Composable
-private fun ErrorMessage(message: String?) {
-    Box(Modifier.fillMaxSize(), Alignment.Center) {
-        Text(
-            text = if (message == BrowserViewModel.NO_STORAGE) {
-                stringResource(R.string.error_no_storage)
-            } else {
-                stringResource(R.string.error_load_folder, message.orEmpty())
-            },
-            color = MaterialTheme.colorScheme.error,
-        )
-    }
+private fun ErrorMessage(message: String?, onRetry: () -> Unit) {
+    val noStorage = message == BrowserViewModel.NO_STORAGE
+    StatePlaceholder(
+        icon = if (noStorage) Icons.Filled.SdStorage else Icons.Filled.ErrorOutline,
+        title = stringResource(if (noStorage) R.string.error_no_storage else R.string.error_load_folder_title),
+        message = if (noStorage) stringResource(R.string.error_no_storage_hint) else message,
+        tone = PlaceholderTone.ERROR,
+        actionLabel = stringResource(R.string.action_retry),
+        onAction = onRetry,
+    )
 }
 
 private fun FileItemAction.toEvent(item: FileItem): BrowserEvent = when (this) {
