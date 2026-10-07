@@ -1,0 +1,1 @@
+- Interfaz refinada: Ajustes en tarjetas con la versión y un Acerca de más completo, menú lateral con el espacio libre, iconos de archivo tonales y pantallas de vacío y error con explicación
