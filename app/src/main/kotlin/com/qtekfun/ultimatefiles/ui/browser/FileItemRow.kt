@@ -7,6 +7,9 @@ import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
@@ -96,7 +99,13 @@ fun FileItemRow(
             }
         }
     }
-    var rowModifier = modifier.combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
+    // The item the menu is about stays highlighted while the menu is open.
+    val highlighted = MaterialTheme.colorScheme.secondaryContainer
+    val container by animateColorAsState(if (selected || menuOpen) highlighted else highlighted.copy(alpha = 0f), label = "row")
+    var rowModifier = modifier
+        .padding(horizontal = 8.dp, vertical = 2.dp)
+        .clip(MaterialTheme.shapes.medium)
+        .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
     if (dragAndDropEnabled && item.isDirectory) {
         rowModifier = rowModifier.dragAndDropTarget(
             shouldStartDragAndDrop = { it.isOurDrag() },
@@ -114,10 +123,7 @@ fun FileItemRow(
 
     ListItem(
         modifier = rowModifier,
-        colors = ListItemDefaults.colors(
-            // The item the menu is about stays highlighted while the menu is open.
-            containerColor = if (selected || menuOpen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-        ),
+        colors = ListItemDefaults.colors(containerColor = container),
         leadingContent = {
             FileLeading(item, selected, leadingModifier.clickable(onClick = onToggleSelection))
         },

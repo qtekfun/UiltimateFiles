@@ -1,6 +1,7 @@
 package com.qtekfun.ultimatefiles.ui.browser
 
 import android.content.ClipData
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -63,10 +64,12 @@ fun FileGridItem(
         }
     }
 
+    val highlighted = MaterialTheme.colorScheme.secondaryContainer
+    val container by animateColorAsState(if (selected || menuOpen) highlighted else highlighted.copy(alpha = 0f), label = "cell")
     var cell = modifier
         .padding(4.dp)
-        .clip(RoundedCornerShape(12.dp))
-        .background(if (selected || menuOpen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+        .clip(MaterialTheme.shapes.medium)
+        .background(container)
         .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
     if (dragAndDropEnabled && item.isDirectory) {
         cell = cell.dragAndDropTarget(shouldStartDragAndDrop = { it.isOurDrag() }, target = dropTarget)
