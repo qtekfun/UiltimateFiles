@@ -1,0 +1,1 @@
+- Arreglo: al cancelar una copia, su notificación podía quedarse junto a la de "cancelada"
