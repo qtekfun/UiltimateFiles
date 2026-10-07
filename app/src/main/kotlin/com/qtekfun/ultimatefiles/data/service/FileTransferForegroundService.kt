@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -27,6 +28,10 @@ class FileTransferForegroundService : Service(), KoinComponent {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Volatile private var lastStartId = 0
+
+    /** Guards [finished]: a progress update that lands after the transfer ended would bring the ongoing notification back. */
+    private val notifyLock = Any()
+    private var finished = false
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
 
@@ -88,19 +93,28 @@ class FileTransferForegroundService : Service(), KoinComponent {
 
     private suspend fun drainQueue() {
         acquireWakeLock()
-        val updates = coordinator.state.onEach { notifications.update(it) }.launchIn(scope)
+        synchronized(notifyLock) { finished = false }
+        val updates = coordinator.state.onEach { state ->
+            synchronized(notifyLock) { if (!finished) notifications.update(state) }
+        }.launchIn(scope)
         var last: TransferProgress? = null
         while (true) {
             val request = coordinator.next() ?: break
             last = coordinator.run(request) ?: last
         }
-        updates.cancel()
+        // Wait for the last update to be over: cancelling alone leaves it free to post after the notification is removed.
+        updates.cancelAndJoin()
         finish(last)
     }
 
     private fun finish(result: TransferProgress?) {
         releaseWakeLock()
-        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        synchronized(notifyLock) {
+            // From here on no update may post the ongoing notification again (it is ongoing: it could not be swiped away).
+            finished = true
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            notifications.clearOngoing()
+        }
         if (result != null) notifications.showResult(result)
         stopSelf(lastStartId)
     }
