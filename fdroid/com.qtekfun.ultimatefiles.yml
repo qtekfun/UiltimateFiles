@@ -83,10 +83,20 @@ Builds:
       - update-java-alternatives -a
     gradle:
       - yes
+  - versionName: 0.7.0
+    versionCode: 70099
+    commit: 9d671eae56a66cde09ea2d8a3c30a507c236af14
+    subdir: app
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-21-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - yes
 
 AllowedAPKSigningKeys: 3d7400fcfd32758d117bb79f86fdda8b007f058966c16c1bde8d97143317b2b8
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-CurrentVersion: 0.6.2
-CurrentVersionCode: 60299
+CurrentVersion: 0.7.0
+CurrentVersionCode: 70099
