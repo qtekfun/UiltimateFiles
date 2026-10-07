@@ -38,11 +38,11 @@ class TransferProgressBarTest {
     fun buttonsStayOnOneLineInANarrowBarWithALongNameAndFigures() {
         compose.setContent { TransferProgressBar(running, paused = false, onTogglePause = {}, onCancel = {}, modifier = Modifier.width(320.dp)) }
 
-        // A label on a single line is about 20dp tall; wrapped onto several lines it would be much more.
+        // A button whose label is on one line is 40dp tall; with the label on three lines it would be over 70dp.
         for (label in listOf(R.string.transfer_pause, R.string.transfer_cancel)) {
             val node = compose.onNodeWithText(text(label)).assertIsDisplayed()
             val bounds = node.getUnclippedBoundsInRoot()
-            assertTrue("$label wrapped", bounds.bottom - bounds.top <= 30.dp)
+            assertTrue("$label wrapped", bounds.bottom - bounds.top <= 56.dp)
         }
     }
 
