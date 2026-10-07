@@ -263,4 +263,8 @@
     <string name="thumbnail_video">Vídeo</string>
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión %1$s</string>
+    <string name="app_tagline">Gestor de archivos de doble panel</string>
+    <string name="settings_about_license">Licencia</string>
+    <string name="settings_about_license_summary">Licencia Pública General de GNU v3</string>
+    <string name="settings_about_source">Código fuente</string>
 </resources>

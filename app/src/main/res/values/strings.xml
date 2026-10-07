@@ -263,4 +263,8 @@
     <string name="thumbnail_video">Video</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %1$s</string>
+    <string name="app_tagline">Dual-panel file manager</string>
+    <string name="settings_about_license">License</string>
+    <string name="settings_about_license_summary">GNU General Public License v3</string>
+    <string name="settings_about_source">Source code</string>
 </resources>
