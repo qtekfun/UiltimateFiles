@@ -4,6 +4,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Fixed
+- After cancelling a copy, the notification of the copy (paused or part-way) could stay next to the "cancelled" one. It is now always removed when the transfer ends.
+
 ## [0.6.1] - 2026-10-07
 
 ### Changed

@@ -102,6 +102,11 @@ class TransferNotifications(private val context: Context) {
         manager.notify(ONGOING_ID, running(state))
     }
 
+    /** Removes the ongoing notification, whatever state it was left in (paused, mid-transfer). */
+    fun clearOngoing() {
+        manager.cancel(ONGOING_ID)
+    }
+
     private fun serviceAction(requestCode: Int, action: String): PendingIntent = PendingIntent.getService(
         context,
         requestCode,
