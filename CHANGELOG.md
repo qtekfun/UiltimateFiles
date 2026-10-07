@@ -4,6 +4,8 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-08
+
 ### Changed
 - Refined interface: Settings in grouped cards with an app header that shows the version and a fuller About (version, licence, source code); a drawer with the app icon and version and the free space of each volume; file and folder icons on rounded tonal tiles by type, rounded rows and an animated selection; empty folders, searches without results, errors (with a **Try again** button) and an empty History now have an icon and an explanation; larger collapsing top bars in Settings and History; rounder shapes and heavier titles.
 

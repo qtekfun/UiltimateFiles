@@ -1,0 +1,1 @@
+- Refined interface: Settings in grouped cards with the version and a fuller About, a richer drawer with free space, tonal file icons and proper empty and error screens
