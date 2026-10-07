@@ -4,6 +4,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Changed
+- The copy bar in the app has the file name and the figures on one line, the progress bar below them, and the Pause and Cancel buttons on a line of their own, as outlined buttons with an icon. A long name or longer figures can no longer push the buttons onto several lines.
+
 ## [0.6.0] - 2026-10-06
 
 ### Added
