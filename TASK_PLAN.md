@@ -55,3 +55,15 @@
   - [x] 7.15 SMB accounts (smbj): list, create, rename, delete and copy; verified only by compilation and path tests.
   - [x] 7.16 SFTP authentication with a private key (PEM, optional passphrase).
   - [x] 7.17 Instrumented Compose UI tests.
+
+- [x] **Phase 8: Panels, thumbnails and polish (v0.4 to v0.7)**
+  - [x] 8.1 Dynamic panels (`PanelId`, panels saved in DataStore, a view model store per panel, close with undo).
+  - [x] 8.2 `PanelBar` with a drop-down of the open panels, placed at the top or the bottom; two fixed slots in landscape.
+  - [x] 8.3 Thumbnails of photos and videos (`ThumbnailLoader`, `ThumbnailPolicy`, a byte-bounded cache) and the setting for
+    network accounts.
+  - [x] 8.4 Item menu that highlights its item and has *Select*; renaming network accounts.
+  - [x] 8.5 Mounted USB drives and SD cards used by path from Android 11 (`RemovableStorage`).
+  - [x] 8.6 Fix: big copies into SAF folders (temporary name renamed by the provider) and the notification left behind after
+    cancelling.
+  - [x] 8.7 Reworked in-app copy bar and a refined interface: Settings in grouped cards with an About section, a richer
+    drawer, tonal file icons and proper empty and error states.

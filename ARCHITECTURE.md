@@ -17,7 +17,9 @@ com.qtekfun.ultimatefiles/
 │   ├── datastore/         # Preference persistence (paths, sorting, views)
 │   └── util/              # Byte formatters, hashes (MD5/SHA), MimeTypes
 ├── data/
-│   ├── repository/        # FileSystemRepository (LocalFileRepo, SafUsbRepo)
+│   ├── repository/        # FileSystemRepository (local, SAF, WebDAV, SFTP, SMB, archives) and the router
+│   ├── system/            # IntentFactory, volume monitor, RemovableStorage (mounted USB/SD volumes)
+│   ├── thumbnail/         # ThumbnailLoader and ThumbnailPolicy (which files get one, sampling)
 │   ├── io/                # FileStreamCopier reporting bytes written
 │   └── service/           # FileTransferForegroundService + NotificationManager
 ├── domain/
@@ -25,7 +27,7 @@ com.qtekfun.ultimatefiles/
 │   └── clipboard/         # ClipboardManager (global cut/copy state shared by both panels)
 └── ui/
     ├── main/              # Main scaffold with NavigationDrawer and WindowSizeClass
-    ├── dualpanel/         # Orchestrator: HorizontalPager (Compact) vs 50/50 Row (Expanded)
+    ├── dualpanel/         # Orchestrator: PanelBar + HorizontalPager (Compact) vs two fixed slots (Expanded)
     ├── browser/           # Single panel (ViewModel, FileList, FileItemRow, CAB)
     ├── components/        # BreadcrumbBar, DockedPasteBar, ConflictDialog, PropertiesBottomSheet
     └── theme/             # Material 3 theme
@@ -71,7 +73,9 @@ that `FileStreamCopier` works with any backend. `RoutingFileSystemRepository` pi
 - `PauseGate` (domain/transfer): the copier and the verification wait on it between blocks; `TransferCoordinator` exposes
   `TransferState` with the active task, the queue and whether it is paused (`active`, `queuedTasks`, `paused`), used by the
   notification, the progress bar and the History screen.
-- Notification on the `transfers_lockscreen` channel (public visibility), with Pause/Resume and Cancel actions.
+- Notification on the `transfers_progress` channel (public visibility), with Pause/Resume and Cancel actions. When the
+  queue is drained the service waits for the job that mirrors the state into the notification before removing it, and
+  refuses later updates, so a cancelled copy cannot leave its notification behind next to the result.
 - `data/network/NextcloudLoginFlow`: Login Flow v2 (polls until the user approves in the browser).
 - `data/backup/BackupManager`: JSON with settings and, encrypted with PBKDF2-SHA256 + AES-256-GCM, the accounts;
   `BackupFiles` reads and writes through the document picker (no storage permissions).
@@ -87,3 +91,30 @@ that `FileStreamCopier` works with any backend. `RoutingFileSystemRepository` pi
 [RELEASING.md](RELEASING.md)): `(MAJOR*10000 + MINOR*100 + PATCH) * 100 + N`, where N is 99 for a final release. Official
 releases come from `vX.Y.Z` tags; nightlies come from `master` with a different application id and the workflow run number
 as `versionCode`.
+
+## 8. Panels
+- `PanelId` identifies a panel (the first two keep the ids, and saved keys, of the original left and right panels).
+  `MainViewModel` owns the open panels, the two that are visible in landscape (`startPanel`, `endPanel`) and the active one,
+  and keeps the invariant that the active panel is always visible: a panel that is not on screen takes the place of the
+  active one. The list of panels and the folder of each go to DataStore.
+- Every panel has a `BrowserViewModel` in a `ViewModelStore` of its own, held by `MainViewModel`, so closing a panel
+  disposes of just its state and everything survives rotation. Closing can be undone: the panel is opened again where it
+  was, in the folder it had.
+- `PanelBar` (drop-down of the open panels with their folders, add, close) goes above or below the panels according to
+  the setting. Portrait uses a `HorizontalPager` keyed by panel id; landscape uses two slots, and each slot has its own bar.
+
+## 9. Thumbnails
+- `ThumbnailPolicy` decides what gets one: photos and videos, not inside archives, and on network accounts only photos of
+  up to 8 MB when the setting allows it. `ThumbnailLoader` decodes photos through `FileSystemRepository` with an
+  `inSampleSize` that keeps the shorter side at least the requested size, applies the EXIF rotation, and takes a frame
+  of a video with `MediaMetadataRetriever` (local and SAF only, since Android needs a path or a URI for that).
+- Results are cached in memory bounded by bytes (`SizedLruCache`), at most three decodes run at once, loading is cancelled
+  when a row scrolls out of view, and failures are remembered so a broken file is not retried on every scroll.
+
+## 10. Removable Storage
+- From Android 11 the all-files access the app already has reaches the volumes the system mounts under `/storage`.
+  `RemovableStorage` lists them with `StorageManager` and `LocalFileSystemRepository` exposes them as extra roots, so they
+  are used by path: faster, and names are kept as they are (a documents provider adds the extension of the MIME type to a
+  name that lacks it, which once broke the temporary name of big copies).
+- A folder granted through the system picker (SAF) for a drive already shown by path is not listed twice. Before Android
+  11, and for drives Android does not mount, SAF remains the way in.

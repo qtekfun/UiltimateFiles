@@ -25,27 +25,40 @@ sent to third parties.
 
 | | |
 |---|---|
-| **Dual panel** | Two panels side by side on wide screens, swipeable tabs on phones, drag and drop between them |
+| **Panels** | As many panels as you need: two side by side on wide screens, one at a time on phones, a bar to choose which one each side shows |
 | **Huge files** | Resumable, verified copies that survive the screen turning off |
 | **Your own cloud** | Nextcloud/WebDAV, SFTP and SMB as first-class locations |
+| **See what you copy** | Thumbnails of photos and videos in the list and the grid |
 | **Archives as folders** | Browse ZIP, 7z, TAR and TAR.GZ without extracting them |
 | **No FABs** | Contextual action bar on top, docked bars at the bottom |
 
 ## Features
 
 ### Browsing
-- **Two panels:** swipeable tabs in portrait, a 50/50 split in landscape and on wide screens, with drag and drop between
-  panels and a "Copy or move?" confirmation.
-- **Navigation:** breadcrumb path bar, search by name, sorting, list or grid view, and a side drawer with volumes
-  (internal storage, USB OTG, SD card) and shortcuts.
-- **No floating buttons:** a contextual top bar while selecting, a per-item menu, and a docked paste bar at the bottom.
+- **Panels:** open as many as you need with **+** (a new panel starts in the folder of the active one) and close them from
+  the panel menu, with undo. They and their folders are remembered. In portrait you swipe from one to the next; in
+  landscape and on wide screens two fixed panels show side by side, with drag and drop between them and a "Copy or move?"
+  confirmation.
+- **Panel bar:** each panel shows the name of its folder, and a drop-down lists all open panels with their folders to pick
+  what a side shows (choosing the one on the other side swaps them). The active panel is highlighted. The bar can sit at
+  the top or the bottom (Settings).
+- **Thumbnails:** photos and videos show a picture instead of an icon in the list and the grid, so you can tell what you
+  are about to copy. Photos are read through the file backend at a reduced size, videos show a frame. On network accounts
+  they are off by default (Settings), because each photo has to be downloaded.
+- **Navigation:** breadcrumb path bar, search by name, sorting, list or grid view, and a side drawer with volumes (internal
+  storage, USB drives and SD cards, with their free space) and shortcuts. Drives that Android has mounted are used
+  directly from Android 11; before that, or for a drive Android does not mount, add the folder with **Add USB / SD
+  folder**.
+- **No floating buttons:** a contextual top bar while selecting, a per-item menu that keeps its item highlighted and has a
+  **Select** entry to start selecting more, and a docked paste bar at the bottom.
 - **Properties** with permissions and MD5/SHA-256 hashes.
 - **Built-in viewers** for images (with zoom), text, PDF, audio and video; "Open with…" hands off to other apps.
 - **Open APKs:** asks once for the "install unknown apps" permission, then hands over to the system installer.
 
 ### Copying and moving
 - **Background transfers** run in a foreground service with a notification showing progress, speed and time left. It is
-  visible on the lock screen and supports **pause/resume** and cancel.
+  visible on the lock screen and supports **pause/resume** and cancel. In the app, a bar shows the file name and the figures,
+  the progress, and Pause and Cancel buttons on a line of their own.
 - **Huge files** are written under a temporary name (`*.ultimatefiles-part`) and renamed when done. Optional SHA-256
   verification runs before the source is deleted in a move. Conflicts can be overwritten, skipped or renamed, with
   "apply to all".
@@ -71,8 +84,12 @@ sent to third parties.
   created.
 
 ### Settings
-- Theme (system, light, dark, AMOLED), dynamic colors, copy verification.
+- Theme (system, light, dark, AMOLED) and dynamic colors, the position of the panel bar, thumbnails on network accounts and
+  copy verification.
+- **Accounts:** rename a network account from the three-dot menu of the drawer (to change anything else, remove it and add
+  it again).
 - **Backup:** export and import settings and accounts. Passwords are encrypted with a passphrase you choose.
+- **About:** the version, the license and a link to the source code.
 
 ## Long copies with the screen off
 
