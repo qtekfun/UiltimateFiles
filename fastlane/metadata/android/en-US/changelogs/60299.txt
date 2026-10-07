@@ -1,0 +1,1 @@
+- Fix: after cancelling a copy, its notification could stay next to the "cancelled" one
