@@ -274,4 +274,5 @@
     <string name="error_no_storage_hint">Conecta una unidad o añade una carpeta desde el menú lateral y vuelve a intentarlo.</string>
     <string name="action_retry">Reintentar</string>
     <string name="history_empty_hint">Aquí aparecerán las copias, los movimientos y los borrados.</string>
+    <string name="drawer_space_free">%1$s libres de %2$s</string>
 </resources>

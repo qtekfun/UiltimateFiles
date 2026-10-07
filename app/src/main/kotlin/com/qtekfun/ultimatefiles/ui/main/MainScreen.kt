@@ -4,6 +4,21 @@ import android.content.ActivityNotFoundException
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import com.qtekfun.ultimatefiles.core.util.formatBytes
+import com.qtekfun.ultimatefiles.BuildConfig
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -380,6 +395,53 @@ private fun AccountMenu(onRename: () -> Unit, onRemove: () -> Unit) {
     }
 }
 
+/** The app's icon, name and version at the top of the drawer. */
+@Composable
+private fun DrawerHeader() {
+    Row(
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(colorResource(R.color.ic_launcher_background)),
+        ) {
+            Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, modifier = Modifier.fillMaxSize())
+        }
+        Column {
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** A thin bar of how full the volume is and how much room is left; nothing for volumes that cannot tell. */
+@Composable
+private fun SpaceUsage(volume: StorageVolume) {
+    val total = volume.totalBytes ?: return
+    val free = volume.freeBytes ?: return
+    Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LinearProgressIndicator(
+            progress = { ((total - free).toFloat() / total).coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+            gapSize = 0.dp,
+            drawStopIndicator = {},
+        )
+        Text(
+            text = stringResource(R.string.drawer_space_free, formatBytes(free), formatBytes(total)),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 @Composable
 private fun DrawerContent(
     volumes: List<StorageVolume>,
@@ -395,14 +457,15 @@ private fun DrawerContent(
 ) {
     ModalDrawerSheet {
         Column(Modifier.verticalScroll(rememberScrollState())) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
-            )
+            DrawerHeader()
             volumes.forEach { volume ->
                 NavigationDrawerItem(
-                    label = { Text(volume.label) },
+                    label = {
+                        Column {
+                            Text(volume.label)
+                            SpaceUsage(volume)
+                        }
+                    },
                     icon = { Icon(volume.icon(), contentDescription = null) },
                     badge = {
                         if (volume.kind == StorageKind.NETWORK) {
