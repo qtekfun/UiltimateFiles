@@ -8,8 +8,10 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
 
 ### 2.1 Navigation and Dual Panel
 - **Adaptive layout:**
-  - *Portrait / Compact:* a 2-panel `HorizontalPager` with synchronized top tabs and lateral swipe.
-  - *Landscape / Expanded:* a fixed 50/50 split view showing both panels at once.
+  - *Portrait / Compact:* a `HorizontalPager` with one panel per page and lateral swipe, plus a panel bar.
+  - *Landscape / Expanded:* two fixed panels side by side; each side has a bar to choose which of the open panels it shows.
+- **Dynamic panels:** panels are created with **+** (starting in the active panel's folder) and closed from the panel menu,
+  with undo. The panel bar goes at the top or the bottom (a setting). Panels and their folders are remembered.
 - **Drag & drop:**
   - In split view, drag files/folders from one panel and drop them in the other (or into a visible subfolder).
   - On drop, show a quick confirmation dialog: "Copy or Move?".
@@ -25,7 +27,8 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
 - **Contextual top bar (CAB):** activates when 1 or more items are selected. Shows a counter, *Copy*, *Cut*, *Delete*,
   *Share* icons and an overflow (*Rename*, *Properties / Hash*).
 - **Item context menu:** long press or the 3-dot menu on each row for quick actions on that single file without selecting it
-  first (*Open with*, *Copy*, *Cut*, *Rename*, *Delete*, *Properties*).
+  first (*Select*, *Open with*, *Copy*, *Cut*, *Rename*, *Delete*, *Properties*). The row stays highlighted while its menu is
+  open, and *Select* starts a selection that more rows can be added to.
 - **Docked paste bar:** a fixed bottom bar that does not float over the content and appears only when there are items on
   the clipboard. It contains a summary of the buffered items, a *Paste here* button and a *Cancel* button.
 
@@ -61,6 +64,9 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
 - Grid view, opening APKs, exporting/importing settings and accounts.
 - Interrupted Nextcloud uploads (for example when the app dies) resume when the copy is repeated: only the chunks that
   changed are sent again.
+- Thumbnails of photos and videos in the list and the grid (network accounts optional).
+- Dynamic panels with a panel bar, in portrait and landscape.
+- Renaming network accounts, an About section in Settings and a reworked in-app copy bar.
 - Release pipeline: signed releases from tags, nightlies, reproducible-build check and an F-Droid recipe.
 
 ## 5. Pending / Ideas
