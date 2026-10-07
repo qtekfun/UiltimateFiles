@@ -1,0 +1,1 @@
+- La barra de copia tiene el nombre y los datos en una línea y los botones Pausar y Cancelar, con contorno e icono, en otra, para que no se partan
