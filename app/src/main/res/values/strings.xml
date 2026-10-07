@@ -267,7 +267,7 @@
     <string name="settings_about_license">License</string>
     <string name="settings_about_license_summary">GNU General Public License v3</string>
     <string name="settings_about_source">Source code</string>
-    <string name="folder_empty_hint">Copy or move files here, or create something new from the ⋮ menu.</string>
+    <string name="folder_empty_hint">Copy or move files here, or create something new from the three-dot menu.</string>
     <string name="search_no_results">No results</string>
     <string name="search_no_results_hint">Nothing in this folder matches “%1$s”.</string>
     <string name="error_load_folder_title">Could not open this folder</string>
