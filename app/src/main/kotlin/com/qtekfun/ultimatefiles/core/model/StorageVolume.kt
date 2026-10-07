@@ -9,4 +9,7 @@ data class StorageVolume(
     val rootPath: String,
     val kind: StorageKind,
     val isEjectable: Boolean,
+    /** Size and free space of the volume, when the backend can tell (local and removable storage). */
+    val totalBytes: Long? = null,
+    val freeBytes: Long? = null,
 )

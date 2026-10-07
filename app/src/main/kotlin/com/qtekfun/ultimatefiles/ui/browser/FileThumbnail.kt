@@ -1,6 +1,7 @@
 package com.qtekfun.ultimatefiles.ui.browser
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -55,7 +56,7 @@ fun FileLeading(item: FileItem, selected: Boolean, modifier: Modifier = Modifier
     if (ThumbnailPolicy.mayHaveThumbnail(item)) {
         MediaThumbnail(item, selected, ListThumbnailSize, modifier.size(ListThumbnailSize))
     } else {
-        IconTile(item, selected, modifier.size(ListThumbnailSize), iconSize = 24.dp)
+        IconTile(item, selected, modifier.size(ListThumbnailSize), tileSize = 48.dp, iconSize = 24.dp)
     }
 }
 
@@ -65,19 +66,41 @@ fun FileTile(item: FileItem, selected: Boolean, modifier: Modifier = Modifier) {
     if (ThumbnailPolicy.mayHaveThumbnail(item)) {
         MediaThumbnail(item, selected, GridThumbnailSize, modifier.fillMaxWidth().aspectRatio(1f))
     } else {
-        IconTile(item, selected, modifier.size(56.dp), iconSize = 40.dp)
+        IconTile(item, selected, modifier.size(56.dp), tileSize = 56.dp, iconSize = 28.dp)
     }
 }
 
+/** Container and content colours of a kind's icon tile, taken from the colour scheme so dynamic colour carries through. */
 @Composable
-private fun IconTile(item: FileItem, selected: Boolean, modifier: Modifier, iconSize: Dp) {
+private fun FileKind.tone(): Pair<Color, Color> {
+    val colors = MaterialTheme.colorScheme
+    return when (this) {
+        FileKind.FOLDER -> colors.primaryContainer to colors.onPrimaryContainer
+        FileKind.IMAGE, FileKind.VIDEO -> colors.tertiaryContainer to colors.onTertiaryContainer
+        FileKind.AUDIO, FileKind.ARCHIVE, FileKind.APK -> colors.secondaryContainer to colors.onSecondaryContainer
+        FileKind.PDF -> colors.errorContainer to colors.onErrorContainer
+        FileKind.TEXT, FileKind.OTHER -> colors.surfaceContainerHighest to colors.onSurfaceVariant
+    }
+}
+
+/** The icon of a file kind on a rounded tonal tile; [modifier] sets the cell, [tileSize] the tile inside it. */
+@Composable
+private fun IconTile(item: FileItem, selected: Boolean, modifier: Modifier, tileSize: Dp, iconSize: Dp) {
+    val (kindContainer, kindContent) = item.kind().tone()
+    val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else kindContainer, label = "tile")
+    val content by animateColorAsState(if (selected) MaterialTheme.colorScheme.onPrimary else kindContent, label = "tileIcon")
     Box(modifier, contentAlignment = Alignment.Center) {
-        Icon(
-            imageVector = if (selected) Icons.Filled.Check else item.kind().icon(),
-            contentDescription = null,
-            modifier = Modifier.size(iconSize),
-            tint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Box(
+            modifier = Modifier.size(tileSize).clip(RoundedCornerShape(14.dp)).background(container),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (selected) Icons.Filled.Check else item.kind().icon(),
+                contentDescription = null,
+                modifier = Modifier.size(iconSize),
+                tint = content,
+            )
+        }
     }
 }
 

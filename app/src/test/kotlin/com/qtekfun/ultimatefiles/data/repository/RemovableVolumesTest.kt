@@ -48,6 +48,21 @@ class RemovableVolumesTest {
     }
 
     @Test
+    fun `volumes report their size and free space when the folder exists`() = runTest {
+        val drive = tmp.newFolder("drive")
+        val gone = StorageVolume("${RemovableStorage.ID_PREFIX}9999-FFFF", "Gone", File(tmp.root, "missing").path, StorageKind.USB_OTG, isEjectable = true)
+        val repo = LocalFileSystemRepository(tmp.newFolder("internal"), "Internal", extraVolumes = { listOf(usb(drive), gone) })
+
+        val (internal, present, missing) = repo.volumes()
+
+        assertTrue(internal.totalBytes!! > 0)
+        assertTrue(internal.freeBytes!! in 0..internal.totalBytes!!)
+        assertTrue(present.totalBytes!! > 0)
+        assertNull("a folder that does not exist has no size", missing.totalBytes)
+        assertNull(missing.freeBytes)
+    }
+
+    @Test
     fun `a granted folder of a drive already shown by path is recognised`() {
         val id = "${RemovableStorage.ID_PREFIX}1234-ABCD"
         assertTrue(RemovableStorage.isSameVolume("content://com.android.externalstorage.documents/tree/1234-ABCD%3A", id))

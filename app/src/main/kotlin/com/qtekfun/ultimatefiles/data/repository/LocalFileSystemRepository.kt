@@ -5,6 +5,8 @@ import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
 import com.qtekfun.ultimatefiles.core.util.MimeTypes
 import com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -21,15 +23,23 @@ class LocalFileSystemRepository(
     private val mimeOf: (String) -> String? = MimeTypes::fromName,
 ) : FileSystemRepository {
 
-    override suspend fun volumes(): List<StorageVolume> = listOf(
-        StorageVolume(
+    override suspend fun volumes(): List<StorageVolume> = withContext(Dispatchers.IO) {
+        val internal = StorageVolume(
             id = INTERNAL_ID,
             label = label,
             rootPath = root.path,
             kind = StorageKind.INTERNAL,
             isEjectable = false,
-        ),
-    ) + extraVolumes()
+        )
+        (listOf(internal) + extraVolumes()).map { it.withSpace() }
+    }
+
+    /** Asked for here and not in [parentOf]: reading the free space is a system call per volume. */
+    private fun StorageVolume.withSpace(): StorageVolume {
+        val directory = File(rootPath)
+        val total = directory.totalSpace
+        return if (total > 0) copy(totalBytes = total, freeBytes = directory.usableSpace) else this
+    }
 
     override suspend fun listFiles(uriOrPath: String): Result<List<FileItem>> = ioResult {
         val children = File(uriOrPath).listFiles() ?: throw IOException("Cannot list $uriOrPath")

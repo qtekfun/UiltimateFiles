@@ -2,7 +2,10 @@ package com.qtekfun.ultimatefiles.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -11,7 +14,27 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.core.model.ThemeMode
+
+/** Rounder than the Material defaults, for a friendlier look: cards, dialogs and menus follow these. */
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
+)
+
+/** The Material scale with a little more weight on titles and labels, so headings stand out from the body text. */
+private val AppTypography = Typography().let { base ->
+    base.copy(
+        titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+        titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+        labelLarge = base.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+    )
+}
 
 private val LightColors = lightColorScheme(primary = Color(0xFF1E6F5C))
 private val DarkColors = darkColorScheme(primary = Color(0xFF7FD4BE))
@@ -51,5 +74,5 @@ fun UltimateFilesTheme(
         else -> LightColors
     }
     val colors = if (themeMode == ThemeMode.AMOLED) base.toAmoled() else base
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = colors, typography = AppTypography, shapes = AppShapes, content = content)
 }

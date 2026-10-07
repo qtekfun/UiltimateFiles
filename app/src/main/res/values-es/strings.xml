@@ -263,4 +263,16 @@
     <string name="thumbnail_video">Vídeo</string>
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión %1$s</string>
+    <string name="app_tagline">Gestor de archivos de doble panel</string>
+    <string name="settings_about_license">Licencia</string>
+    <string name="settings_about_license_summary">Licencia Pública General de GNU v3</string>
+    <string name="settings_about_source">Código fuente</string>
+    <string name="folder_empty_hint">Copia o mueve archivos aquí, o crea algo nuevo desde el menú de tres puntos.</string>
+    <string name="search_no_results">Sin resultados</string>
+    <string name="search_no_results_hint">Nada en esta carpeta coincide con «%1$s».</string>
+    <string name="error_load_folder_title">No se pudo abrir esta carpeta</string>
+    <string name="error_no_storage_hint">Conecta una unidad o añade una carpeta desde el menú lateral y vuelve a intentarlo.</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="history_empty_hint">Aquí aparecerán las copias, los movimientos y los borrados.</string>
+    <string name="drawer_space_free">%1$s libres de %2$s</string>
 </resources>

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -25,10 +26,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import com.qtekfun.ultimatefiles.ui.components.StatePlaceholder
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,10 +64,11 @@ fun HistoryScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(R.string.history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -77,13 +82,17 @@ fun HistoryScreen(
                         }
                     }
                 },
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { padding ->
         if (entries.isEmpty() && running.active == null && running.queuedTasks.isEmpty()) {
-            Box(Modifier.padding(padding).fillMaxSize(), Alignment.Center) {
-                Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            StatePlaceholder(
+                icon = Icons.Filled.History,
+                title = stringResource(R.string.history_empty),
+                message = stringResource(R.string.history_empty_hint),
+                modifier = Modifier.padding(padding),
+            )
         } else {
             LazyColumn(Modifier.padding(padding)) {
                 running.active?.let { active ->

@@ -263,4 +263,16 @@
     <string name="thumbnail_video">Video</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %1$s</string>
+    <string name="app_tagline">Dual-panel file manager</string>
+    <string name="settings_about_license">License</string>
+    <string name="settings_about_license_summary">GNU General Public License v3</string>
+    <string name="settings_about_source">Source code</string>
+    <string name="folder_empty_hint">Copy or move files here, or create something new from the three-dot menu.</string>
+    <string name="search_no_results">No results</string>
+    <string name="search_no_results_hint">Nothing in this folder matches “%1$s”.</string>
+    <string name="error_load_folder_title">Could not open this folder</string>
+    <string name="error_no_storage_hint">Connect a drive or add a folder from the side menu, then try again.</string>
+    <string name="action_retry">Try again</string>
+    <string name="history_empty_hint">Copies, moves and deletions will show up here.</string>
+    <string name="drawer_space_free">%1$s free of %2$s</string>
 </resources>
