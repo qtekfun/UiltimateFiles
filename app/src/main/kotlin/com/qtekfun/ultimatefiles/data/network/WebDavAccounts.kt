@@ -22,6 +22,8 @@ class WebDavAccountService(
     private val client: WebDavClient = WebDavClient(),
     private val loginFlow: NextcloudLoginFlow = NextcloudLoginFlow(),
     private val requireHttps: Boolean = true,
+    /** Called with the id of an account whose data was replaced, so cached clients for it are dropped. */
+    private val onAccountChanged: (String) -> Unit = {},
 ) {
     /**
      * Signs in through Nextcloud's Login Flow v2: [openBrowser] receives the page where the user approves
@@ -31,12 +33,13 @@ class WebDavAccountService(
         serverUrl: String,
         label: String,
         trust: TrustChoice = TrustChoice(),
+        replacing: WebDavAccount? = null,
         openBrowser: (String) -> Unit,
     ): Result<WebDavAccount> = try {
         val start = loginFlow.start(serverUrl, trust)
         openBrowser(start.loginUrl) // runs in the caller's context (the UI thread for the ViewModel)
         val credentials = loginFlow.awaitCredentials(start)
-        connect(credentials.server, credentials.loginName, credentials.appPassword, label, trust)
+        connect(credentials.server, credentials.loginName, credentials.appPassword, label, trust, replacing)
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -49,6 +52,7 @@ class WebDavAccountService(
         password: String,
         label: String,
         trust: TrustChoice = TrustChoice(),
+        replacing: WebDavAccount? = null,
     ): Result<WebDavAccount> =
         withContext(Dispatchers.IO) {
             try {
@@ -63,14 +67,20 @@ class WebDavAccountService(
                         .getOrDefault(e)
                 }
                 val account = WebDavAccount(
-                    id = UUID.randomUUID().toString(),
+                    // Replacing keeps the id: panels, history and saved folders refer to the account by it.
+                    id = replacing?.id ?: UUID.randomUUID().toString(),
                     label = label.trim().ifEmpty { session.baseUrl.host },
                     baseUrl = baseUrl,
                     username = username,
                     pinnedCertSha256 = trust.pinnedSha256?.let(PinnedTls::normalize),
                     allowInsecureHttp = trust.allowInsecureHttp,
                 )
-                accounts.add(account, password)
+                if (replacing != null) {
+                    accounts.update(account, password)
+                    onAccountChanged(replacing.id)
+                } else {
+                    accounts.add(account, password)
+                }
                 Result.success(account)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e

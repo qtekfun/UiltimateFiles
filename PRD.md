@@ -68,7 +68,7 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
   entry in a panel to act on it. Not available on servers or inside archives.
 - Thumbnails of photos and videos in the list and the grid (network accounts optional).
 - Dynamic panels with a panel bar, in portrait and landscape.
-- Renaming network accounts, an About section in Settings and a reworked in-app copy bar.
+- Editing network accounts in place (every field, checked before saving, id kept), renaming them, an About section in Settings and a reworked in-app copy bar.
 - Release pipeline: signed releases from tags, nightlies, reproducible-build check and an F-Droid recipe.
 
 ## 5. Pending / Ideas

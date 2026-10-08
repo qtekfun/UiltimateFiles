@@ -90,8 +90,11 @@ sent to third parties.
 ### Settings
 - Theme (system, light, dark, AMOLED) and dynamic colors, the position of the panel bar, thumbnails on network accounts and
   copy verification.
-- **Accounts:** rename a network account from the three-dot menu of the drawer (to change anything else, remove it and add
-  it again).
+- **Accounts:** edit a network account from the three-dot menu of the drawer: the same form as when adding, filled in, with
+  the password or key left empty to keep the one stored. The connection is checked first and the account is only changed if
+  it works; it keeps its identity, so open panels and history keep working. An SFTP server at another address asks you to
+  confirm its host key again, and a Nextcloud account at another address signs in again in the browser. You can also rename
+  or remove it from that menu.
 - **Backup:** export and import settings and accounts. Passwords are encrypted with a passphrase you choose.
 - **About:** the version, the license and a link to the source code.
 

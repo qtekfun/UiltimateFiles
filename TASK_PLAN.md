@@ -67,4 +67,6 @@
     cancelling.
   - [x] 8.7 Reworked in-app copy bar and a refined interface: Settings in grouped cards with an About section, a richer
     drawer, tonal file icons and proper empty and error states.
+  - [x] 8.9 Editing network accounts: `AccountRepository.update`, `update` in the SFTP/SMB account services, replacing a Nextcloud
+    account through the Login Flow, the edit mode of the account form and dropping cached connections (`AccountEditing`).
   - [x] 8.8 Size analysis (`SizeAnalyzer`, `SizeAnalysisViewModel`, `SizeAnalysisScreen`) from a panel's menu and from the drawer.

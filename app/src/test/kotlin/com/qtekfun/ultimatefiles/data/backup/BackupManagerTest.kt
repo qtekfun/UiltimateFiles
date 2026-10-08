@@ -46,6 +46,11 @@ private class MemoryAccounts : AccountRepository {
         passwords[account.id] = password
     }
     override suspend fun remove(accountId: String) { state.value = state.value.filterNot { it.id == accountId } }
+    override suspend fun update(account: WebDavAccount, password: String?) {
+        if (state.value.none { it.id == account.id }) return
+        state.value = state.value.map { if (it.id == account.id) account else it }
+        if (password != null) passwords[account.id] = password
+    }
     override suspend fun rename(accountId: String, label: String) { state.value = state.value.map { if (it.id == accountId) it.copy(label = label) else it } }
 }
 

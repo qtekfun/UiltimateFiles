@@ -3,6 +3,7 @@ package com.qtekfun.ultimatefiles.data.network
 import com.qtekfun.ultimatefiles.core.model.WebDavAccount
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,11 @@ private class RecordingAccounts : AccountRepository {
         state.value += account
     }
     override suspend fun remove(accountId: String) { state.value = state.value.filterNot { it.id == accountId } }
+    override suspend fun update(account: WebDavAccount, password: String?) {
+        if (state.value.none { it.id == account.id }) return
+        state.value = state.value.map { if (it.id == account.id) account else it }
+        if (password != null) passwords[account.id] = password
+    }
     override suspend fun rename(accountId: String, label: String) { state.value = state.value.map { if (it.id == accountId) it.copy(label = label) else it } }
 }
 
@@ -86,5 +92,36 @@ class NextcloudLoginFlowTest {
         assertEquals("alice", account.username)
         assertEquals(server.baseUrl, account.baseUrl)
         assertEquals("secret", accounts.passwords[account.id])
+    }
+
+    @Test fun signingInAgainReplacesTheAccountKeepingItsId() = runBlocking {
+        val accounts = RecordingAccounts()
+        val old = WebDavAccount("keep-me", "Old name", "http://old.example/remote.php/dav/files/bob", "bob")
+        accounts.add(old, "old-password")
+        val changed = mutableListOf<String>()
+        val service = WebDavAccountService(accounts, WebDavClient(retryDelayMillis = 1), flow(), requireHttps = false) { changed += it }
+
+        val account = service.connectWithLoginFlow(server.rootUrl, "New name", replacing = old) { server.approveLogin() }.getOrThrow()
+
+        assertEquals("keep-me", account.id)
+        assertEquals("New name", account.label)
+        assertEquals("alice", account.username)
+        assertEquals(server.baseUrl, account.baseUrl)
+        assertEquals("secret", accounts.passwords["keep-me"])
+        assertEquals(1, accounts.accounts.first().size)
+        assertEquals(listOf("keep-me"), changed)
+    }
+
+    @Test fun anAccountIsNotReplacedWhenTheLoginNeverHappens() = runBlocking {
+        val accounts = RecordingAccounts()
+        val old = WebDavAccount("keep-me", "Old name", "http://old.example/remote.php/dav/files/bob", "bob")
+        accounts.add(old, "old-password")
+        val service = WebDavAccountService(accounts, WebDavClient(retryDelayMillis = 1), flow(timeoutMillis = 100), requireHttps = false)
+
+        val result = service.connectWithLoginFlow(server.rootUrl, "New name", replacing = old) { /* the user never approves */ }
+
+        assertTrue(result.isFailure)
+        assertEquals(listOf(old), accounts.accounts.first())
+        assertEquals("old-password", accounts.passwords["keep-me"])
     }
 }

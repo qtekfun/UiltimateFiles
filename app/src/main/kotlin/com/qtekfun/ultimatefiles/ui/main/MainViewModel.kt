@@ -11,6 +11,9 @@ import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
+import com.qtekfun.ultimatefiles.core.model.AccountProtocol
+import com.qtekfun.ultimatefiles.core.model.WebDavAccount
+import com.qtekfun.ultimatefiles.data.network.SshConnector
 import com.qtekfun.ultimatefiles.data.network.TrustChoice
 import com.qtekfun.ultimatefiles.data.network.SftpAccountService
 import com.qtekfun.ultimatefiles.data.network.SmbAccountService
@@ -39,6 +42,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** An account read for the edit form; [usesKey] tells whether an SFTP account signs in with a private key. */
+data class EditableAccount(val account: WebDavAccount, val usesKey: Boolean)
 
 enum class ShortcutKind { DOWNLOADS, DOCUMENTS, PHOTOS }
 
@@ -230,7 +236,7 @@ class MainViewModel(
     ) {
         loginJob?.cancel()
         loginJob = viewModelScope.launch {
-            val result = accountService.connectWithLoginFlow(serverUrl, label, trust, openBrowser).map { }
+            val result = accountService.connectWithLoginFlow(serverUrl, label, trust, openBrowser = openBrowser).map { }
             if (result.isSuccess) refreshVolumes()
             onDone(result)
         }
@@ -271,6 +277,97 @@ class MainViewModel(
             onDone(result)
         }
     }
+
+    // --- editing an account ------------------------------------------------------------------------
+
+    private val _accountChanges = Channel<String>(Channel.BUFFERED)
+
+    /** Ids of accounts whose data was just changed; the screen reloads the panels that show them. */
+    val accountChanges: Flow<String> = _accountChanges.receiveAsFlow()
+
+    /** Reads the account behind a network [volume] for the edit form; null if it is gone. */
+    fun loadForEdit(volume: StorageVolume, onLoaded: (EditableAccount?) -> Unit) {
+        viewModelScope.launch {
+            val id = accountIdOf(volume)
+            val account = accountRepository.accounts.first().firstOrNull { it.id == id }
+            // Only whether it is a key is handed to the screen, never the stored secret.
+            val usesKey = account?.protocol == AccountProtocol.SFTP &&
+                accountRepository.passwordOf(id)?.let(SshConnector::privateKeyOf) != null
+            onLoaded(account?.let { EditableAccount(it, usesKey) })
+        }
+    }
+
+    /**
+     * Changes a Nextcloud/WebDAV account. With [signIn] the Login Flow runs again in the browser (needed for another
+     * server address) and replaces the account in place; without it only the name is saved, with no network.
+     */
+    fun updateNextcloud(
+        existing: WebDavAccount,
+        serverUrl: String,
+        label: String,
+        trust: TrustChoice,
+        signIn: Boolean,
+        openBrowser: (String) -> Unit,
+        onDone: (Result<Unit>) -> Unit,
+    ) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = if (signIn) {
+                accountService.connectWithLoginFlow(serverUrl, label, trust, existing, openBrowser).map { }
+            } else {
+                runCatching { accountRepository.rename(existing.id, label.trim().ifEmpty { existing.label }) }
+            }
+            finishUpdate(existing.id, result, onDone)
+        }
+    }
+
+    fun updateSftp(
+        existing: WebDavAccount,
+        host: String,
+        port: Int,
+        username: String,
+        typedSecret: String,
+        newKeyPem: String?,
+        useKey: Boolean,
+        label: String,
+        pinnedFingerprint: String?,
+        onDone: (Result<Unit>) -> Unit,
+    ) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = sftpAccountService
+                .update(existing, host, port, username, typedSecret, newKeyPem, useKey, label, pinnedFingerprint).map { }
+            finishUpdate(existing.id, result, onDone)
+        }
+    }
+
+    fun updateSmb(
+        existing: WebDavAccount,
+        host: String,
+        port: Int,
+        share: String,
+        domain: String,
+        username: String,
+        typedPassword: String,
+        label: String,
+        onDone: (Result<Unit>) -> Unit,
+    ) {
+        loginJob?.cancel()
+        loginJob = viewModelScope.launch {
+            val result = smbAccountService.update(existing, host, port, share, domain, username, typedPassword, label).map { }
+            finishUpdate(existing.id, result, onDone)
+        }
+    }
+
+    private fun finishUpdate(accountId: String, result: Result<Unit>, onDone: (Result<Unit>) -> Unit) {
+        if (result.isSuccess) {
+            refreshVolumes()
+            _accountChanges.trySend(accountId)
+        }
+        onDone(result)
+    }
+
+    private fun accountIdOf(volume: StorageVolume) = volume.id.removePrefix("dav:").removePrefix("sftp:").removePrefix("smb:")
 
     fun cancelConnect() {
         loginJob?.cancel()
