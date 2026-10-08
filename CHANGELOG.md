@@ -4,6 +4,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Changed
+- App icon: the folder drawing is smaller inside the icon, so it no longer touches the edge of the shape the launcher cuts out and has room to breathe, in the launcher, the F-Droid listing and the app's own header.
+
 ## [0.7.0] - 2026-10-08
 
 ### Changed
