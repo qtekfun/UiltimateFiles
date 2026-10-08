@@ -1,0 +1,1 @@
+- Edit a network account from its menu in the drawer: server, user, password or key; the connection is checked before saving

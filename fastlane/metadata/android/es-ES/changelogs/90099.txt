@@ -1,0 +1,1 @@
+- Edita una cuenta de red desde su menú en el menú lateral: servidor, usuario, contraseña o clave; la conexión se comprueba antes de guardar
