@@ -130,3 +130,14 @@ as `versionCode`.
   "Show in panel" sends `BrowserEvent.Reveal` to the active panel, which opens the item's folder and selects it.
 - The entry is offered only where `SizeAnalyzer.supports(path)` is true: not for `dav://`, `sftp://`, `smb://` or `archive://`.
 
+## 12. Editing Accounts
+- An account is edited in place: `AccountRepository.update(account, password)` keeps the id (paths are `dav://<id>/...`,
+  `sftp://<id>/...`, `smb://<id>/...`, and saved panel folders and history refer to it) and its place in the list; a null
+  password keeps the stored secret, which the form never shows.
+- `SftpAccountService.update`, `SmbAccountService.update` and `WebDavAccountService` (`replacing`) check the new data first and
+  only then store it, so a failed edit leaves the account as it was. Then `onAccountChanged` drops the connections kept for the
+  id (`forget` on the repositories) and `MainViewModel` tells the screen to reload the panels that show it.
+- `AccountEditing` holds the pure rules: how stored data maps back to form fields, that a pinned SSH host key or a certificate
+  trust only carries over to the same host and port or server (anything else is asked about again, and a changed key at the
+  same host is still refused), and what the stored SFTP secret becomes (`key NUL passphrase` is kept unless another is given).
+
