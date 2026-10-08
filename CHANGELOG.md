@@ -4,6 +4,8 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-09
+
 ### Added
 - **Edit a network account** from the three-dot menu of the account in the drawer: server, port, share, domain, user, password or key, with the same form as when adding. The password or key can be left empty to keep it, the connection is checked before saving (a failed edit changes nothing) and the account keeps its identity, so open panels and history keep working. An SFTP server at another address asks to confirm its host key again, and a Nextcloud account at another address signs in again in the browser.
 
