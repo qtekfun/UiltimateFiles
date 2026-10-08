@@ -110,6 +110,7 @@ class BrowserViewModel(
     fun onEvent(event: BrowserEvent) {
         when (event) {
             is BrowserEvent.Navigate -> load(event.path)
+            is BrowserEvent.Reveal -> reveal(event.item)
             BrowserEvent.NavigateUp -> _state.value.parentPath?.let(::load)
             BrowserEvent.Refresh -> revalidate()
             BrowserEvent.ToggleViewMode -> viewModelScope.launch {
@@ -166,6 +167,18 @@ class BrowserViewModel(
             _state.update { it.copy(isLoading = false, errorMessage = NO_STORAGE) }
         } else {
             load(start)
+        }
+    }
+
+    /** Opens the folder that holds [item] and selects it there. */
+    private fun reveal(item: FileItem) {
+        viewModelScope.launch {
+            val parent = repository.parentOf(item.path) ?: return@launch
+            load(parent)
+            loadJob?.join()
+            _state.update { s ->
+                if (s.currentPath == parent && s.items.any { it.path == item.path }) s.copy(selectedPaths = setOf(item.path)) else s
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package com.qtekfun.ultimatefiles.ui.browser
 
 import android.content.ActivityNotFoundException
 import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
+import com.qtekfun.ultimatefiles.domain.usecase.SizeAnalyzer
 import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -69,6 +70,8 @@ fun BrowserScreen(
     topInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     /** Set when something docked under this panel already takes care of the navigation bar inset. */
     consumeNavigationBar: Boolean = false,
+    /** Starts the size analysis of the current folder, given its path and name; null disables the entry. */
+    onAnalyze: ((path: String, label: String) -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard by viewModel.clipboard.collectAsStateWithLifecycle()
@@ -178,6 +181,9 @@ fun BrowserScreen(
                     onNewFile = { onEvent(BrowserEvent.RequestNewFile) },
                     onSortSelected = { onEvent(BrowserEvent.SortBy(it)) },
                     onSelectAll = { onEvent(BrowserEvent.SelectAll) },
+                    onAnalyze = state.currentPath?.takeIf { onAnalyze != null && SizeAnalyzer.supports(it) }?.let { path ->
+                        { onAnalyze?.invoke(path, state.breadcrumb.lastOrNull()?.label.orEmpty()) }
+                    },
                     windowInsets = topInsets,
                 )
             }
