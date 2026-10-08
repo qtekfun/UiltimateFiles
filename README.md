@@ -45,6 +45,10 @@ sent to third parties.
 - **Thumbnails:** photos and videos show a picture instead of an icon in the list and the grid, so you can tell what you
   are about to copy. Photos are read through the file backend at a reduced size, videos show a frame. On network accounts
   they are off by default (Settings), because each photo has to be downloaded.
+- **Size analysis:** **Analyze size** in a panel's menu (for its folder) or on a volume in the drawer works out where the
+  space went, TreeSize style: the entries from the biggest down, each with its size, its share of the folder and a bar, and
+  a tap goes down into a folder. A long press shows the entry in a panel, selected, so copy, move and delete apply to it.
+  It works on this device (internal storage, USB, SD, folders added through the system picker), not on servers.
 - **Navigation:** breadcrumb path bar, search by name, sorting, list or grid view, and a side drawer with volumes (internal
   storage, USB drives and SD cards, with their free space) and shortcuts. Drives that Android has mounted are used
   directly from Android 11; before that, or for a drive Android does not mount, add the folder with **Add USB / SD

@@ -118,3 +118,15 @@ as `versionCode`.
   name that lacks it, which once broke the temporary name of big copies).
 - A folder granted through the system picker (SAF) for a drive already shown by path is not listed twice. Before Android
   11, and for drives Android does not mount, SAF remains the way in.
+
+## 11. Size Analysis
+- `SizeAnalyzer` (domain/usecase) walks a folder only through `FileSystemRepository.listFiles` and returns a tree of
+  `SizeNode` (bytes and file count of everything below each entry). Memory stays bounded: of each folder only the 200 biggest
+  entries are kept and the rest become one "Other (N items)" node, while every total stays exact. A depth limit of 48 stops
+  symbolic link loops, a folder that cannot be listed is counted as unreadable instead of failing the analysis, progress is
+  reported at most every 150 ms and cancelling the coroutine stops the walk.
+- `SizeAnalysisViewModel` runs it on `Dispatchers.Default` and holds Idle / Scanning / Done / Failed plus the trail of folders the
+  user has gone down. `MainScreen` shows it as `AppScreen.ANALYSIS`, where back goes up one folder before it leaves.
+  "Show in panel" sends `BrowserEvent.Reveal` to the active panel, which opens the item's folder and selects it.
+- The entry is offered only where `SizeAnalyzer.supports(path)` is true: not for `dav://`, `sftp://`, `smb://` or `archive://`.
+
