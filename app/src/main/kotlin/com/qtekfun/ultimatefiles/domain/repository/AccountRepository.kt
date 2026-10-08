@@ -13,6 +13,12 @@ interface AccountRepository {
 
     suspend fun remove(accountId: String)
 
+    /**
+     * Replaces the stored data of the account with [account]'s id, keeping its place in the list. The stored secret is
+     * kept when [password] is null and replaced otherwise. An id that is not stored changes nothing.
+     */
+    suspend fun update(account: WebDavAccount, password: String?)
+
     /** Changes only the name shown for the account; its password and settings are untouched. */
     suspend fun rename(accountId: String, label: String)
 }

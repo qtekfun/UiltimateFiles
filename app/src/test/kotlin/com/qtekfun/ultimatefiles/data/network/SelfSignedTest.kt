@@ -23,6 +23,7 @@ private class OneAccount(account: WebDavAccount) : AccountRepository {
     override suspend fun passwordOf(accountId: String): String? = "secret"
     override suspend fun add(account: WebDavAccount, password: String) { state.value += account }
     override suspend fun remove(accountId: String) { state.value = state.value.filterNot { it.id == accountId } }
+    override suspend fun update(account: WebDavAccount, password: String?) { state.value = state.value.map { if (it.id == account.id) account else it } }
     override suspend fun rename(accountId: String, label: String) { state.value = state.value.map { if (it.id == accountId) it.copy(label = label) else it } }
 }
 
@@ -32,6 +33,7 @@ private class MemoryAccountStore : AccountRepository {
     override suspend fun passwordOf(accountId: String): String? = "secret"
     override suspend fun add(account: WebDavAccount, password: String) { state.value += account }
     override suspend fun remove(accountId: String) { state.value = state.value.filterNot { it.id == accountId } }
+    override suspend fun update(account: WebDavAccount, password: String?) { state.value = state.value.map { if (it.id == account.id) account else it } }
     override suspend fun rename(accountId: String, label: String) { state.value = state.value.map { if (it.id == accountId) it.copy(label = label) else it } }
 }
 

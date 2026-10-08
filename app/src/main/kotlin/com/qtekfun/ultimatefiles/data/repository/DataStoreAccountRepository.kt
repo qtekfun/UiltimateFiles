@@ -39,6 +39,15 @@ class DataStoreAccountRepository(
         store.edit { prefs -> prefs[KEY] = serialize(parse(prefs[KEY]).filterNot { it.account.id == accountId }) }
     }
 
+    override suspend fun update(account: WebDavAccount, password: String?) {
+        store.edit { prefs ->
+            val rows = parse(prefs[KEY]).map { row ->
+                if (row.account.id == account.id) Row(account, password?.let(cipher::encrypt) ?: row.secret) else row
+            }
+            prefs[KEY] = serialize(rows)
+        }
+    }
+
     override suspend fun rename(accountId: String, label: String) {
         store.edit { prefs ->
             val rows = parse(prefs[KEY]).map { if (it.account.id == accountId) Row(it.account.copy(label = label), it.secret) else it }
