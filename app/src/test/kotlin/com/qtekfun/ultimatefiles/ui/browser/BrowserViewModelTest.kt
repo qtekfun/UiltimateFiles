@@ -1,5 +1,6 @@
 package com.qtekfun.ultimatefiles.ui.browser
 
+import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.PanelBarPosition
 import com.qtekfun.ultimatefiles.core.model.PanelId
@@ -47,6 +48,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BrowserViewModelTest {
@@ -143,6 +145,18 @@ class BrowserViewModelTest {
 
         viewModel.onEvent(BrowserEvent.NavigateUp)
         assertEquals(tmp.root.path, viewModel.state.first { it.currentPath == tmp.root.path && !it.isLoading }.currentPath)
+    }
+
+    @Test
+    fun `revealing an item opens its folder and selects it`() = runTest {
+        loaded()
+        val inner = File(tmp.root, "alpha/inner.txt").apply { writeText("x") }
+        val item = FileItem(inner.path, "inner.txt", isDirectory = false, sizeBytes = 1, lastModifiedMillis = 0, mimeType = null)
+
+        viewModel.onEvent(BrowserEvent.Reveal(item))
+
+        val shown = viewModel.state.first { it.currentPath == File(tmp.root, "alpha").path && !it.isLoading && it.selectedPaths.isNotEmpty() }
+        assertEquals(setOf(inner.path), shown.selectedPaths)
     }
 
     @Test

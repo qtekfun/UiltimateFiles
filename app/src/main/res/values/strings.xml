@@ -275,4 +275,24 @@
     <string name="action_retry">Try again</string>
     <string name="history_empty_hint">Copies, moves and deletions will show up here.</string>
     <string name="drawer_space_free">%1$s free of %2$s</string>
+    <string name="action_analyze_size">Analyze size</string>
+    <string name="analysis_scanning">Analyzing…</string>
+    <string name="analysis_progress">%1$s · %2$s</string>
+    <string name="analysis_failed_title">Could not analyze this folder</string>
+    <string name="analysis_less_than_one">&lt;1%</string>
+    <string name="analysis_row_details">%1$s · %2$s</string>
+    <string name="analysis_show_in_panel">Show in panel</string>
+    <string name="analysis_open_in_panel">Open in panel</string>
+    <plurals name="analysis_files">
+        <item quantity="one">%1$s file</item>
+        <item quantity="other">%1$s files</item>
+    </plurals>
+    <plurals name="analysis_unreadable">
+        <item quantity="one">%1$d folder could not be read, so its size is missing</item>
+        <item quantity="other">%1$d folders could not be read, so their sizes are missing</item>
+    </plurals>
+    <plurals name="analysis_other">
+        <item quantity="one">Other (%1$d item)</item>
+        <item quantity="other">Other (%1$d items)</item>
+    </plurals>
 </resources>

@@ -50,6 +50,7 @@ import com.qtekfun.ultimatefiles.domain.transfer.TransferCoordinator
 import com.qtekfun.ultimatefiles.domain.transfer.TransferJournal
 import com.qtekfun.ultimatefiles.domain.transfer.TransferServiceLauncher
 import com.qtekfun.ultimatefiles.domain.usecase.BatchCopyUseCase
+import com.qtekfun.ultimatefiles.domain.usecase.SizeAnalyzer
 import com.qtekfun.ultimatefiles.domain.usecase.BatchMoveUseCase
 import com.qtekfun.ultimatefiles.domain.usecase.BuildBreadcrumbUseCase
 import com.qtekfun.ultimatefiles.domain.usecase.DeleteUseCase
@@ -58,6 +59,7 @@ import com.qtekfun.ultimatefiles.domain.usecase.StreamCopier
 import com.qtekfun.ultimatefiles.domain.usecase.TransferEngine
 import com.qtekfun.ultimatefiles.ui.browser.BrowserViewModel
 import com.qtekfun.ultimatefiles.ui.dualpanel.DragDropState
+import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisViewModel
 import com.qtekfun.ultimatefiles.ui.history.HistoryViewModel
 import com.qtekfun.ultimatefiles.ui.main.MainViewModel
 import com.qtekfun.ultimatefiles.ui.settings.SettingsViewModel
@@ -137,6 +139,8 @@ val appModule = module {
     single { BackupFiles(androidContext()) }
     factory { SettingsViewModel(get(), get(), get()) }
     factory { HistoryViewModel(get(), get()) }
+    factory { SizeAnalyzer(get()) }
+    factory { SizeAnalysisViewModel(get()) }
     factory { params ->
         BrowserViewModel(
             panel = params.get<PanelId>(),

@@ -70,6 +70,9 @@ sealed interface BrowserEvent {
     data object DismissDialog : BrowserEvent
     data class StartDrag(val item: FileItem) : BrowserEvent
     data class DropItems(val targetPath: String) : BrowserEvent
+
+    /** Shows [item] in its own folder, selected, so the usual actions apply to it (used by the size analysis). */
+    data class Reveal(val item: FileItem) : BrowserEvent
 }
 
 /** One-shot results that need an Android context (intents, snackbars). */

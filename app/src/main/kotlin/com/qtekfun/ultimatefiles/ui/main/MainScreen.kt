@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -87,6 +88,9 @@ import com.qtekfun.ultimatefiles.core.model.StorageVolume
 import com.qtekfun.ultimatefiles.data.system.IntentFactory
 import com.qtekfun.ultimatefiles.ui.browser.BrowserEvent
 import com.qtekfun.ultimatefiles.ui.browser.BrowserViewModel
+import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisScreen
+import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisState
+import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisViewModel
 import com.qtekfun.ultimatefiles.ui.components.AddAccountDialog
 import com.qtekfun.ultimatefiles.ui.components.BatteryHintDialog
 import com.qtekfun.ultimatefiles.ui.components.InterruptedTransfersDialog
@@ -110,7 +114,7 @@ import com.qtekfun.ultimatefiles.data.system.IncomingFiles
 import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import org.koin.mp.KoinPlatform
 
-private enum class AppScreen { BROWSER, HISTORY, SETTINGS }
+private enum class AppScreen { BROWSER, HISTORY, SETTINGS, ANALYSIS }
 
 /** Root screen: navigation drawer + dual panel, plus the dialogs and bar shared by both panels. */
 @Composable
@@ -120,10 +124,27 @@ fun MainScreen() {
     val settingsViewModel = viewModel<SettingsViewModel>(factory = viewModelFactory { initializer { koin.get<SettingsViewModel>() } })
     val historyViewModel = viewModel<HistoryViewModel>(factory = viewModelFactory { initializer { koin.get<HistoryViewModel>() } })
     var screen by rememberSaveable { mutableStateOf(AppScreen.BROWSER) }
+    val analysisViewModel = viewModel<SizeAnalysisViewModel>(factory = viewModelFactory { initializer { koin.get<SizeAnalysisViewModel>() } })
+    // What is being analysed is kept apart from the view model so that the screen can start again after the process died.
+    var analysisPath by rememberSaveable { mutableStateOf<String?>(null) }
+    var analysisLabel by rememberSaveable { mutableStateOf("") }
+    fun startAnalysis(path: String, label: String) {
+        analysisPath = path
+        analysisLabel = label
+        screen = AppScreen.ANALYSIS
+        analysisViewModel.start(path, label)
+    }
+    fun leaveAnalysis() {
+        analysisViewModel.reset()
+        analysisPath = null
+        screen = AppScreen.BROWSER
+    }
     var showAddAccount by rememberSaveable { mutableStateOf(false) }
     var accountToRemove by remember { mutableStateOf<StorageVolume?>(null) }
     var accountToRename by remember { mutableStateOf<StorageVolume?>(null) }
-    BackHandler(enabled = screen != AppScreen.BROWSER) { screen = AppScreen.BROWSER }
+    BackHandler(enabled = screen != AppScreen.BROWSER && screen != AppScreen.ANALYSIS) { screen = AppScreen.BROWSER }
+    // Back goes up one folder inside the analysis first, and only then leaves it.
+    BackHandler(enabled = screen == AppScreen.ANALYSIS) { if (!analysisViewModel.up()) leaveAnalysis() }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val panels = state.panels.map { id -> key(id) { PanelEntry(id, rememberBrowserViewModel(id, viewModel)) } }
@@ -195,6 +216,10 @@ fun MainScreen() {
                         screen = AppScreen.SETTINGS
                         scope.launch { drawerState.close() }
                     },
+                    onAnalyze = { volume ->
+                        startAnalysis(volume.rootPath, volume.label)
+                        scope.launch { drawerState.close() }
+                    },
                     onEject = {
                         try {
                             context.startActivity(KoinPlatform.getKoin().get<IntentFactory>().ejectSettings())
@@ -225,7 +250,32 @@ fun MainScreen() {
                                 viewModel.closePanel(id, panels.firstOrNull { it.id == id }?.viewModel?.state?.value?.currentPath)
                             },
                             onOpenDrawer = { scope.launch { drawerState.open() } },
+                            onAnalyze = ::startAnalysis,
                         )
+                        AppScreen.ANALYSIS -> {
+                            val analysis by analysisViewModel.state.collectAsStateWithLifecycle()
+                            LaunchedEffect(analysis) {
+                                // After the process died the view model is empty again: start over, or leave if nothing was being analysed.
+                                if (analysis is SizeAnalysisState.Idle) {
+                                    analysisPath?.let { analysisViewModel.start(it, analysisLabel) } ?: run { screen = AppScreen.BROWSER }
+                                }
+                            }
+                            SizeAnalysisScreen(
+                                state = analysis,
+                                onBack = { if (!analysisViewModel.up()) leaveAnalysis() },
+                                onOpen = analysisViewModel::open,
+                                onCancel = ::leaveAnalysis,
+                                onRetry = analysisViewModel::start,
+                                onShowInPanel = { item ->
+                                    panels.firstOrNull { it.id == state.activePanel }?.viewModel?.onEvent(BrowserEvent.Reveal(item))
+                                    leaveAnalysis()
+                                },
+                                onOpenInPanel = { item ->
+                                    panels.firstOrNull { it.id == state.activePanel }?.viewModel?.onEvent(BrowserEvent.Navigate(item.path))
+                                    leaveAnalysis()
+                                },
+                            )
+                        }
                         AppScreen.HISTORY -> {
                             val entries by historyViewModel.entries.collectAsStateWithLifecycle()
                             val running by historyViewModel.transfer.collectAsStateWithLifecycle()
@@ -453,6 +503,7 @@ private fun DrawerContent(
     onRenameAccount: (StorageVolume) -> Unit,
     onShowHistory: () -> Unit,
     onShowSettings: () -> Unit,
+    onAnalyze: (StorageVolume) -> Unit,
     onEject: () -> Unit,
 ) {
     ModalDrawerSheet {
@@ -470,9 +521,16 @@ private fun DrawerContent(
                     badge = {
                         if (volume.kind == StorageKind.NETWORK) {
                             AccountMenu(onRename = { onRenameAccount(volume) }, onRemove = { onRemoveAccount(volume) })
-                        } else if (volume.isEjectable) {
-                            IconButton(onClick = onEject) {
-                                Icon(Icons.Filled.Eject, contentDescription = stringResource(R.string.drawer_eject))
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { onAnalyze(volume) }) {
+                                    Icon(Icons.Filled.DataUsage, contentDescription = stringResource(R.string.action_analyze_size))
+                                }
+                                if (volume.isEjectable) {
+                                    IconButton(onClick = onEject) {
+                                        Icon(Icons.Filled.Eject, contentDescription = stringResource(R.string.drawer_eject))
+                                    }
+                                }
                             }
                         }
                     },

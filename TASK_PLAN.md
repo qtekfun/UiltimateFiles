@@ -67,3 +67,4 @@
     cancelling.
   - [x] 8.7 Reworked in-app copy bar and a refined interface: Settings in grouped cards with an About section, a richer
     drawer, tonal file icons and proper empty and error states.
+  - [x] 8.8 Size analysis (`SizeAnalyzer`, `SizeAnalysisViewModel`, `SizeAnalysisScreen`) from a panel's menu and from the drawer.

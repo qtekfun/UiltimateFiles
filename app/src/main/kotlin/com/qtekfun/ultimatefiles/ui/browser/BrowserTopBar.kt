@@ -59,6 +59,8 @@ fun BrowserTopBar(
     onSelectAll: () -> Unit,
     onToggleViewMode: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Null where the folder cannot be analysed (a server, an archive). */
+    onAnalyze: (() -> Unit)? = null,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
     var menuOpen by rememberSaveable { mutableStateOf(false) }
@@ -151,6 +153,13 @@ fun BrowserTopBar(
                         text = { Text(stringResource(R.string.action_select_all)) },
                         onClick = { menuOpen = false; onSelectAll() },
                     )
+                    if (onAnalyze != null) {
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_analyze_size)) },
+                            onClick = { menuOpen = false; onAnalyze() },
+                        )
+                    }
                 }
             }
         },

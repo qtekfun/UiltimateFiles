@@ -64,6 +64,8 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
 - Grid view, opening APKs, exporting/importing settings and accounts.
 - Interrupted Nextcloud uploads (for example when the app dies) resume when the copy is repeated: only the chunks that
   changed are sent again.
+- Size analysis of a folder or a volume (TreeSize style): sorted entries with their share of the folder, drill-down, and showing an
+  entry in a panel to act on it. Not available on servers or inside archives.
 - Thumbnails of photos and videos in the list and the grid (network accounts optional).
 - Dynamic panels with a panel bar, in portrait and landscape.
 - Renaming network accounts, an About section in Settings and a reworked in-app copy bar.
