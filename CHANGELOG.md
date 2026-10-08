@@ -4,6 +4,8 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-08
+
 ### Added
 - **Analyze size**, in a panel's menu (for its folder) and on each volume in the drawer: where the space went, with the entries from the biggest down, their share of the folder and a bar, and a tap to go down into a folder. A long press shows an entry in a panel, selected, to copy, move or delete it. It works on this device (internal storage, USB, SD, added folders), not on servers or in archives.
 

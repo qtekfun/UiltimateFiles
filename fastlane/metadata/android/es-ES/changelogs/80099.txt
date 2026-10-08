@@ -1,0 +1,2 @@
+- Analizar tamaño: mira dónde se fue el espacio en una carpeta o en un volumen entero, de mayor a menor, y muestra un elemento en un panel para copiarlo, moverlo o borrarlo
+- Un dibujo más pequeño en el icono de la app
