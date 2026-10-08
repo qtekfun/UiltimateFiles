@@ -5,8 +5,17 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Scaled to about 40% of the icon's width: a launcher masks the 108dp canvas down to its central 72dp or so, and
+         the glyph used to reach the edge of that mask. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="55"
+        android:scaleX="0.68"
+        android:scaleY="0.68"
+        android:translateY="-1">
     <path
         android:fillColor="#FFFFFF"
         android:fillType="evenOdd"
         android:pathData="M28,32h19l6,8h27c2.8,0 5,2.2 5,5v27c0,2.8 -2.2,5 -5,5H28c-2.8,0 -5,-2.2 -5,-5V37c0,-2.8 2.2,-5 5,-5zM52.5,46h3v24h-3z" />
+    </group>
 </vector>
