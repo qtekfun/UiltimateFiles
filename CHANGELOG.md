@@ -7,6 +7,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 ### Added
 - **Analyze size**, in a panel's menu (for its folder) and on each volume in the drawer: where the space went, with the entries from the biggest down, their share of the folder and a bar, and a tap to go down into a folder. A long press shows an entry in a panel, selected, to copy, move or delete it. It works on this device (internal storage, USB, SD, added folders), not on servers or in archives.
 
+### Changed
+- App icon: the folder drawing is smaller inside the icon, so it no longer touches the edge of the shape the launcher cuts out and has room to breathe, in the launcher, the F-Droid listing and the app's own header.
+
 ## [0.7.0] - 2026-10-08
 
 ### Changed
