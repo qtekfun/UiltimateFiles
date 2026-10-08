@@ -295,4 +295,12 @@
         <item quantity="one">Otros (%1$d elemento)</item>
         <item quantity="other">Otros (%1$d elementos)</item>
     </plurals>
+    <string name="account_edit_title">Editar cuenta</string>
+    <string name="account_save">Guardar</string>
+    <string name="account_edit">Editar</string>
+    <string name="account_secret_keep_hint">Déjala vacía para conservar la actual</string>
+    <string name="account_key_replace">Se conserva la clave guardada · elegir otro archivo</string>
+    <string name="account_use_password">Usar una contraseña en su lugar</string>
+    <string name="account_signin_again">Iniciar sesión de nuevo</string>
+    <string name="account_edit_hint">Si cambias la dirección, volverás a iniciar sesión en el navegador. Déjala igual para cambiar solo el nombre, o inicia sesión de nuevo si el acceso dejó de funcionar.</string>
 </resources>

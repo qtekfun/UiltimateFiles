@@ -91,6 +91,7 @@ import com.qtekfun.ultimatefiles.ui.browser.BrowserViewModel
 import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisScreen
 import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisState
 import com.qtekfun.ultimatefiles.ui.analysis.SizeAnalysisViewModel
+import com.qtekfun.ultimatefiles.ui.components.AccountEdit
 import com.qtekfun.ultimatefiles.ui.components.AddAccountDialog
 import com.qtekfun.ultimatefiles.ui.components.BatteryHintDialog
 import com.qtekfun.ultimatefiles.ui.components.InterruptedTransfersDialog
@@ -142,6 +143,7 @@ fun MainScreen() {
     var showAddAccount by rememberSaveable { mutableStateOf(false) }
     var accountToRemove by remember { mutableStateOf<StorageVolume?>(null) }
     var accountToRename by remember { mutableStateOf<StorageVolume?>(null) }
+    var accountToEdit by remember { mutableStateOf<EditableAccount?>(null) }
     BackHandler(enabled = screen != AppScreen.BROWSER && screen != AppScreen.ANALYSIS) { screen = AppScreen.BROWSER }
     // Back goes up one folder inside the analysis first, and only then leaves it.
     BackHandler(enabled = screen == AppScreen.ANALYSIS) { if (!analysisViewModel.up()) leaveAnalysis() }
@@ -165,6 +167,16 @@ fun MainScreen() {
                 duration = SnackbarDuration.Short,
             )
             if (result == SnackbarResult.ActionPerformed) viewModel.restorePanel(closed)
+        }
+    }
+
+    // Panels showing an account that was just edited reload it, so they do not keep using the old connection's listing.
+    LaunchedEffect(viewModel) {
+        viewModel.accountChanges.collect { id ->
+            panels.forEach { entry ->
+                val path = entry.viewModel.state.value.currentPath.orEmpty()
+                if (listOf("dav", "sftp", "smb").any { path.startsWith("$it://$id") }) entry.viewModel.onEvent(BrowserEvent.Refresh)
+            }
         }
     }
 
@@ -208,6 +220,7 @@ fun MainScreen() {
                     },
                     onRemoveAccount = { accountToRemove = it },
                         onRenameAccount = { accountToRename = it },
+                        onEditAccount = { volume -> viewModel.loadForEdit(volume) { accountToEdit = it } },
                     onShowHistory = {
                         screen = AppScreen.HISTORY
                         scope.launch { drawerState.close() }
@@ -356,6 +369,28 @@ fun MainScreen() {
             onDismiss = { showAddAccount = false },
         )
     }
+    accountToEdit?.let { editable ->
+        AddAccountDialog(
+            onConnect = viewModel::connectAccount,
+            onConnectSftp = viewModel::connectSftp,
+            onConnectSmb = viewModel::connectSmb,
+            onCancel = viewModel::cancelConnect,
+            onDismiss = { accountToEdit = null },
+            edit = AccountEdit(
+                account = editable.account,
+                usesKey = editable.usesKey,
+                onUpdateNextcloud = { server, label, trust, signIn, openBrowser, onDone ->
+                    viewModel.updateNextcloud(editable.account, server, label, trust, signIn, openBrowser, onDone)
+                },
+                onUpdateSftp = { host, port, user, secret, key, useKey, label, pinned, onDone ->
+                    viewModel.updateSftp(editable.account, host, port, user, secret, key, useKey, label, pinned, onDone)
+                },
+                onUpdateSmb = { host, port, share, domain, user, password, label, onDone ->
+                    viewModel.updateSmb(editable.account, host, port, share, domain, user, password, label, onDone)
+                },
+            ),
+        )
+    }
     accountToRename?.let { volume ->
         NameInputDialog(
             title = R.string.action_rename,
@@ -418,13 +453,21 @@ private fun rememberBrowserViewModel(panel: PanelId, main: MainViewModel): Brows
 
 /** The three-dot menu of a network account in the drawer. */
 @Composable
-private fun AccountMenu(onRename: () -> Unit, onRemove: () -> Unit) {
+private fun AccountMenu(onEdit: () -> Unit, onRename: () -> Unit, onRemove: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) {
             Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.action_more))
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.account_edit)) },
+                leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                onClick = {
+                    open = false
+                    onEdit()
+                },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_rename)) },
                 leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
@@ -501,6 +544,7 @@ private fun DrawerContent(
     onAddAccount: () -> Unit,
     onRemoveAccount: (StorageVolume) -> Unit,
     onRenameAccount: (StorageVolume) -> Unit,
+    onEditAccount: (StorageVolume) -> Unit,
     onShowHistory: () -> Unit,
     onShowSettings: () -> Unit,
     onAnalyze: (StorageVolume) -> Unit,
@@ -520,7 +564,7 @@ private fun DrawerContent(
                     icon = { Icon(volume.icon(), contentDescription = null) },
                     badge = {
                         if (volume.kind == StorageKind.NETWORK) {
-                            AccountMenu(onRename = { onRenameAccount(volume) }, onRemove = { onRemoveAccount(volume) })
+                            AccountMenu(onEdit = { onEditAccount(volume) }, onRename = { onRenameAccount(volume) }, onRemove = { onRemoveAccount(volume) })
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { onAnalyze(volume) }) {

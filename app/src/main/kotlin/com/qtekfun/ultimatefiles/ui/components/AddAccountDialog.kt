@@ -37,6 +37,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.core.model.AccountProtocol
+import com.qtekfun.ultimatefiles.core.model.WebDavAccount
+import com.qtekfun.ultimatefiles.data.network.AccountEditing
 import com.qtekfun.ultimatefiles.data.network.HostKeyChangedException
 import com.qtekfun.ultimatefiles.data.network.InsecureServerException
 import com.qtekfun.ultimatefiles.data.network.UntrustedHostKeyException
@@ -47,6 +50,45 @@ import com.qtekfun.ultimatefiles.data.network.LoginFlowExpiredException
 import com.qtekfun.ultimatefiles.data.network.WebDavException
 
 @OptIn(ExperimentalLayoutApi::class)
+/**
+ * What the form needs to change an account that already exists. The callbacks are bound to [account] by the caller, so
+ * the account keeps its id.
+ */
+class AccountEdit(
+    val account: WebDavAccount,
+    /** The stored secret of an SFTP account is a private key (never handed to the form itself). */
+    val usesKey: Boolean,
+    val onUpdateNextcloud: (
+        serverUrl: String,
+        label: String,
+        trust: TrustChoice,
+        signIn: Boolean,
+        openBrowser: (String) -> Unit,
+        onDone: (Result<Unit>) -> Unit,
+    ) -> Unit,
+    val onUpdateSftp: (
+        host: String,
+        port: Int,
+        username: String,
+        typedSecret: String,
+        newKeyPem: String?,
+        useKey: Boolean,
+        label: String,
+        pinnedFingerprint: String?,
+        onDone: (Result<Unit>) -> Unit,
+    ) -> Unit,
+    val onUpdateSmb: (
+        host: String,
+        port: Int,
+        share: String,
+        domain: String,
+        username: String,
+        typedPassword: String,
+        label: String,
+        onDone: (Result<Unit>) -> Unit,
+    ) -> Unit,
+)
+
 /**
  * Asks for the address of a Nextcloud server and signs in with its Login Flow: the approval happens in the browser
  * and the app receives an app password, so no password is ever typed here.
@@ -81,24 +123,38 @@ fun AddAccountDialog(
     ) -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit,
+    /** Set to change an existing account with the same form: the fields start filled in and the secrets empty. */
+    edit: AccountEdit? = null,
 ) {
-    var kind by remember { mutableStateOf(AccountKind.NEXTCLOUD) }
+    val form = remember(edit) { edit?.let { AccountEditing.formOf(it.account) } }
+    var kind by remember {
+        mutableStateOf(
+            when (form?.protocol) {
+                AccountProtocol.SFTP -> AccountKind.SFTP
+                AccountProtocol.SMB -> AccountKind.SMB
+                else -> AccountKind.NEXTCLOUD
+            },
+        )
+    }
     val sftp = kind == AccountKind.SFTP
     val smb = kind == AccountKind.SMB
-    var share by remember { mutableStateOf("") }
-    var domain by remember { mutableStateOf("") }
-    var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("22") }
-    var user by remember { mutableStateOf("") }
+    var share by remember { mutableStateOf(form?.share.orEmpty()) }
+    var domain by remember { mutableStateOf(form?.domain.orEmpty()) }
+    var host by remember { mutableStateOf(form?.host.orEmpty()) }
+    var port by remember { mutableStateOf(form?.port?.takeIf { it > 0 }?.toString() ?: "22") }
+    var user by remember { mutableStateOf(form?.username.orEmpty()) }
     var password by remember { mutableStateOf("") }
     var hostKey by remember { mutableStateOf<UntrustedHostKeyException?>(null) }
-    var server by remember { mutableStateOf("") }
-    var label by remember { mutableStateOf("") }
+    var server by remember { mutableStateOf(form?.server.orEmpty()) }
+    var label by remember { mutableStateOf(form?.label.orEmpty()) }
+    // Editing an account that signs in with a key: the stored key is kept unless another is picked or a password is chosen.
+    var switchedToPassword by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Throwable?>(null) }
     var prompt by remember { mutableStateOf<TrustPrompt?>(null) }
     var keyPem by remember { mutableStateOf<String?>(null) }
     var keyName by remember { mutableStateOf("") }
+    val useKey = keyPem != null || (edit?.usesKey == true && !switchedToPassword)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pickKey = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -111,6 +167,7 @@ fun AddAccountDialog(
                 }
                 if (text != null && text.trimStart().startsWith("-----BEGIN")) {
                     keyPem = text
+                    switchedToPassword = false
                     keyName = uri.lastPathSegment?.substringAfterLast('/').orEmpty()
                     error = null
                 } else {
@@ -121,10 +178,11 @@ fun AddAccountDialog(
     }
     val uriHandler = LocalUriHandler.current
 
-    fun connect(choice: TrustChoice) {
+    /** [signIn] false only when editing and the address is the same: then just the name is saved, with no new login. */
+    fun connect(choice: TrustChoice, signIn: Boolean = true) {
         busy = true
         error = null
-        onConnect(server, label, choice, { url -> uriHandler.openUri(url) }) { result ->
+        val done: (Result<Unit>) -> Unit = { result ->
             busy = false
             result.fold(
                 onSuccess = { onDismiss() },
@@ -138,6 +196,8 @@ fun AddAccountDialog(
                 },
             )
         }
+        val openBrowser: (String) -> Unit = { url -> uriHandler.openUri(url) }
+        if (edit != null) edit.onUpdateNextcloud(server, label, choice, signIn, openBrowser, done) else onConnect(server, label, choice, openBrowser, done)
     }
 
     fun connectSftp(pinned: String?) {
@@ -145,7 +205,7 @@ fun AddAccountDialog(
         error = null
         // A key travels as the account's secret: the key text, then the passphrase after a NUL character.
         val secret = keyPem?.let { if (password.isEmpty()) it else it + "\u0000" + password } ?: password
-        onConnectSftp(host, port.toIntOrNull() ?: 0, user, secret, label, pinned) { result ->
+        val done: (Result<Unit>) -> Unit = { result ->
             busy = false
             result.fold(
                 onSuccess = { onDismiss() },
@@ -154,14 +214,26 @@ fun AddAccountDialog(
                 },
             )
         }
+        val portNumber = port.toIntOrNull() ?: 0
+        if (edit != null) {
+            edit.onUpdateSftp(host, portNumber, user, password, keyPem, useKey, label, pinned, done)
+        } else {
+            onConnectSftp(host, portNumber, user, secret, label, pinned, done)
+        }
     }
 
     fun connectSmb() {
         busy = true
         error = null
-        onConnectSmb(host, port.toIntOrNull() ?: 0, share, domain, user, password, label) { result ->
+        val done: (Result<Unit>) -> Unit = { result ->
             busy = false
             result.fold(onSuccess = { onDismiss() }, onFailure = { error = it })
+        }
+        val portNumber = port.toIntOrNull() ?: 0
+        if (edit != null) {
+            edit.onUpdateSmb(host, portNumber, share, domain, user, password, label, done)
+        } else {
+            onConnectSmb(host, portNumber, share, domain, user, password, label, done)
         }
     }
 
@@ -202,11 +274,11 @@ fun AddAccountDialog(
 
     AlertDialog(
         onDismissRequest = ::close,
-        title = { Text(stringResource(R.string.account_title)) },
+        title = { Text(stringResource(if (edit != null) R.string.account_edit_title else R.string.account_title)) },
         text = {
             Column(modifier = Modifier.verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // The three labels are longer than the dialog is wide, so the chips wrap instead of being cut off.
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (edit == null) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = kind == AccountKind.NEXTCLOUD, enabled = !busy, onClick = { kind = AccountKind.NEXTCLOUD }, label = { Text(stringResource(R.string.account_type_nextcloud)) })
                     FilterChip(selected = sftp, enabled = !busy, onClick = { kind = AccountKind.SFTP; port = "22" }, label = { Text(stringResource(R.string.account_type_sftp)) })
                     FilterChip(selected = smb, enabled = !busy, onClick = { kind = AccountKind.SMB; port = "445" }, label = { Text(stringResource(R.string.account_type_smb)) })
@@ -264,7 +336,12 @@ fun AddAccountDialog(
                         value = password,
                         onValueChange = { password = it },
                         enabled = !busy,
-                        label = { Text(stringResource(if (sftp && keyPem != null) R.string.account_key_passphrase else R.string.account_password)) },
+                        label = { Text(stringResource(if (sftp && useKey) R.string.account_key_passphrase else R.string.account_password)) },
+                        supportingText = if (edit != null) {
+                            { Text(stringResource(R.string.account_secret_keep_hint)) }
+                        } else {
+                            null
+                        },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -273,12 +350,25 @@ fun AddAccountDialog(
                     if (sftp) {
                         TextButton(enabled = !busy, onClick = { pickKey.launch(arrayOf("*/*")) }) {
                             Text(
-                                if (keyPem == null) stringResource(R.string.account_key_pick) else stringResource(R.string.account_key_loaded, keyName),
+                                when {
+                                    keyPem != null -> stringResource(R.string.account_key_loaded, keyName)
+                                    useKey -> stringResource(R.string.account_key_replace)
+                                    else -> stringResource(R.string.account_key_pick)
+                                },
                             )
+                        }
+                        if (edit?.usesKey == true && useKey) {
+                            // Leaving a key for a password: the password field then holds the new password.
+                            TextButton(enabled = !busy, onClick = { switchedToPassword = true; keyPem = null }) {
+                                Text(stringResource(R.string.account_use_password))
+                            }
                         }
                     }
                 } else {
-                    Text(stringResource(R.string.account_hint), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(if (edit != null) R.string.account_edit_hint else R.string.account_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     OutlinedTextField(
                         value = server,
                         onValueChange = { server = it },
@@ -289,6 +379,13 @@ fun AddAccountDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    if (edit != null && AccountEditing.sameServer(edit.account.baseUrl, server)) {
+                        // The address is the same, so nothing needs authorising again unless the login stopped working.
+                        TextButton(
+                            enabled = !busy,
+                            onClick = { connect(AccountEditing.trustFor(edit.account, server), signIn = true) },
+                        ) { Text(stringResource(R.string.account_signin_again)) }
+                    }
                 }
                 OutlinedTextField(
                     value = label,
@@ -312,21 +409,38 @@ fun AddAccountDialog(
             }
         },
         confirmButton = {
+            // Editing a Nextcloud account at the same address needs no new login: only the name is saved.
+            val sameServer = edit != null && AccountEditing.sameServer(edit.account.baseUrl, server)
             TextButton(
                 enabled = !busy && when (kind) {
                     AccountKind.NEXTCLOUD -> server.isNotBlank()
-                    AccountKind.SFTP -> host.isNotBlank() && user.isNotBlank() && (password.isNotEmpty() || keyPem != null)
-                    AccountKind.SMB -> host.isNotBlank() && share.isNotBlank() && user.isNotBlank() && password.isNotEmpty()
+                    AccountKind.SFTP -> host.isNotBlank() && user.isNotBlank() && if (edit != null) {
+                        // Leaving a key for a password is the one change that cannot keep the stored secret.
+                        !(edit.usesKey && !useKey && password.isEmpty())
+                    } else {
+                        password.isNotEmpty() || keyPem != null
+                    }
+                    AccountKind.SMB -> host.isNotBlank() && share.isNotBlank() && user.isNotBlank() && (edit != null || password.isNotEmpty())
                 },
                 onClick = {
                     when (kind) {
-                        AccountKind.NEXTCLOUD -> connect(TrustChoice())
-                        AccountKind.SFTP -> connectSftp(null)
+                        AccountKind.NEXTCLOUD ->
+                            if (edit != null) connect(AccountEditing.trustFor(edit.account, server), signIn = !sameServer) else connect(TrustChoice())
+                        // The pinned host key only holds for the same host and port; another server is asked about again.
+                        AccountKind.SFTP -> connectSftp(edit?.let { AccountEditing.sftpPinFor(it.account, host, port.toIntOrNull() ?: 0) })
                         AccountKind.SMB -> connectSmb()
                     }
                 },
             ) {
-                Text(stringResource(if (kind == AccountKind.NEXTCLOUD) R.string.account_connect else R.string.account_connect_credentials))
+                Text(
+                    stringResource(
+                        when {
+                            edit != null && (kind != AccountKind.NEXTCLOUD || sameServer) -> R.string.account_save
+                            kind == AccountKind.NEXTCLOUD -> R.string.account_connect
+                            else -> R.string.account_connect_credentials
+                        },
+                    ),
+                )
             }
         },
         dismissButton = {
