@@ -1,0 +1,2 @@
+- Analyze size: see where the space went in a folder or a whole volume, biggest first, and show an entry in a panel to copy, move or delete it
+- A smaller drawing in the app icon
