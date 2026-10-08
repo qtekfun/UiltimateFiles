@@ -87,14 +87,23 @@ val appModule = module {
     single { WebDavClient() }
     single<UploadResumeStore> { FileUploadResumeStore(File(androidContext().filesDir, "upload-resume.tsv")) }
     single { WebDavFileSystemRepository(accounts = get(), client = get(), resumeStore = get()) }
-    single { WebDavAccountService(accounts = get(), client = get()) }
+    single {
+        val scope = this
+        WebDavAccountService(accounts = get(), client = get(), onAccountChanged = { scope.get<WebDavFileSystemRepository>().forget(it) })
+    }
     single { SshConnector() }
     single { IncomingFiles(androidContext()) }
     single { SftpFileSystemRepository(accounts = get(), connector = get()) }
-    single { SftpAccountService(accounts = get(), connector = get()) }
+    single {
+        val scope = this
+        SftpAccountService(accounts = get(), connector = get(), onAccountChanged = { scope.get<SftpFileSystemRepository>().forget(it) })
+    }
     single { SmbConnector() }
     single { SmbFileSystemRepository(accounts = get(), connector = get()) }
-    single { SmbAccountService(accounts = get(), connector = get()) }
+    single {
+        val scope = this
+        SmbAccountService(accounts = get(), connector = get(), onAccountChanged = { scope.get<SmbFileSystemRepository>().forget(it) })
+    }
     single {
         val scope = this
         ArchiveFileSystemRepository(source = { scope.get<FileSystemRepository>() }, cacheDir = File(androidContext().cacheDir, "archives"))

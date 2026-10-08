@@ -116,6 +116,11 @@ class WebDavFileSystemRepository(
 
     private val clients = java.util.concurrent.ConcurrentHashMap<String, WebDavClient>()
 
+    /** Drops the clients kept for an account whose data has just been changed (they are keyed by its certificate pin). */
+    fun forget(accountId: String) {
+        clients.keys.removeAll { it.startsWith("$accountId|") }
+    }
+
     /** The client for one account: with its pinned certificate when it has one. */
     private fun clientFor(account: WebDavAccount): WebDavClient =
         clients.getOrPut("${account.id}|${account.pinnedCertSha256}") { client.pinnedTo(account.pinnedCertSha256) }

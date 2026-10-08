@@ -24,6 +24,7 @@ import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -41,6 +42,11 @@ private class MemoryAccounts : AccountRepository {
         passwords[account.id] = password
     }
     override suspend fun remove(accountId: String) { state.value = state.value.filterNot { it.id == accountId } }
+    override suspend fun update(account: WebDavAccount, password: String?) {
+        if (state.value.none { it.id == account.id }) return
+        state.value = state.value.map { if (it.id == account.id) account else it }
+        if (password != null) passwords[account.id] = password
+    }
     override suspend fun rename(accountId: String, label: String) { state.value = state.value.map { if (it.id == accountId) it.copy(label = label) else it } }
 }
 
@@ -53,13 +59,15 @@ class SftpTest {
     private val accounts = MemoryAccounts()
     private val connector = SshConnector.forJvm()
 
+    @Volatile private var validPassword = "secret"
+
     @Before
     fun setUp() {
         root = tmp.newFolder("server-root")
         server = SshServer.setUpDefaultServer().apply {
             port = 0
             keyPairProvider = SimpleGeneratorHostKeyProvider(tmp.newFile("hostkey.ser").toPath())
-            setPasswordAuthenticator { user, password, _ -> user == "alice" && password == "secret" }
+            setPasswordAuthenticator { user, password, _ -> user == "alice" && password == validPassword }
             subsystemFactories = listOf(SftpSubsystemFactory())
             fileSystemFactory = VirtualFileSystemFactory(root.toPath())
             start()
@@ -201,5 +209,103 @@ class SftpTest {
 
         assertEquals(AccountProtocol.SFTP, account.protocol)
         assertEquals(pem, accounts.passwordOf(account.id))
+    }
+
+    // --- editing an account ---------------------------------------------------------------------
+
+    private val changed = mutableListOf<String>()
+    private val editingService get() = SftpAccountService(accounts, connector) { changed += it }
+
+    @Test
+    fun `editing keeps the id and the stored password when none is typed`() = runTest {
+        val account = connectTrusted()
+
+        val result = editingService.update(
+            account, "127.0.0.1", server.port, "alice", typedSecret = "", newKeyPem = null, useKey = false,
+            label = "Renamed", pinnedFingerprint = AccountEditing.sftpPinFor(account, "127.0.0.1", server.port),
+        )
+
+        val saved = result.getOrThrow()
+        assertEquals(account.id, saved.id)
+        assertEquals("Renamed", saved.label)
+        assertEquals(saved, accounts.accounts.first().single())
+        assertEquals("secret", accounts.passwordOf(account.id))
+        assertEquals(account.pinnedCertSha256, saved.pinnedCertSha256)
+        assertEquals(listOf(account.id), changed)
+    }
+
+    @Test
+    fun `editing with a new password checks it and replaces the stored one`() = runTest {
+        val account = connectTrusted()
+        validPassword = "secret2"
+
+        val result = editingService.update(
+            account, "127.0.0.1", server.port, "alice", typedSecret = "secret2", newKeyPem = null, useKey = false,
+            label = "Lab", pinnedFingerprint = account.pinnedCertSha256,
+        )
+
+        assertTrue(result.isSuccess)
+        assertEquals("secret2", accounts.passwordOf(account.id))
+    }
+
+    @Test
+    fun `a failed check leaves the stored account exactly as it was`() = runTest {
+        val account = connectTrusted()
+
+        val result = editingService.update(
+            account, "127.0.0.1", server.port, "mallory", typedSecret = "", newKeyPem = null, useKey = false,
+            label = "Broken", pinnedFingerprint = account.pinnedCertSha256,
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(account, accounts.accounts.first().single())
+        assertEquals("secret", accounts.passwordOf(account.id))
+        assertTrue(changed.isEmpty())
+    }
+
+    @Test
+    fun `another host key than the pinned one is refused and nothing changes`() = runTest {
+        val account = connectTrusted()
+
+        val result = editingService.update(
+            account, "127.0.0.1", server.port, "alice", typedSecret = "", newKeyPem = null, useKey = false,
+            label = "Lab", pinnedFingerprint = "SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        )
+
+        assertTrue(result.exceptionOrNull() is HostKeyChangedException)
+        assertEquals(account, accounts.accounts.first().single())
+    }
+
+    @Test
+    fun `a different host starts with nothing pinned, asks, and then keeps the id`() = runTest {
+        val account = connectTrusted()
+        val pin = AccountEditing.sftpPinFor(account, "localhost", server.port)
+        assertNull(pin)
+
+        val asked = editingService.update(
+            account, "localhost", server.port, "alice", typedSecret = "", newKeyPem = null, useKey = false, label = "Lab", pinnedFingerprint = pin,
+        )
+        val fingerprint = (asked.exceptionOrNull() as UntrustedHostKeyException).fingerprint
+        assertEquals("the old account stays until the new host key is confirmed", account, accounts.accounts.first().single())
+
+        val saved = editingService.update(
+            account, "localhost", server.port, "alice", typedSecret = "", newKeyPem = null, useKey = false, label = "Lab", pinnedFingerprint = fingerprint,
+        ).getOrThrow()
+
+        assertEquals(account.id, saved.id)
+        assertEquals("sftp://localhost:${server.port}", saved.baseUrl)
+        assertEquals(fingerprint, saved.pinnedCertSha256)
+    }
+
+    @Test
+    fun `leaving a key for a password needs a password and changes nothing without one`() = runTest {
+        val pem = "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n"
+        val keyed = WebDavAccount("k", "Key", "sftp://127.0.0.1:${server.port}", "alice", pinnedCertSha256 = "SHA256:x", protocol = AccountProtocol.SFTP)
+        accounts.add(keyed, pem)
+
+        val result = editingService.update(keyed, "127.0.0.1", server.port, "alice", "", null, useKey = false, label = "Key", pinnedFingerprint = "SHA256:x")
+
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+        assertEquals(pem, accounts.passwordOf("k"))
     }
 }

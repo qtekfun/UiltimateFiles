@@ -201,8 +201,11 @@ class SftpFileSystemRepository(
         return ssh
     }
 
-    private fun drop(account: WebDavAccount) {
-        connections.remove(account.id)?.let { runCatching { it.close() } }
+    private fun drop(account: WebDavAccount) = forget(account.id)
+
+    /** Closes the connection kept for an account whose data has just been changed, so the next call uses the new data. */
+    fun forget(accountId: String) {
+        connections.remove(accountId)?.let { runCatching { it.close() } }
     }
 
     /** The account's home directory joined with [relative]; the home is asked once per channel, which is cheap. */

@@ -222,8 +222,11 @@ class SmbFileSystemRepository(
         return connector.connect(host, port, share, domain, user, password).also { connections[account.id] = it }
     }
 
-    private fun drop(account: WebDavAccount) {
-        connections.remove(account.id)?.close()
+    private fun drop(account: WebDavAccount) = forget(account.id)
+
+    /** Closes the connection kept for an account whose data has just been changed, so the next call uses the new data. */
+    fun forget(accountId: String) {
+        connections.remove(accountId)?.close()
     }
 
     private fun isDirectory(attributes: Long) = EnumWithValue.EnumUtils.isSet(attributes, FileAttributes.FILE_ATTRIBUTE_DIRECTORY)
