@@ -113,10 +113,20 @@ Builds:
       - update-java-alternatives -a
     gradle:
       - yes
+  - versionName: 0.10.0
+    versionCode: 100099
+    commit: b526b5c54a73f1f25630939cd5f24d0ae735cf7f
+    subdir: app
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-21-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - yes
 
 AllowedAPKSigningKeys: 3d7400fcfd32758d117bb79f86fdda8b007f058966c16c1bde8d97143317b2b8
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-CurrentVersion: 0.9.0
-CurrentVersionCode: 90099
+CurrentVersion: 0.10.0
+CurrentVersionCode: 100099
