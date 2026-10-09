@@ -67,6 +67,14 @@ android {
         }
     }
 
+    packaging {
+        resources {
+            // The three Bouncy Castle jars (and other libraries) each carry their own copy of this licence text under
+            // the same name; one copy in the APK is enough.
+            pickFirsts += "META-INF/LICENSE.md"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -95,6 +103,13 @@ kotlin {
 }
 
 dependencies {
+    // sshj and smbj each ask for a different Bouncy Castle, and two of its modules (bcprov 1.85.2 and bcutil 1.84) carry
+    // the same classes, which the duplicate-class check refuses. One version of all three keeps them apart.
+    constraints {
+        implementation(libs.bouncycastle.prov)
+        implementation(libs.bouncycastle.pkix)
+        implementation(libs.bouncycastle.util)
+    }
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

@@ -9,14 +9,15 @@ coroutines = "1.11.0"
 datastore = "1.1.7"
 documentfile = "1.1.0"
 koin = "4.2.2"
-okhttp = "4.12.0"
-commons-compress = "1.27.1"
-xz = "1.10"
-sshj = "0.40.0"
-smbj = "0.14.0"
-slf4j = "2.0.17"
-sshd = "2.15.0"
-org-json = "20250517"
+okhttp = "5.5.0"
+commons-compress = "1.28.0"
+xz = "1.12"
+sshj = "0.41.1"
+smbj = "0.15.0"
+slf4j = "2.0.20"
+sshd = "2.20.0"
+org-json = "20260814"
+bouncycastle = "1.86"
 junit = "4.13.2"
 androidx-test-runner = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
@@ -47,6 +48,9 @@ sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
 xz = { module = "org.tukaani:xz", version.ref = "xz" }
 commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commons-compress" }
 org-json = { module = "org.json:json", version.ref = "org-json" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk18on", version.ref = "bouncycastle" }
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }

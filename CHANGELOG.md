@@ -4,6 +4,9 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+### Changed
+- Updated libraries: OkHttp 5.5, sshj 0.41.1, smbj 0.15, Commons Compress 1.28, XZ 1.12 and Bouncy Castle 1.86 (kept on one version because sshj and smbj ask for different ones).
+
 ## [0.10.0] - 2026-10-09
 
 ### Added
