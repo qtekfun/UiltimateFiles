@@ -1,0 +1,2 @@
+- Notices when a server is not available: it says why (no network, no answer, sign-in rejected, changed certificate or host key, not found), marks the account in the drawer and offers Retry and Edit account
+- Failed copies to or from a server say the reason in the notification and the history
