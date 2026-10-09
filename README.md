@@ -78,6 +78,11 @@ sent to third parties.
 - **SMB** (Windows, Samba, NAS): accounts with optional domain, user and password. **Not tested against a real server yet**
   (it compiles and its paths are unit-tested); no explicit encryption and no resuming.
 
+- **When a server is not available:** a notice says why (no network, no answer, sign-in rejected, certificate or host key
+  changed, address not found) naming the account, with **Retry** and **Edit account**; the drawer marks the account with a
+  warning until it works again, and a copy that fails for that reason says so in the notice, the history and the
+  notification. Nothing checks servers in the background: it only happens when you open, refresh or copy.
+
 ### Archives
 - Tap a **ZIP, 7z, TAR or TAR.GZ** to open it as a read-only folder, even when it lives on a remote server or inside another
   archive. Copying out of it works like any other copy.

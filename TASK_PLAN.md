@@ -69,4 +69,6 @@
     drawer, tonal file icons and proper empty and error states.
   - [x] 8.9 Editing network accounts: `AccountRepository.update`, `update` in the SFTP/SMB account services, replacing a Nextcloud
     account through the Login Flow, the edit mode of the account form and dropping cached connections (`AccountEditing`).
+  - [x] 8.10 Notices for unavailable servers: `ConnectionProblems` classifier, `ConnectionHealth`, a Snackbar with Retry and Edit
+    account, a drawer mark and the reason in failed copies, in the history and in the result notification.
   - [x] 8.8 Size analysis (`SizeAnalyzer`, `SizeAnalysisViewModel`, `SizeAnalysisScreen`) from a panel's menu and from the drawer.

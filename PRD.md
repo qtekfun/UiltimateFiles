@@ -69,6 +69,7 @@ fidelity in file operations (internal storage and USB OTG), a non-blocking backg
 - Thumbnails of photos and videos in the list and the grid (network accounts optional).
 - Dynamic panels with a panel bar, in portrait and landscape.
 - Editing network accounts in place (every field, checked before saving, id kept), renaming them, an About section in Settings and a reworked in-app copy bar.
+- Clear notices when a server is unavailable (Snackbar with Retry and Edit account, a mark on the account in the drawer, and the reason in failed copies).
 - Release pipeline: signed releases from tags, nightlies, reproducible-build check and an F-Droid recipe.
 
 ## 5. Pending / Ideas
