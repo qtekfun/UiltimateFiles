@@ -1,0 +1,1 @@
+- Librerías actualizadas (OkHttp 5, sshj, smbj, Commons Compress, XZ, Bouncy Castle); el funcionamiento de la app no cambia

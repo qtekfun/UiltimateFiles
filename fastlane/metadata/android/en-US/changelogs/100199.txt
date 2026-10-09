@@ -1,0 +1,1 @@
+- Updated libraries (OkHttp 5, sshj, smbj, Commons Compress, XZ, Bouncy Castle); nothing changes in how the app works
