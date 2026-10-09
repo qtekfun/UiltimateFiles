@@ -303,4 +303,21 @@
     <string name="account_use_password">Use a password instead</string>
     <string name="account_signin_again">Sign in again</string>
     <string name="account_edit_hint">Change the address and you will sign in again in your browser. Leave it as it is to only change the name, or sign in again if the login stopped working.</string>
+    <string name="connection_this_server">this server</string>
+    <string name="connection_problem_offline">No network connection: could not reach %1$s.</string>
+    <string name="connection_problem_no_response">No answer from %1$s. The server may be off, or its address or port changed.</string>
+    <string name="connection_problem_auth">Sign-in rejected by %1$s. Edit the account to update the user or password.</string>
+    <string name="connection_problem_identity">The identity of %1$s changed (certificate or host key), so the connection was blocked.</string>
+    <string name="connection_problem_not_found">Nothing found at the address or share of %1$s any more.</string>
+    <string name="connection_problem_other">Could not connect to %1$s: %2$s</string>
+    <string name="connection_short_offline">No network connection</string>
+    <string name="connection_short_no_response">Not responding</string>
+    <string name="connection_short_auth">Sign-in rejected</string>
+    <string name="connection_short_identity">Identity changed</string>
+    <string name="connection_short_not_found">Address not found</string>
+    <string name="connection_short_other">Connection failed</string>
+    <string name="connection_retry">Retry</string>
+    <string name="connection_edit_account">Edit account</string>
+    <string name="account_error_offline">No network connection.</string>
+    <string name="account_error_no_response">The server did not answer. Check the address and the port.</string>
 </resources>

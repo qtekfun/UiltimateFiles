@@ -41,6 +41,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblemCodec
+import com.qtekfun.ultimatefiles.ui.components.connectionMessage
+import androidx.compose.ui.platform.LocalResources
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
@@ -119,11 +122,14 @@ private fun HistoryRow(entry: HistoryEntry) {
         HistoryOperation.EXTRACT -> if (entry.itemCount == 1) R.string.history_extracted_one else R.string.history_extracted_many
     }
     val subject: Any = if (entry.itemCount == 1) entry.firstItemName else entry.itemCount
+    // A failure that was a server problem is stored as a code (see ConnectionProblemCodec); older entries hold plain text.
+    val resources = LocalResources.current
+    val error = ConnectionProblemCodec.decode(entry.error)?.let { (kind, label) -> resources.connectionMessage(kind, label) } ?: entry.error
     val details = listOfNotNull(
         entry.targetName?.let { stringResource(R.string.history_to, it) },
         formatBytes(entry.totalBytes).takeIf { entry.totalBytes > 0 },
         entry.status.label()?.let { stringResource(it) },
-        entry.error,
+        error,
         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.finishedAtMillis)),
     ).joinToString(" · ")
     ListItem(

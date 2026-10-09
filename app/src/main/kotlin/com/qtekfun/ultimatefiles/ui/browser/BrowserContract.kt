@@ -2,6 +2,7 @@ package com.qtekfun.ultimatefiles.ui.browser
 
 import androidx.annotation.StringRes
 import com.qtekfun.ultimatefiles.core.model.BreadcrumbSegment
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.HashState
 import com.qtekfun.ultimatefiles.core.model.SortField
@@ -81,4 +82,7 @@ sealed interface BrowserEffect {
     data class OpenViewer(val item: FileItem) : BrowserEffect
     data class ShareFiles(val items: List<FileItem>) : BrowserEffect
     data class Message(@StringRes val resId: Int, val detail: String? = null) : BrowserEffect
+
+    /** A server could not be used; [retryPath] is the folder that was being opened. */
+    data class ConnectionNotice(val problem: ConnectionProblem, val accountLabel: String?, val retryPath: String) : BrowserEffect
 }

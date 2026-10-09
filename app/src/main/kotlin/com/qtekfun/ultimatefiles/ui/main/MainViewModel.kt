@@ -19,7 +19,11 @@ import com.qtekfun.ultimatefiles.data.network.SftpAccountService
 import com.qtekfun.ultimatefiles.data.network.SmbAccountService
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.repository.SafFileSystemRepository
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth
 import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository
 import com.qtekfun.ultimatefiles.domain.repository.UserPreferencesRepository
 import com.qtekfun.ultimatefiles.domain.repository.VolumeChangeSource
@@ -64,6 +68,9 @@ data class MainState(
 
 enum class PanelSlot { START, END }
 
+/** A connection problem together with the name of the account it is about (null when it is not known). */
+data class NamedConnectionProblem(val problem: ConnectionProblem, val accountLabel: String?)
+
 /** A panel the user closed, kept just long enough to offer undoing it. */
 data class ClosedPanel(val index: Int, val path: String?)
 
@@ -81,12 +88,22 @@ class MainViewModel(
     private val sftpAccountService: SftpAccountService,
     private val smbAccountService: SmbAccountService,
     private val preferences: UserPreferencesRepository,
+    private val health: ConnectionHealth,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
     val state: StateFlow<MainState> = _state.asStateFlow()
 
     val transfer = coordinator.state
+
+    /** Server accounts that could not be used the last time they were, for the marks in the drawer. */
+    val unreachable: StateFlow<Map<String, ConnectionProblem>> = health.problems
+
+    /** A batch that failed because a server could not be used, with the account's name, for the in-app notice. */
+    val connectionNotices: Flow<NamedConnectionProblem> = coordinator.connectionProblems.map { problem ->
+        val label = problem.accountId?.let { id -> accountRepository.accounts.first().firstOrNull { it.id == id }?.label }
+        NamedConnectionProblem(problem, label)
+    }
     val pendingDrop = dragDrop.pendingDrop
 
     /** Copies the system stopped before they finished; the screen offers to resume or discard them. */
@@ -317,7 +334,7 @@ class MainViewModel(
             } else {
                 runCatching { accountRepository.rename(existing.id, label.trim().ifEmpty { existing.label }) }
             }
-            finishUpdate(existing.id, result, onDone)
+            finishUpdate(existing.id, result, onDone, verified = signIn)
         }
     }
 
@@ -337,7 +354,7 @@ class MainViewModel(
         loginJob = viewModelScope.launch {
             val result = sftpAccountService
                 .update(existing, host, port, username, typedSecret, newKeyPem, useKey, label, pinnedFingerprint).map { }
-            finishUpdate(existing.id, result, onDone)
+            finishUpdate(existing.id, result, onDone, verified = true)
         }
     }
 
@@ -355,12 +372,14 @@ class MainViewModel(
         loginJob?.cancel()
         loginJob = viewModelScope.launch {
             val result = smbAccountService.update(existing, host, port, share, domain, username, typedPassword, label).map { }
-            finishUpdate(existing.id, result, onDone)
+            finishUpdate(existing.id, result, onDone, verified = true)
         }
     }
 
-    private fun finishUpdate(accountId: String, result: Result<Unit>, onDone: (Result<Unit>) -> Unit) {
+    /** [verified] is true when the new data was tried against the server, which then is no longer marked as unreachable. */
+    private fun finishUpdate(accountId: String, result: Result<Unit>, onDone: (Result<Unit>) -> Unit, verified: Boolean) {
         if (result.isSuccess) {
+            if (verified) health.clear(accountId)
             refreshVolumes()
             _accountChanges.trySend(accountId)
         }
@@ -377,7 +396,9 @@ class MainViewModel(
     /** Forgets the account behind a network [volume]; nothing is deleted on the server. */
     fun removeAccount(volume: StorageVolume) {
         viewModelScope.launch {
-            accountRepository.remove(volume.id.removePrefix("dav:").removePrefix("sftp:").removePrefix("smb:"))
+            val id = volume.id.removePrefix("dav:").removePrefix("sftp:").removePrefix("smb:")
+            accountRepository.remove(id)
+            health.clear(id)
             refreshVolumes()
         }
     }

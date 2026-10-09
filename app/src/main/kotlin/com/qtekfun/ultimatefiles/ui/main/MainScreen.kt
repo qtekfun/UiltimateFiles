@@ -82,6 +82,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.qtekfun.ultimatefiles.R
+import com.qtekfun.ultimatefiles.ui.components.connectionShortReason
+import com.qtekfun.ultimatefiles.ui.components.connectionMessage
+import com.qtekfun.ultimatefiles.ui.components.ConnectionSnackbarVisuals
+import com.qtekfun.ultimatefiles.ui.components.ConnectionAwareSnackbar
+import com.qtekfun.ultimatefiles.core.util.RemoteAccounts
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
+import androidx.compose.material.icons.filled.Warning
 import com.qtekfun.ultimatefiles.core.model.PanelId
 import com.qtekfun.ultimatefiles.core.model.StorageKind
 import com.qtekfun.ultimatefiles.core.model.StorageVolume
@@ -144,12 +151,18 @@ fun MainScreen() {
     var accountToRemove by remember { mutableStateOf<StorageVolume?>(null) }
     var accountToRename by remember { mutableStateOf<StorageVolume?>(null) }
     var accountToEdit by remember { mutableStateOf<EditableAccount?>(null) }
+    val unreachable by viewModel.unreachable.collectAsStateWithLifecycle()
     BackHandler(enabled = screen != AppScreen.BROWSER && screen != AppScreen.ANALYSIS) { screen = AppScreen.BROWSER }
     // Back goes up one folder inside the analysis first, and only then leaves it.
     BackHandler(enabled = screen == AppScreen.ANALYSIS) { if (!analysisViewModel.up()) leaveAnalysis() }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val panels = state.panels.map { id -> key(id) { PanelEntry(id, rememberBrowserViewModel(id, viewModel)) } }
+    /** Opens the edit form of the account with this id (from a notice about a server that could not be used). */
+    fun editAccountById(accountId: String) {
+        val volume = state.volumes.firstOrNull { RemoteAccounts.idOfVolume(it.id) == accountId } ?: return
+        viewModel.loadForEdit(volume) { accountToEdit = it }
+    }
     val transfer by viewModel.transfer.collectAsStateWithLifecycle()
     val pendingDrop by viewModel.pendingDrop.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -167,6 +180,20 @@ fun MainScreen() {
                 duration = SnackbarDuration.Short,
             )
             if (result == SnackbarResult.ActionPerformed) viewModel.restorePanel(closed)
+        }
+    }
+
+    // A copy that failed because a server could not be used says why, and offers to edit the account.
+    LaunchedEffect(viewModel) {
+        viewModel.connectionNotices.collect { notice ->
+            snackbar.showSnackbar(
+                ConnectionSnackbarVisuals(
+                    message = resources.connectionMessage(notice.problem.kind, notice.accountLabel, notice.problem.detail),
+                    retryLabel = null,
+                    editLabel = resources.getString(R.string.connection_edit_account),
+                    accountId = notice.problem.accountId,
+                ),
+            )
         }
     }
 
@@ -211,6 +238,7 @@ fun MainScreen() {
             drawerContent = {
                 DrawerContent(
                     volumes = state.volumes,
+                    unreachable = unreachable,
                     shortcuts = state.shortcuts,
                     onOpen = ::openInActivePanel,
                     onAddStorage = { pickFolder.launch(null) },
@@ -245,7 +273,9 @@ fun MainScreen() {
         ) {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
-                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).zIndex(1f))
+                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).zIndex(1f)) { data ->
+                        ConnectionAwareSnackbar(data, onEditAccount = ::editAccountById)
+                    }
                     when (screen) {
                         AppScreen.BROWSER -> DualPanelScaffold(
                             panels = panels,
@@ -264,6 +294,7 @@ fun MainScreen() {
                             },
                             onOpenDrawer = { scope.launch { drawerState.open() } },
                             onAnalyze = ::startAnalysis,
+                            onEditAccount = ::editAccountById,
                         )
                         AppScreen.ANALYSIS -> {
                             val analysis by analysisViewModel.state.collectAsStateWithLifecycle()
@@ -538,6 +569,7 @@ private fun SpaceUsage(volume: StorageVolume) {
 @Composable
 private fun DrawerContent(
     volumes: List<StorageVolume>,
+    unreachable: Map<String, ConnectionProblem>,
     shortcuts: List<Shortcut>,
     onOpen: (String) -> Unit,
     onAddStorage: () -> Unit,
@@ -556,9 +588,28 @@ private fun DrawerContent(
             volumes.forEach { volume ->
                 NavigationDrawerItem(
                     label = {
+                        val problem = RemoteAccounts.idOfVolume(volume.id)?.let { unreachable[it] }
                         Column {
-                            Text(volume.label)
-                            SpaceUsage(volume)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(volume.label, modifier = Modifier.weight(1f, fill = false))
+                                if (problem != null) {
+                                    Icon(
+                                        Icons.Filled.Warning,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                            if (problem != null) {
+                                Text(
+                                    text = LocalResources.current.connectionShortReason(problem.kind),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            } else {
+                                SpaceUsage(volume)
+                            }
                         }
                     },
                     icon = { Icon(volume.icon(), contentDescription = null) },

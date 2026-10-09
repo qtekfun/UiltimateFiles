@@ -10,7 +10,12 @@ import com.qtekfun.ultimatefiles.core.model.TransferRequest
 import com.qtekfun.ultimatefiles.domain.usecase.ArchiveFormat
 import com.qtekfun.ultimatefiles.domain.usecase.ArchivePaths
 import com.qtekfun.ultimatefiles.domain.usecase.ViewerKind
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind
 import com.qtekfun.ultimatefiles.core.model.PanelId
+import com.qtekfun.ultimatefiles.core.util.RemoteAccounts
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth
 import com.qtekfun.ultimatefiles.core.model.SortOrder
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
 import com.qtekfun.ultimatefiles.core.model.ViewMode
@@ -57,6 +62,11 @@ class BrowserViewModel(
     private val moveFiles: BatchMoveUseCase,
     private val dragDrop: DragDropState,
     private val volumeChanges: VolumeChangeSource,
+    /** Says whether a failure to open a remote folder is a server problem, and which. */
+    private val classifier: ConnectionFailureClassifier = ConnectionFailureClassifier.None,
+    private val health: ConnectionHealth = ConnectionHealth(),
+    /** The name of a server account, for the notice. */
+    private val accountLabelOf: suspend (accountId: String) -> String? = { null },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrowserState())
@@ -68,6 +78,7 @@ class BrowserViewModel(
     val clipboard = clipboardManager.state
 
     private var loadJob: Job? = null
+    private var lastNotice: Pair<String, Long>? = null
     private var hashJob: Job? = null
 
     init {
@@ -238,9 +249,11 @@ class BrowserViewModel(
                         )
                     }
                     preferences.setLastDirectory(panel, path)
+                    RemoteAccounts.idOf(path)?.let(health::clear)
                 },
                 onFailure = { error ->
                     if (error is CancellationException) throw error
+                    reportRemoteFailure(path, error)
                     if (allowFallback && _state.value.currentPath != null) {
                         revalidate()
                     } else {
@@ -381,6 +394,25 @@ class BrowserViewModel(
         emit(BrowserEffect.Message(resId, error.message))
     }
 
+    /**
+     * Tells the user, once per failed attempt, that a server could not be used and remembers it for the drawer. Folders of
+     * this device never get here: only `dav://`, `sftp://` and `smb://` paths belong to an account.
+     */
+    private suspend fun reportRemoteFailure(path: String, error: Throwable) {
+        val accountId = RemoteAccounts.idOf(path) ?: return
+        val kind = classifier.classify(error) ?: ConnectionProblemKind.OTHER
+        // A folder that was deleted says nothing about the account; only a missing top level (a wrong address) does.
+        if (kind == ConnectionProblemKind.NOT_FOUND && !RemoteAccounts.isRoot(path)) return
+        val problem = ConnectionProblem(kind, accountId, error.message)
+        // An unexplained error (a folder you may not read) is shown, but does not mark the whole account as down.
+        if (kind != ConnectionProblemKind.OTHER) health.report(problem)
+        val now = System.currentTimeMillis()
+        val last = lastNotice
+        if (last != null && last.first == path && now - last.second < NOTICE_REPEAT_MILLIS) return
+        lastNotice = path to now
+        emit(BrowserEffect.ConnectionNotice(problem, accountLabelOf(accountId), retryPath = path))
+    }
+
     private fun emit(effect: BrowserEffect) {
         _effects.trySend(effect)
     }
@@ -388,6 +420,9 @@ class BrowserViewModel(
     companion object {
         /** Time the system needs to finish mounting or unmounting before the volumes are re-read. */
         private const val VOLUME_SETTLE_MILLIS = 500L
+
+        /** A failure that repeats within this time of the same one (the fallback reloads the folder) is not announced twice. */
+        const val NOTICE_REPEAT_MILLIS = 3_000L
 
         /** Marker stored in [BrowserState.errorMessage] when there is no volume to browse. */
         const val NO_STORAGE = "no-storage"

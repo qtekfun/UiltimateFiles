@@ -1,12 +1,15 @@
 package com.qtekfun.ultimatefiles.domain.usecase
 
 import com.qtekfun.ultimatefiles.core.model.ConflictDecision
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
 import com.qtekfun.ultimatefiles.core.model.ConflictResolution
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
 import com.qtekfun.ultimatefiles.core.model.TransferRequest
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionFailures
 import com.qtekfun.ultimatefiles.core.util.MimeTypes
 import com.qtekfun.ultimatefiles.core.util.TransferSpeedMeter
 import com.qtekfun.ultimatefiles.core.util.uniqueName
@@ -41,11 +44,13 @@ class TransferEngine(
     private val clockMillis: () -> Long = System::currentTimeMillis,
     /** Files at least this big are written under a temporary name and renamed once complete. */
     private val bigFileBytes: Long = DEFAULT_BIG_FILE_BYTES,
+    /** Says whether a failure was a server being unreachable, so the batch can report why. */
+    private val classifier: ConnectionFailureClassifier = ConnectionFailureClassifier.None,
 ) {
     /** Pausing this gate suspends the running copy (and verification) between chunks. */
     val pauseGate = PauseGate()
 
-    private val archives = ArchiveEngine(repository, pauseGate, clockMillis)
+    private val archives = ArchiveEngine(repository, pauseGate, clockMillis, classifier)
 
     /**
      * Emits throttled progress snapshots (latest wins) and finishes with a terminal status
@@ -77,6 +82,9 @@ class TransferEngine(
         private var current = ""
         private var lastEmitMillis = 0L
 
+        /** The source and the destination being worked on, to blame the right server when a copy between two fails. */
+        private var touched: List<String> = emptyList()
+
         suspend fun run() {
             try {
                 request.items.forEach { measure(it) }
@@ -86,7 +94,8 @@ class TransferEngine(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                publish(TransferStatus.FAILED, e.message ?: e.javaClass.simpleName)
+                val problem = ConnectionFailures.forRequest(classifier, e, request, touched)
+                publish(TransferStatus.FAILED, e.message ?: e.javaClass.simpleName, problem)
             }
         }
 
@@ -104,6 +113,7 @@ class TransferEngine(
 
         /** Returns true when everything under [item] was transferred (nothing skipped). */
         private suspend fun transfer(item: FileItem, targetDir: String): Boolean {
+            touched = listOf(item.path, targetDir)
             val existing = findExisting(targetDir, item.name)
             return if (item.isDirectory) transferDirectory(item, targetDir, existing)
             else transferFile(item, targetDir, existing)
@@ -281,7 +291,7 @@ class TransferEngine(
         private suspend fun findPart(dir: String, partName: String): FileItem? =
             findExisting(dir, partName) ?: children(dir).firstOrNull { it.name.startsWith(partName, ignoreCase = true) }
 
-        private fun snapshot(status: TransferStatus, error: String? = null) = TransferProgress(
+        private fun snapshot(status: TransferStatus, error: String? = null, problem: ConnectionProblem? = null) = TransferProgress(
             currentName = current,
             processedBytes = doneBytes,
             totalBytes = totalBytes,
@@ -290,6 +300,7 @@ class TransferEngine(
             bytesPerSecond = meter.record(doneBytes),
             status = status,
             error = error,
+            connectionProblem = problem,
         )
 
         /** Non-suspending, throttled update used from the byte-copy callback. */
@@ -300,9 +311,9 @@ class TransferEngine(
             out.trySend(snapshot(status))
         }
 
-        private suspend fun publish(status: TransferStatus, error: String? = null) {
+        private suspend fun publish(status: TransferStatus, error: String? = null, problem: ConnectionProblem? = null) {
             lastEmitMillis = clockMillis()
-            out.send(snapshot(status, error))
+            out.send(snapshot(status, error, problem))
         }
     }
 

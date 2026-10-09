@@ -1,5 +1,6 @@
 package com.qtekfun.ultimatefiles.domain.history
 
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblemCodec
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
@@ -37,6 +38,8 @@ class TransferHistoryRecorder(
     private val history: TransferHistoryRepository,
     private val files: FileSystemRepository,
     private val clockMillis: () -> Long = System::currentTimeMillis,
+    /** The name of a server account, for the entries that failed on a connection problem. */
+    private val accountLabelOf: suspend (accountId: String) -> String? = { null },
 ) {
     /** Whether [item] is still there; used to drop already-moved items when an interrupted batch is offered again. */
     suspend fun exists(item: FileItem): Boolean = files.stat(item.path).isSuccess
@@ -61,9 +64,16 @@ class TransferHistoryRecorder(
                 totalBytes = finalProgress?.processedBytes ?: 0L,
                 firstItemName = request.items.firstOrNull()?.name.orEmpty(),
                 targetName = targetName,
-                error = finalProgress?.error,
+                error = errorOf(finalProgress),
             ),
         )
+    }
+
+    /** A connection problem is stored as a code and the account's name (see [ConnectionProblemCodec]), anything else as its message. */
+    private suspend fun errorOf(progress: TransferProgress?): String? {
+        val problem = progress?.connectionProblem ?: return progress?.error
+        val label = problem.accountId?.let { accountLabelOf(it) }
+        return ConnectionProblemCodec.encode(problem.kind, label)
     }
 
     suspend fun recordDelete(items: List<FileItem>, result: Result<Unit>) {

@@ -303,4 +303,21 @@
     <string name="account_use_password">Usar una contraseña en su lugar</string>
     <string name="account_signin_again">Iniciar sesión de nuevo</string>
     <string name="account_edit_hint">Si cambias la dirección, volverás a iniciar sesión en el navegador. Déjala igual para cambiar solo el nombre, o inicia sesión de nuevo si el acceso dejó de funcionar.</string>
+    <string name="connection_this_server">este servidor</string>
+    <string name="connection_problem_offline">Sin conexión de red: no se pudo llegar a %1$s.</string>
+    <string name="connection_problem_no_response">%1$s no responde. Puede estar apagado, o haber cambiado su dirección o puerto.</string>
+    <string name="connection_problem_auth">Inicio de sesión rechazado por %1$s. Edita la cuenta para cambiar el usuario o la contraseña.</string>
+    <string name="connection_problem_identity">La identidad de %1$s cambió (certificado o huella del servidor), así que se bloqueó la conexión.</string>
+    <string name="connection_problem_not_found">Ya no hay nada en la dirección o el recurso de %1$s.</string>
+    <string name="connection_problem_other">No se pudo conectar con %1$s: %2$s</string>
+    <string name="connection_short_offline">Sin conexión de red</string>
+    <string name="connection_short_no_response">No responde</string>
+    <string name="connection_short_auth">Inicio de sesión rechazado</string>
+    <string name="connection_short_identity">Identidad cambiada</string>
+    <string name="connection_short_not_found">Dirección no encontrada</string>
+    <string name="connection_short_other">Conexión fallida</string>
+    <string name="connection_retry">Reintentar</string>
+    <string name="connection_edit_account">Editar cuenta</string>
+    <string name="account_error_offline">Sin conexión de red.</string>
+    <string name="account_error_no_response">El servidor no respondió. Comprueba la dirección y el puerto.</string>
 </resources>

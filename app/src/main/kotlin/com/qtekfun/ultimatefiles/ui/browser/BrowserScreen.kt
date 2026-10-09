@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -50,6 +51,9 @@ import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.data.system.IntentFactory
 import com.qtekfun.ultimatefiles.ui.components.ConfirmDeleteDialog
+import com.qtekfun.ultimatefiles.ui.components.ConnectionAwareSnackbar
+import com.qtekfun.ultimatefiles.ui.components.ConnectionSnackbarVisuals
+import com.qtekfun.ultimatefiles.ui.components.connectionMessage
 import com.qtekfun.ultimatefiles.ui.components.DockedPasteBar
 import com.qtekfun.ultimatefiles.ui.components.NameInputDialog
 import com.qtekfun.ultimatefiles.ui.components.PropertiesBottomSheet
@@ -72,6 +76,8 @@ fun BrowserScreen(
     consumeNavigationBar: Boolean = false,
     /** Starts the size analysis of the current folder, given its path and name; null disables the entry. */
     onAnalyze: ((path: String, label: String) -> Unit)? = null,
+    /** Opens the form to edit the account with this id (from the notice of a server that could not be used). */
+    onEditAccount: (accountId: String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard by viewModel.clipboard.collectAsStateWithLifecycle()
@@ -108,6 +114,18 @@ fun BrowserScreen(
                     context.startActivity(intents.share(effect.items))
                 } catch (e: ActivityNotFoundException) {
                     snackbar.showSnackbar(resources.getString(R.string.error_no_app))
+                }
+                is BrowserEffect.ConnectionNotice -> {
+                    val accountId = effect.problem.accountId
+                    val result = snackbar.showSnackbar(
+                        ConnectionSnackbarVisuals(
+                            message = resources.connectionMessage(effect.problem.kind, effect.accountLabel, effect.problem.detail),
+                            retryLabel = resources.getString(R.string.connection_retry),
+                            editLabel = resources.getString(R.string.connection_edit_account),
+                            accountId = accountId,
+                        ),
+                    )
+                    if (result == SnackbarResult.ActionPerformed) onEvent(BrowserEvent.Navigate(effect.retryPath))
                 }
                 is BrowserEffect.Message -> snackbar.showSnackbar(
                     listOfNotNull(resources.getString(effect.resId), effect.detail).joinToString(": "),
@@ -195,7 +213,7 @@ fun BrowserScreen(
                 onCancel = { onEvent(BrowserEvent.CancelClipboard) },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SnackbarHost(snackbar) { data -> ConnectionAwareSnackbar(data, onEditAccount) } },
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.isLoading,

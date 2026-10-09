@@ -12,6 +12,7 @@ import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
 import com.qtekfun.ultimatefiles.core.util.formatBytes
+import com.qtekfun.ultimatefiles.ui.components.connectionMessage
 import com.qtekfun.ultimatefiles.core.util.formatDuration
 import com.qtekfun.ultimatefiles.domain.transfer.TransferState
 
@@ -84,11 +85,15 @@ class TransferNotifications(private val context: Context) {
         return builder.build()
     }
 
-    fun showResult(progress: TransferProgress?) {
+    /** [accountLabel] is the name of the server account behind a [TransferProgress.connectionProblem], when it is known. */
+    fun showResult(progress: TransferProgress?, accountLabel: String? = null) {
         val (title, text) = when (progress?.status) {
             TransferStatus.COMPLETED -> R.string.transfer_done to null
             TransferStatus.CANCELLED -> R.string.transfer_cancelled to null
-            else -> R.string.transfer_failed to progress?.error
+            else -> R.string.transfer_failed to (
+                progress?.connectionProblem?.let { context.resources.connectionMessage(it.kind, accountLabel, it.detail) }
+                    ?: progress?.error
+                )
         }
         val notification = baseBuilder()
             .setContentTitle(context.getString(title))

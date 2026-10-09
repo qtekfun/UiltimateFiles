@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -93,26 +94,42 @@ class BrowserViewModelTest {
         tmp.newFolder("zeta")
         tmp.newFolder("alpha")
         tmp.newFile("b.txt").writeText("hello")
-        val repo = LocalFileSystemRepository(tmp.root, "Internal") { null }
+        repo = LocalFileSystemRepository(tmp.root, "Internal") { null }
         val recorder = TransferHistoryRecorder(history, repo)
-        val coordinator = TransferCoordinator(TransferEngine(repo, FileStreamCopier()), recorder) { }
-        viewModel = BrowserViewModel(
-            panel = PanelId.LEFT,
-            repository = repo,
-            preferences = prefs,
-            clipboardManager = clipboard,
-            coordinator = coordinator,
-            buildBreadcrumb = BuildBreadcrumbUseCase(repo),
-            deleteFiles = DeleteUseCase(repo, recorder),
-            calculateHash = HashCalcUseCase(repo),
-            copyFiles = BatchCopyUseCase(coordinator, prefs),
-            moveFiles = BatchMoveUseCase(coordinator, prefs),
-            dragDrop = DragDropState(),
-            volumeChanges = object : VolumeChangeSource {
-                override val changes: Flow<Unit> = volumeEvents
-            },
-        )
+        coordinator = TransferCoordinator(TransferEngine(repo, FileStreamCopier()), recorder) { }
+        this.recorder = recorder
+        viewModel = newViewModel()
     }
+
+    private lateinit var repo: LocalFileSystemRepository
+    private lateinit var coordinator: TransferCoordinator
+    private lateinit var recorder: TransferHistoryRecorder
+
+    private fun newViewModel(
+        classifier: com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier =
+            com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier.None,
+        health: com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth = com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth(),
+        accountLabelOf: suspend (String) -> String? = { null },
+        repository: com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository = repo,
+    ) = BrowserViewModel(
+        panel = PanelId.LEFT,
+        repository = repository,
+        preferences = prefs,
+        clipboardManager = clipboard,
+        coordinator = coordinator,
+        buildBreadcrumb = BuildBreadcrumbUseCase(repository),
+        deleteFiles = DeleteUseCase(repo, recorder),
+        calculateHash = HashCalcUseCase(repo),
+        copyFiles = BatchCopyUseCase(coordinator, prefs),
+        moveFiles = BatchMoveUseCase(coordinator, prefs),
+        dragDrop = DragDropState(),
+        volumeChanges = object : VolumeChangeSource {
+            override val changes: Flow<Unit> = volumeEvents
+        },
+        classifier = classifier,
+        health = health,
+        accountLabelOf = accountLabelOf,
+    )
 
     @After
     fun tearDown() {
@@ -288,5 +305,97 @@ class BrowserViewModelTest {
 
         val state = viewModel.state.first { it.currentPath == tmp.root.path && !it.isLoading }
         assertEquals(listOf("Internal"), state.breadcrumb.map { it.label })
+    }
+
+    /** Shows the folder of this device under the path of a server account, as if `dav://nas/` held the same files. */
+    private inner class AsIfRemote(private val inner: com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository) :
+        com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository by inner {
+        private fun remote(path: String) = path.startsWith("dav://nas/")
+        override suspend fun listFiles(uriOrPath: String) = inner.listFiles(if (remote(uriOrPath)) tmp.root.path else uriOrPath)
+        override suspend fun stat(uriOrPath: String) =
+            if (remote(uriOrPath)) inner.stat(tmp.root.path).map { it.copy(path = uriOrPath) } else inner.stat(uriOrPath)
+        override suspend fun parentOf(uriOrPath: String) = if (remote(uriOrPath)) null else inner.parentOf(uriOrPath)
+    }
+
+    private val timeoutClassifier = com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier {
+        com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind.NO_RESPONSE
+    }
+
+    private suspend fun effectsAfter(vm: BrowserViewModel, action: () -> Unit): List<BrowserEffect> {
+        val seen = java.util.Collections.synchronizedList(mutableListOf<BrowserEffect>())
+        val collector = kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { vm.effects.collect { seen += it } }
+        vm.state.first { !it.isLoading && it.currentPath != null }
+        action()
+        // The listing runs on an IO thread; give it real time to fail and to be reported.
+        kotlinx.coroutines.withContext(Dispatchers.Default) { kotlinx.coroutines.delay(600) }
+        collector.cancel()
+        return seen.toList()
+    }
+
+    @Test
+    fun `a server folder that cannot be opened is announced with its reason and marks the account`() = runTest {
+        val health = com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth()
+        val vm = newViewModel(classifier = timeoutClassifier, health = health, accountLabelOf = { "Casa NAS" })
+        try {
+            val seen = effectsAfter(vm) { vm.onEvent(BrowserEvent.Navigate("dav://nas/Photos")) }
+
+            val notice = seen.filterIsInstance<BrowserEffect.ConnectionNotice>().single()
+            assertEquals(com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind.NO_RESPONSE, notice.problem.kind)
+            assertEquals("nas", notice.problem.accountId)
+            assertEquals("Casa NAS", notice.accountLabel)
+            assertEquals("dav://nas/Photos", notice.retryPath)
+            assertEquals(com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind.NO_RESPONSE, health.problems.value["nas"]?.kind)
+        } finally {
+            vm.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun `a folder of this device that cannot be opened is not a connection problem`() = runTest {
+        val health = com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth()
+        val vm = newViewModel(classifier = timeoutClassifier, health = health)
+        try {
+            val seen = effectsAfter(vm) { vm.onEvent(BrowserEvent.Navigate(File(tmp.root, "does-not-exist").path)) }
+
+            assertTrue(seen.none { it is BrowserEffect.ConnectionNotice })
+            assertTrue(health.problems.value.isEmpty())
+        } finally {
+            vm.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun `a missing folder inside an account is not blamed on the account, a missing top level is`() = runTest {
+        val notFound = com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier {
+            com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind.NOT_FOUND
+        }
+        val health = com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth()
+        val vm = newViewModel(classifier = notFound, health = health)
+        try {
+            val inside = effectsAfter(vm) { vm.onEvent(BrowserEvent.Navigate("dav://nas/gone/folder")) }
+            assertTrue(inside.none { it is BrowserEffect.ConnectionNotice })
+            assertTrue(health.problems.value.isEmpty())
+
+            val top = effectsAfter(vm) { vm.onEvent(BrowserEvent.Navigate("dav://nas/")) }
+            assertEquals(1, top.filterIsInstance<BrowserEffect.ConnectionNotice>().size)
+            assertEquals(com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind.NOT_FOUND, health.problems.value["nas"]?.kind)
+        } finally {
+            vm.viewModelScope.cancel()
+        }
+    }
+
+    @Test
+    fun `a later successful listing clears the mark of the account`() = runTest {
+        val health = com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth()
+        health.report(com.qtekfun.ultimatefiles.core.model.ConnectionProblem(com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind.NO_RESPONSE, "nas"))
+        val vm = newViewModel(classifier = timeoutClassifier, health = health, repository = AsIfRemote(repo))
+        try {
+            val seen = effectsAfter(vm) { vm.onEvent(BrowserEvent.Navigate("dav://nas/")) }
+
+            assertTrue(seen.none { it is BrowserEffect.ConnectionNotice })
+            assertTrue("the account works again", health.problems.value.isEmpty())
+        } finally {
+            vm.viewModelScope.cancel()
+        }
     }
 }

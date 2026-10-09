@@ -141,3 +141,21 @@ as `versionCode`.
   trust only carries over to the same host and port or server (anything else is asked about again, and a changed key at the
   same host is still refused), and what the stored SFTP secret becomes (`key NUL passphrase` is kept unless another is given).
 
+## 13. Connection Problems
+- `ConnectionProblems` (data/network) reads the whole cause chain of an exception and says why a server could not be used:
+  `OFFLINE`, `NO_RESPONSE`, `AUTH`, `IDENTITY` (certificate or SSH host key), `NOT_FOUND`; null means the error has nothing to do
+  with the connection (a name clash, a bad argument). It needs no network state, so there is no `ACCESS_NETWORK_STATE`
+  permission. Domain code only sees the `ConnectionFailureClassifier` interface. `RemoteAccounts` tells the account id behind a
+  `dav://`, `sftp://` or `smb://` path; local, SAF and archive paths belong to no account and never produce a notice.
+- `BrowserViewModel` reports a failed listing of a remote folder once (not again when the fallback reloads it) as a
+  `BrowserEffect.ConnectionNotice`; the panel shows a Snackbar with **Retry** (reload that folder) and **Edit account**. A
+  missing folder inside an account is not blamed on the account, a missing top level is. An unexplained error is shown but does
+  not mark the account.
+- `ConnectionHealth` (a Koin singleton) holds the accounts that failed the last time they were used and clears them when a
+  later listing or batch works or the account is edited or removed; the drawer reads it. Nothing polls servers.
+- A failed batch carries `TransferProgress.connectionProblem` (set by `TransferEngine`/`ArchiveEngine` through
+  `ConnectionFailures`, which blames the only account involved, or the one being worked on). `TransferCoordinator` updates the
+  health, announces it (`connectionProblems`, shown as a Snackbar by `MainScreen`) and the recorder stores it in the history
+  entry's `error` string as `connection:<KIND>:<account name>` (`ConnectionProblemCodec`): the log format is unchanged, older
+  entries keep their plain text, and the screen and the notification turn the code into a sentence with the current language.
+
