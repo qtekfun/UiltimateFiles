@@ -1,0 +1,2 @@
+- Avisos cuando un servidor no está disponible: dicen el motivo (sin red, sin respuesta, inicio de sesión rechazado, certificado o huella cambiados, no encontrado), marcan la cuenta en el menú lateral y ofrecen Reintentar y Editar cuenta
+- Las copias fallidas hacia o desde un servidor dicen el motivo en la notificación y en el historial

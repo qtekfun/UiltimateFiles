@@ -4,6 +4,8 @@ All notable changes. Versions follow [SemVer](https://semver.org/); the notes of
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-09
+
 ### Added
 - **Notices when a server is not available.** Opening, refreshing or copying with a Nextcloud, SFTP or SMB account that cannot be used now says why (no network, no answer, sign-in rejected, certificate or host key changed, address not found), naming the account, with **Retry** and **Edit account** buttons. The drawer marks the account with a warning until it works again, and a copy that fails for that reason says so in the notice, the history and the notification. Nothing checks servers in the background.
 
