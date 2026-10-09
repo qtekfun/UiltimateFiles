@@ -13,6 +13,8 @@ data class TransferProgress(
     val bytesPerSecond: Long = 0L,
     val status: TransferStatus = TransferStatus.RUNNING,
     val error: String? = null,
+    /** Set with a failed status when the cause was a server that could not be used, so the UI can say why. */
+    val connectionProblem: ConnectionProblem? = null,
 ) {
     /** 0f..1f, or null when the total size is not known. */
     val fraction: Float?

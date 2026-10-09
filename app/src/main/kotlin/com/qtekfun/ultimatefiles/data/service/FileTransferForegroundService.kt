@@ -9,12 +9,14 @@ import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
 import com.qtekfun.ultimatefiles.core.model.TransferStatus
+import com.qtekfun.ultimatefiles.domain.repository.AccountRepository
 import com.qtekfun.ultimatefiles.domain.transfer.TransferCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -25,6 +27,7 @@ import org.koin.core.component.inject
 class FileTransferForegroundService : Service(), KoinComponent {
     private val coordinator: TransferCoordinator by inject()
     private val notifications: TransferNotifications by inject()
+    private val accounts: AccountRepository by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Volatile private var lastStartId = 0
@@ -104,10 +107,12 @@ class FileTransferForegroundService : Service(), KoinComponent {
         }
         // Wait for the last update to be over: cancelling alone leaves it free to post after the notification is removed.
         updates.cancelAndJoin()
-        finish(last)
+        val accountId = last?.connectionProblem?.accountId
+        val label = accountId?.let { id -> accounts.accounts.first().firstOrNull { it.id == id }?.label }
+        finish(last, label)
     }
 
-    private fun finish(result: TransferProgress?) {
+    private fun finish(result: TransferProgress?, accountLabel: String? = null) {
         releaseWakeLock()
         synchronized(notifyLock) {
             // From here on no update may post the ongoing notification again (it is ongoing: it could not be swiped away).
@@ -115,7 +120,7 @@ class FileTransferForegroundService : Service(), KoinComponent {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             notifications.clearOngoing()
         }
-        if (result != null) notifications.showResult(result)
+        if (result != null) notifications.showResult(result, accountLabel)
         stopSelf(lastStartId)
     }
 

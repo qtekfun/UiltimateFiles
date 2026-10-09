@@ -49,13 +49,14 @@ fun DualPanelScaffold(
     onClosePanel: (PanelId) -> Unit,
     onOpenDrawer: () -> Unit,
     onAnalyze: (path: String, label: String) -> Unit,
+    onEditAccount: (accountId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (panels.size < MIN_PANELS) return
     if (isSplitLayout(LocalConfiguration.current.screenWidthDp)) {
-        SplitPanels(panels, startPanel, endPanel, activePanel, barPosition, onActivePanelChange, onShowPanel, onAddPanel, onClosePanel, onOpenDrawer, onAnalyze, modifier)
+        SplitPanels(panels, startPanel, endPanel, activePanel, barPosition, onActivePanelChange, onShowPanel, onAddPanel, onClosePanel, onOpenDrawer, onAnalyze, onEditAccount, modifier)
     } else {
-        PagedPanels(panels, activePanel, barPosition, onActivePanelChange, onAddPanel, onClosePanel, onOpenDrawer, onAnalyze, modifier)
+        PagedPanels(panels, activePanel, barPosition, onActivePanelChange, onAddPanel, onClosePanel, onOpenDrawer, onAnalyze, onEditAccount, modifier)
     }
 }
 
@@ -72,6 +73,7 @@ private fun SplitPanels(
     onClosePanel: (PanelId) -> Unit,
     onOpenDrawer: () -> Unit,
     onAnalyze: (path: String, label: String) -> Unit,
+    onEditAccount: (accountId: String) -> Unit,
     modifier: Modifier,
 ) {
     Row(modifier = modifier.fillMaxSize()) {
@@ -110,6 +112,7 @@ private fun SplitPanels(
                         topInsets = if (barPosition == PanelBarPosition.TOP) NoInsets else androidx.compose.material3.TopAppBarDefaults.windowInsets,
                         consumeNavigationBar = barPosition == PanelBarPosition.BOTTOM,
                         onAnalyze = onAnalyze,
+                        onEditAccount = onEditAccount,
                     )
                 }
                 if (barPosition == PanelBarPosition.BOTTOM) bar()
@@ -132,6 +135,7 @@ private fun PagedPanels(
     onClosePanel: (PanelId) -> Unit,
     onOpenDrawer: () -> Unit,
     onAnalyze: (path: String, label: String) -> Unit,
+    onEditAccount: (accountId: String) -> Unit,
     modifier: Modifier,
 ) {
     val activeIndex = panels.indexOfFirst { it.id == activePanel }.coerceAtLeast(0)
@@ -166,6 +170,7 @@ private fun PagedPanels(
                 topInsets = if (barPosition == PanelBarPosition.TOP) NoInsets else androidx.compose.material3.TopAppBarDefaults.windowInsets,
                 consumeNavigationBar = barPosition == PanelBarPosition.BOTTOM,
                 onAnalyze = onAnalyze,
+                        onEditAccount = onEditAccount,
             )
         }
         if (barPosition == PanelBarPosition.BOTTOM) bar()

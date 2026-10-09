@@ -21,7 +21,11 @@ import com.qtekfun.ultimatefiles.data.network.SshConnector
 import com.qtekfun.ultimatefiles.data.network.WebDavAccountService
 import com.qtekfun.ultimatefiles.data.network.WebDavClient
 import com.qtekfun.ultimatefiles.data.repository.ArchiveFileSystemRepository
+import com.qtekfun.ultimatefiles.data.network.ConnectionProblems
 import com.qtekfun.ultimatefiles.data.repository.DataStoreAccountRepository
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth
+import kotlinx.coroutines.flow.first
 import com.qtekfun.ultimatefiles.data.repository.FileTransferHistoryRepository
 import com.qtekfun.ultimatefiles.data.repository.LocalFileSystemRepository
 import com.qtekfun.ultimatefiles.data.repository.RoutingFileSystemRepository
@@ -119,13 +123,22 @@ val appModule = module {
         )
     }
 
-    single { TransferEngine(repository = get(), copier = get()) }
+    single { ConnectionHealth() }
+    single<ConnectionFailureClassifier> { ConnectionProblems }
+    single { TransferEngine(repository = get(), copier = get(), classifier = get()) }
     single<TransferServiceLauncher> { ServiceTransferLauncher(androidContext()) }
     single<TransferHistoryRepository> { FileTransferHistoryRepository(File(androidContext().filesDir, "history.tsv")) }
-    single { TransferHistoryRecorder(history = get(), files = get()) }
+    single {
+        val accounts = get<AccountRepository>()
+        TransferHistoryRecorder(
+            history = get(),
+            files = get(),
+            accountLabelOf = { id -> accounts.accounts.first().firstOrNull { it.id == id }?.label },
+        )
+    }
     single<VolumeChangeSource> { CompositeVolumeChangeSource(SystemVolumeMonitor(androidContext()), get()) }
     single<TransferJournal> { FileTransferJournal(File(androidContext().filesDir, "transfer-journal.json")) }
-    single { TransferCoordinator(engine = get(), recorder = get(), journal = get(), launcher = get()) }
+    single { TransferCoordinator(engine = get(), recorder = get(), journal = get(), launcher = get(), health = get()) }
     single { TransferNotifications(androidContext()) }
 
     factory { BatchCopyUseCase(get(), get()) }
@@ -143,7 +156,7 @@ val appModule = module {
     single { DragDropState() }
 
     // ViewModels are created through ViewModelProvider factories in the UI; Koin only supplies the dependencies.
-    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { BackupManager(preferences = get(), accounts = get()) }
     single { BackupFiles(androidContext()) }
     factory { SettingsViewModel(get(), get(), get()) }
@@ -151,6 +164,7 @@ val appModule = module {
     factory { SizeAnalyzer(get()) }
     factory { SizeAnalysisViewModel(get()) }
     factory { params ->
+        val accounts = get<AccountRepository>()
         BrowserViewModel(
             panel = params.get<PanelId>(),
             repository = get(),
@@ -164,6 +178,9 @@ val appModule = module {
             moveFiles = get(),
             dragDrop = get(),
             volumeChanges = get(),
+            classifier = get(),
+            health = get(),
+            accountLabelOf = { id -> accounts.accounts.first().firstOrNull { it.id == id }?.label },
         )
     }
 }

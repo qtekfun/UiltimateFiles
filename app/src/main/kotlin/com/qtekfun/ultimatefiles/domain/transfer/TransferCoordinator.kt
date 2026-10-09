@@ -1,5 +1,11 @@
 package com.qtekfun.ultimatefiles.domain.transfer
 
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
+import com.qtekfun.ultimatefiles.core.util.RemoteAccounts
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionHealth
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import com.qtekfun.ultimatefiles.core.model.ConflictDecision
 import com.qtekfun.ultimatefiles.core.model.ConflictPrompt
 import com.qtekfun.ultimatefiles.core.model.FileItem
@@ -48,6 +54,9 @@ class TransferCoordinator(
     private val recorder: TransferHistoryRecorder,
     private val gate: PauseGate = engine.pauseGate,
     private val journal: TransferJournal = NoJournal,
+    /** Marks the servers that a finished batch could or could not use. */
+    private val health: ConnectionHealth = ConnectionHealth(),
+    /** Last, so that `TransferCoordinator(engine, recorder) { ... }` keeps meaning the launcher. */
     private val launcher: TransferServiceLauncher,
 ) : ConflictResolver {
     private val lock = Any()
@@ -62,6 +71,11 @@ class TransferCoordinator(
 
     /** Batches a previous run left unfinished because the app was stopped; the user decides whether to resume them. */
     val interrupted: StateFlow<List<TransferSummary>> = _interrupted.asStateFlow()
+
+    private val _connectionProblems = MutableSharedFlow<ConnectionProblem>(extraBufferCapacity = 4)
+
+    /** One item per batch that failed because a server could not be used, for the in-app notice. */
+    val connectionProblems: Flow<ConnectionProblem> = _connectionProblems.asSharedFlow()
 
     private val _state = MutableStateFlow(TransferState())
     val state: StateFlow<TransferState> = _state.asStateFlow()
@@ -164,8 +178,21 @@ class TransferCoordinator(
             unfinished.remove(request)
             journal.save(unfinished.toList())
         }
+        reportConnection(request, finalProgress)
         withContext(NonCancellable) { recorder.recordTransfer(request, finalProgress) }
         return finalProgress
+    }
+
+    /** A batch that worked proves its servers are reachable; one that failed on a connection says which and why. */
+    private fun reportConnection(request: TransferRequest, finalProgress: TransferProgress?) {
+        when (finalProgress?.status) {
+            TransferStatus.COMPLETED -> health.clear(RemoteAccounts.idsIn(request.items, request.targetDirectory))
+            TransferStatus.FAILED -> finalProgress.connectionProblem?.let { problem ->
+                health.report(problem)
+                _connectionProblems.tryEmit(problem)
+            }
+            else -> Unit
+        }
     }
 
     /** Cancels the running transfer and drops everything still queued. */

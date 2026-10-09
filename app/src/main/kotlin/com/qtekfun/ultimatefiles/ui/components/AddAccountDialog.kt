@@ -40,6 +40,8 @@ import com.qtekfun.ultimatefiles.R
 import com.qtekfun.ultimatefiles.core.model.AccountProtocol
 import com.qtekfun.ultimatefiles.core.model.WebDavAccount
 import com.qtekfun.ultimatefiles.data.network.AccountEditing
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblemKind
+import com.qtekfun.ultimatefiles.data.network.ConnectionProblems
 import com.qtekfun.ultimatefiles.data.network.HostKeyChangedException
 import com.qtekfun.ultimatefiles.data.network.InsecureServerException
 import com.qtekfun.ultimatefiles.data.network.UntrustedHostKeyException
@@ -453,17 +455,21 @@ private enum class AccountKind { NEXTCLOUD, SFTP, SMB }
 
 private fun Throwable.messageRes(): Int = when {
     this is InvalidKeyFileException -> R.string.account_error_key
-    message?.contains("LOGON_FAILURE") == true || message?.contains("ACCESS_DENIED") == true -> R.string.account_error_auth
-    message?.contains("BAD_NETWORK_NAME") == true -> R.string.account_error_share
     this is InvalidServerUrlException -> R.string.account_error_url
     this is LoginFlowExpiredException -> R.string.account_error_expired
-    this is javax.net.ssl.SSLException -> R.string.account_error_certificate
-    this is HostKeyChangedException -> R.string.account_error_hostkey
-    this is net.schmizz.sshj.userauth.UserAuthException -> R.string.account_error_auth
     this is ActivityNotFoundException -> R.string.account_error_browser
-    this is WebDavException && code == 401 -> R.string.account_error_auth
-    this is WebDavException && code == 404 -> R.string.account_error_path
-    else -> R.string.account_error_generic
+    // An SMB share that refuses a user is a sign-in problem here, although for a file it would only be a permission.
+    message?.contains("ACCESS_DENIED") == true -> R.string.account_error_auth
+    this is HostKeyChangedException -> R.string.account_error_hostkey
+    else -> when (ConnectionProblems.classify(this)) {
+        ConnectionProblemKind.AUTH -> R.string.account_error_auth
+        ConnectionProblemKind.IDENTITY -> R.string.account_error_certificate
+        ConnectionProblemKind.NOT_FOUND ->
+            if (message?.contains("BAD_NETWORK_NAME") == true) R.string.account_error_share else R.string.account_error_path
+        ConnectionProblemKind.OFFLINE -> R.string.account_error_offline
+        ConnectionProblemKind.NO_RESPONSE -> R.string.account_error_no_response
+        else -> R.string.account_error_generic
+    }
 }
 
 private const val MAX_KEY_BYTES = 64 * 1024

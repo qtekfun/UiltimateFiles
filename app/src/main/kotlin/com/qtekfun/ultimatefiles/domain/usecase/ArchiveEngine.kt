@@ -1,5 +1,6 @@
 package com.qtekfun.ultimatefiles.domain.usecase
 
+import com.qtekfun.ultimatefiles.core.model.ConnectionProblem
 import com.qtekfun.ultimatefiles.core.model.FileItem
 import com.qtekfun.ultimatefiles.core.model.OperationType
 import com.qtekfun.ultimatefiles.core.model.TransferProgress
@@ -8,6 +9,8 @@ import com.qtekfun.ultimatefiles.core.model.TransferStatus
 import com.qtekfun.ultimatefiles.core.util.MimeTypes
 import com.qtekfun.ultimatefiles.core.util.TransferSpeedMeter
 import com.qtekfun.ultimatefiles.core.util.uniqueName
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionFailureClassifier
+import com.qtekfun.ultimatefiles.domain.connection.ConnectionFailures
 import com.qtekfun.ultimatefiles.domain.repository.FileSystemRepository
 import com.qtekfun.ultimatefiles.domain.transfer.PauseGate
 import java.io.FilterInputStream
@@ -44,6 +47,7 @@ class ArchiveEngine(
     private val repository: FileSystemRepository,
     private val gate: PauseGate,
     private val clockMillis: () -> Long = System::currentTimeMillis,
+    private val classifier: ConnectionFailureClassifier = ConnectionFailureClassifier.None,
 ) {
     fun execute(request: TransferRequest): Flow<TransferProgress> =
         channelFlow { Run(request, this).run() }
@@ -66,7 +70,7 @@ class ArchiveEngine(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                publish(TransferStatus.FAILED, e.message ?: e.javaClass.simpleName)
+                publish(TransferStatus.FAILED, e.message ?: e.javaClass.simpleName, ConnectionFailures.forRequest(classifier, e, request))
             }
         }
 
@@ -259,7 +263,7 @@ class ArchiveEngine(
             }
         }
 
-        private fun snapshot(status: TransferStatus, error: String? = null) = TransferProgress(
+        private fun snapshot(status: TransferStatus, error: String? = null, problem: ConnectionProblem? = null) = TransferProgress(
             currentName = current,
             processedBytes = doneBytes,
             totalBytes = totalBytes,
@@ -268,6 +272,7 @@ class ArchiveEngine(
             bytesPerSecond = meter.record(doneBytes),
             status = status,
             error = error,
+            connectionProblem = problem,
         )
 
         private fun tick() {
@@ -277,9 +282,9 @@ class ArchiveEngine(
             out.trySend(snapshot(TransferStatus.RUNNING))
         }
 
-        private suspend fun publish(status: TransferStatus, error: String? = null) {
+        private suspend fun publish(status: TransferStatus, error: String? = null, problem: ConnectionProblem? = null) {
             lastEmitMillis = clockMillis()
-            out.send(snapshot(status, error))
+            out.send(snapshot(status, error, problem))
         }
     }
 
